@@ -3,48 +3,33 @@ import type { UserAccount } from "@prisma/client";
 import prisma from "../../lib/prisma";
 import type { PublicUser } from "../../types/user.types";
 
-
-class UserService { 
-
+class UserService {
   async findById(id: string): Promise<UserAccount | null> {
-    return prisma.userAccount.findUnique({
-      where: { id },
-    });
+    return prisma.userAccount.findUnique({ where: { id } });
   }
 
   async findByEmail(email: string): Promise<UserAccount | null> {
-    return prisma.userAccount.findUnique({
-      where: { email },
-    });
+    return prisma.userAccount.findUnique({ where: { email } });
   }
 
   async findByGoogleSubjectId(googleSubjectId: string): Promise<UserAccount | null> {
-    return prisma.userAccount.findUnique({
-      where: { googleSubjectId },
-    });
+    return prisma.userAccount.findUnique({ where: { googleSubjectId } });
   }
 
   async findOrCreateByGoogleProfile(profile: GoogleProfile): Promise<UserAccount> {
     const email = profile.emails?.[0]?.value;
-    if (!email) {
-      throw new Error("Google profile does not contain an email");
-    }
+    if (!email) throw new Error("Google profile does not contain an email");
 
     let user = await this.findByGoogleSubjectId(profile.id);
     if (user) {
       return prisma.userAccount.update({
         where: { id: user.id },
-        data: {
-          displayName: profile.displayName,
-          avatarUrl: profile.photos?.[0]?.value,
-        },
+        data: { displayName: profile.displayName, avatarUrl: profile.photos?.[0]?.value },
       });
     }
 
     user = await this.findByEmail(email);
-    
     if (user) {
-      // link Google account to existing user
       return prisma.userAccount.update({
         where: { id: user.id },
         data: {
@@ -55,7 +40,6 @@ class UserService {
       });
     }
 
-    // create new user
     return prisma.userAccount.create({
       data: {
         email,
@@ -74,38 +58,19 @@ class UserService {
       name: user.displayName,
       role: user.role,
       avatarUrl: user.avatarUrl || undefined,
-      devMode: user.devMode,
     };
-  }
-
-  async toggleDevMode(id: string): Promise<UserAccount> {
-    const user = await this.findById(id);
-    if (!user) {
-      throw new Error("User not found");
-    }
-    
-    return prisma.userAccount.update({
-      where: { id },
-      data: { devMode: !user.devMode },
-    });
   }
 
   async updateProfile(id: string, name: string, avatarUrl?: string): Promise<UserAccount> {
     return prisma.userAccount.update({
       where: { id },
-      data: {
-        displayName: name,
-        avatarUrl,
-      },
+      data: { displayName: name, avatarUrl },
     });
   }
 
   async deleteById(id: string): Promise<void> {
-    await prisma.userAccount.delete({
-      where: { id },
-    });
+    await prisma.userAccount.delete({ where: { id } });
   }
-
 }
 
 export const userService = new UserService();

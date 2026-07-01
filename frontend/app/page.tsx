@@ -6,19 +6,15 @@ import { getGoogleLoginUrl } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  FiShield, FiRefreshCw, FiGrid, FiArrowRight, FiLogOut,
-  FiZap, FiActivity, FiAlertTriangle, FiCheckCircle, FiTerminal,
-  FiCpu, FiServer, FiLock, FiTrendingUp, FiLayers, FiEye,
-  FiCoffee, FiBattery,
+  FiArrowRight, FiLogOut, FiCheckCircle,
+  FiZap, FiLock, FiTrendingUp, FiLayers, FiUsers,
+  FiGlobe, FiCpu, FiBarChart2,
 } from "react-icons/fi";
 
-// ═══════════════════════════════════════════════════════════════
-// Animated Grid Background
-// ═══════════════════════════════════════════════════════════════
+// ── Animated grid background ──────────────────────────────────
 function AnimatedGridBackground() {
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      {/* Base grid */}
       <div
         className="absolute inset-0 opacity-[0.04]"
         style={{
@@ -29,22 +25,18 @@ function AnimatedGridBackground() {
           backgroundSize: '60px 60px',
         }}
       />
-      {/* Animated gradient spotlight moving across grid */}
       <div
         className="absolute inset-0 animate-grid-spotlight opacity-30"
         style={{
           background: `radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(159,232,112,0.07), transparent 40%)`,
         }}
       />
-      {/* Faint radial glow center */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-brand-1/[0.02] blur-3xl" />
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Mouse-tracking spotlight effect
-// ═══════════════════════════════════════════════════════════════
+// ── Mouse spotlight ───────────────────────────────────────────
 function useMouseSpotlight() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -56,9 +48,7 @@ function useMouseSpotlight() {
   }, []);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Reveal on scroll hook
-// ═══════════════════════════════════════════════════════════════
+// ── Reveal on scroll ──────────────────────────────────────────
 function useReveal(threshold = 0.1) {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
@@ -75,19 +65,11 @@ function useReveal(threshold = 0.1) {
   return { ref, revealed };
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Staggered children reveal
-// ═══════════════════════════════════════════════════════════════
+// ── Staggered reveal ─────────────────────────────────────────
 function StaggerReveal({
-  children,
-  className = "",
-  staggerDelay = 75,
-  baseDelay = 0,
+  children, className = "", staggerDelay = 75, baseDelay = 0,
 }: {
-  children: React.ReactNode;
-  className?: string;
-  staggerDelay?: number;
-  baseDelay?: number;
+  children: React.ReactNode; className?: string; staggerDelay?: number; baseDelay?: number;
 }) {
   const { ref, revealed } = useReveal(0.05);
   return (
@@ -111,15 +93,9 @@ function StaggerReveal({
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Bento card
-// ═══════════════════════════════════════════════════════════════
+// ── Bento card ───────────────────────────────────────────────
 function BentoCard({ icon: Icon, title, description, className = "", span = "" }: {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  className?: string;
-  span?: string;
+  icon: React.ElementType; title: string; description: string; className?: string; span?: string;
 }) {
   return (
     <div className={`group relative overflow-hidden rounded-3xl border border-border bg-surface p-8 transition-all duration-500 hover:border-brand-1/30 hover:glow-green ${span} ${className}`}>
@@ -135,9 +111,7 @@ function BentoCard({ icon: Icon, title, description, className = "", span = "" }
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Floating particle
-// ═══════════════════════════════════════════════════════════════
+// ── Floating particle ─────────────────────────────────────────
 function FloatingParticle({ size, left, top, delay, duration }: {
   size: number; left: string; top: string; delay: number; duration: number;
 }) {
@@ -153,15 +127,13 @@ function FloatingParticle({ size, left, top, delay, duration }: {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Page
-// ═══════════════════════════════════════════════════════════════
+// ── Page ──────────────────────────────────────────────────────
 
 type HeroPhase = 'initial' | 'settle' | 'content';
 
 export default function Home() {
   const { user, loading: userLoading, logout } = useUser();
-  const ctaHref = user ? "/environments" : getGoogleLoginUrl();
+  const ctaHref = user ? "/dashboard" : getGoogleLoginUrl();
   const ctaLabel = user ? "Go to App" : "Get started free";
   const isExternal = !user;
 
@@ -170,7 +142,6 @@ export default function Home() {
 
   useMouseSpotlight();
 
-  // Hero sequence: logo at center, stays 1s, then shrinks+shifts
   useEffect(() => {
     const timers = [
       setTimeout(() => setHeroPhase('settle'), 1000),
@@ -182,32 +153,26 @@ export default function Home() {
 
   const { ref: featuresRef, revealed: featuresRevealed } = useReveal();
   const { ref: stepsRef, revealed: stepsRevealed } = useReveal();
-  const { ref: realityRef, revealed: realityRevealed } = useReveal();
   const { ref: ctaRef, revealed: ctaRevealed } = useReveal();
-  const { ref: dashboardRef, revealed: dashboardRevealed } = useReveal();
 
   return (
     <div className="min-h-screen bg-background text-text-primary overflow-x-hidden">
-      {/* Global animated grid background */}
       <AnimatedGridBackground />
 
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* ── Nav ────────────────────────────────────────────────── */}
-      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* Nav */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${showNav ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
         <div className="glass border-b border-border/50">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 group">
               <div className="relative w-7 h-7 rounded-lg overflow-hidden shrink-0 ring-2 ring-brand-1/20 group-hover:ring-brand-1/50 transition-all">
-                <Image src="/Tronnium_Main.png" alt="Tronnium" fill className="object-cover" />
+                <Image src="/Tronnium_Main.png" alt="Logo" fill className="object-cover" />
               </div>
-              <span className="text-sm font-bold tracking-tight text-text-primary">Tronnium</span>
+              <span className="text-sm font-bold tracking-tight text-text-primary">MyApp</span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm text-text-secondary hover:text-text-primary transition-colors">Features</a>
               <a href="#how" className="text-sm text-text-secondary hover:text-text-primary transition-colors">How it works</a>
-              <a href="#reality" className="text-sm text-text-secondary hover:text-text-primary transition-colors">Reality</a>
             </nav>
 
             <div className="flex items-center gap-3">
@@ -216,7 +181,7 @@ export default function Home() {
               ) : user ? (
                 <>
                   <span className="text-sm text-text-muted hidden sm:block">{user.name}</span>
-                  <Link href="/environments" className="btn-primary btn-sm">Go to App</Link>
+                  <Link href="/dashboard" className="btn-primary btn-sm">Go to App</Link>
                   <button onClick={logout} className="btn-icon" title="Logout">
                     <FiLogOut className="w-4 h-4 text-text-muted" />
                   </button>
@@ -229,11 +194,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* ── Hero ───────────────────────────────────────────────── */}
-      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* Hero */}
       <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
-        {/* Floating particles */}
         <div className="absolute inset-0 pointer-events-none">
           <FloatingParticle size={4} left="15%" top="20%" delay={0} duration={6} />
           <FloatingParticle size={3} left="75%" top="15%" delay={1.5} duration={8} />
@@ -244,34 +206,28 @@ export default function Home() {
           <FloatingParticle size={3} left="10%" top="45%" delay={2} duration={7.5} />
         </div>
 
-        {/* Background orbs */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[10%] left-[15%] w-[500px] h-[500px] rounded-full bg-brand-1/8 blur-[120px] animate-pulse-glow" />
           <div className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] rounded-full bg-brand-1/5 blur-[100px] animate-pulse-glow" style={{ animationDelay: "2s" }} />
         </div>
 
         <div className="relative z-20 flex flex-col items-center">
-          {/* Logo */}
           <div
             className="relative transition-all will-change-transform"
             style={{
               transitionDuration: heroPhase === 'settle' ? '600ms' : '0ms',
               transitionTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-              transform:
-                heroPhase === 'initial'
-                  ? 'translateY(0px) scale(1)'
-                  : 'translateY(-90px) scale(0.72)',
+              transform: heroPhase === 'initial' ? 'translateY(0px) scale(1)' : 'translateY(-90px) scale(0.72)',
             }}
           >
             <div className="absolute inset-0 rounded-3xl bg-brand-1/30 blur-2xl transition-all duration-700"
               style={{ transform: heroPhase === 'initial' ? 'scale(1.6)' : 'scale(1.2)', opacity: 0.6 }}
             />
             <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden ring-[3px] ring-brand-1/30 shadow-2xl">
-              <Image src="/Tronnium_Main.png" alt="Tronnium" fill className="object-cover" />
+              <Image src="/Tronnium_Main.png" alt="Logo" fill className="object-cover" />
             </div>
           </div>
 
-          {/* Content */}
           <div
             className="relative z-10 text-center max-w-3xl mx-auto px-6 transition-all duration-700"
             style={{
@@ -285,17 +241,17 @@ export default function Home() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-1 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-1" />
               </span>
-              <span className="text-xs font-semibold text-text-secondary">AI-powered remediation</span>
+              <span className="text-xs font-semibold text-text-secondary">Now in beta</span>
             </div>
 
             <h1 className="text-display text-5xl sm:text-6xl md:text-7xl lg:text-[84px] leading-[0.95] tracking-[-0.04em] mb-6">
-              Security that
+              Build something
               <br />
-              <span className="gradient-text">moves fast.</span>
+              <span className="gradient-text">worth using.</span>
             </h1>
 
             <p className="text-lg md:text-xl text-text-secondary leading-relaxed mb-10 max-w-xl mx-auto">
-              Continuous vulnerability scanning across your entire infrastructure. AI triage that tells you what matters.
+              The foundation for your next SaaS. Auth, database, and UI — all wired up and ready to ship.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
@@ -310,155 +266,51 @@ export default function Home() {
                   <FiArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               )}
-              <a href="#how" className="btn-secondary btn-lg animate-fade-in-up" style={{ animationDelay: '350ms' }}>See how it works</a>
+              <a href="#features" className="btn-secondary btn-lg animate-fade-in-up" style={{ animationDelay: '350ms' }}>See what&apos;s included</a>
             </div>
 
             <div className="mt-12 flex items-center justify-center gap-6 text-xs text-text-muted animate-fade-in-up" style={{ animationDelay: '500ms' }}>
               <div className="flex items-center gap-2">
                 <FiCheckCircle className="w-4 h-4 text-brand-1" />
-                <span>No credit card</span>
+                <span>Google OAuth ready</span>
               </div>
               <div className="flex items-center gap-2">
                 <FiCheckCircle className="w-4 h-4 text-brand-1" />
-                <span>Free forever</span>
+                <span>Prisma + PostgreSQL</span>
               </div>
               <div className="flex items-center gap-2">
                 <FiCheckCircle className="w-4 h-4 text-brand-1" />
-                <span>Setup in 2 min</span>
+                <span>Next.js + Express</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* ── Dashboard Preview ──────────────────────────────────── */}
-      {/* ═══════════════════════════════════════════════════════════ */}
-      <section className="py-24 md:py-32 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <div ref={dashboardRef} className={`text-center mb-16 transition-all duration-700 ${dashboardRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-1 mb-4">The Dashboard</p>
-            <h2 className="text-display text-4xl md:text-5xl lg:text-6xl tracking-tight mb-4">
-              Everything. <span className="gradient-text">One view.</span>
-            </h2>
-            <p className="text-text-secondary max-w-xl mx-auto">
-              From scan initiation to vulnerability closure, your entire security workflow in a single, beautiful interface.
-            </p>
-          </div>
-
-          <div className={`relative mx-auto max-w-5xl transition-all duration-1000 delay-200 ${dashboardRevealed ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-[0.96]'}`}>
-            <div className="rounded-2xl overflow-hidden border border-border bg-surface shadow-2xl glow-green hover:shadow-[0_0_80px_rgba(159,232,112,0.12)] transition-shadow duration-700">
-              <div className="h-10 bg-surface-secondary border-b border-border flex items-center px-4 gap-2">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-error-text/60" />
-                  <div className="w-3 h-3 rounded-full bg-warning-text/60" />
-                  <div className="w-3 h-3 rounded-full bg-success-text/60" />
-                </div>
-                <div className="flex-1 mx-4">
-                  <div className="max-w-md mx-auto h-6 rounded-md bg-background flex items-center px-3">
-                    <FiLock className="w-3 h-3 text-text-muted mr-2" />
-                    <span className="text-[10px] text-text-muted">app.tronnium.io/environments/prod/security</span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6 md:p-8 grid grid-cols-12 gap-4">
-                <div className="col-span-2 hidden md:block space-y-3">
-                  <div className="h-8 rounded-lg bg-brand-1/10 flex items-center px-3">
-                    <FiShield className="w-4 h-4 text-brand-1 mr-2" />
-                    <span className="text-xs font-semibold text-brand-1">Security</span>
-                  </div>
-                  {['Assets', 'Scans', 'Workflows', 'Settings'].map((item) => (
-                    <div key={item} className="h-8 rounded-lg flex items-center px-3 text-xs text-text-muted hover:bg-surface-secondary transition-colors cursor-pointer">{item}</div>
-                  ))}
-                </div>
-                <div className="col-span-12 md:col-span-10 space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      { label: 'Total Assets', value: '24' },
-                      { label: 'Critical', value: '3', color: 'text-error-text' },
-                      { label: 'High', value: '12', color: 'text-warning-text' },
-                      { label: 'Resolved', value: '89%', color: 'text-success-text' },
-                    ].map((stat) => (
-                      <div key={stat.label} className="rounded-xl border border-border bg-surface-secondary/50 p-4 hover:bg-surface-secondary/70 transition-colors">
-                        <p className={`text-2xl font-black ${stat.color || 'text-text-primary'}`}>{stat.value}</p>
-                        <p className="text-[10px] text-text-muted mt-1">{stat.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="rounded-xl border border-border bg-surface-secondary/30 p-5">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-sm font-bold text-text-primary">Vulnerability Trend</h4>
-                      <span className="text-[10px] text-text-muted">Last 30 days</span>
-                    </div>
-                    <div className="h-32 flex items-end gap-2">
-                      {[40, 65, 45, 80, 55, 90, 70, 60, 85, 50, 75, 45].map((h, i) => (
-                        <div key={i} className="flex-1 flex flex-col justify-end group">
-                          <div className="w-full rounded-t-sm bg-brand-1/60 group-hover:bg-brand-1 transition-all duration-300" style={{ height: `${h}%` }} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-border overflow-hidden">
-                    <div className="grid grid-cols-12 gap-2 px-4 py-2.5 bg-surface-secondary/50 text-[10px] font-semibold text-text-muted uppercase">
-                      <div className="col-span-4">CVE</div>
-                      <div className="col-span-3">Asset</div>
-                      <div className="col-span-2">Severity</div>
-                      <div className="col-span-2">Status</div>
-                    </div>
-                    {[
-                      { cve: 'CVE-2024-21887', asset: 'vpn-gateway-01', sev: 'Critical', status: 'Open' },
-                      { cve: 'CVE-2024-21762', asset: 'web-server-03', sev: 'High', status: 'In Progress' },
-                      { cve: 'CVE-2023-4966', asset: 'load-balancer-02', sev: 'Critical', status: 'Open' },
-                    ].map((row, i) => (
-                      <div key={i} className="grid grid-cols-12 gap-2 px-4 py-3 border-t border-border hover:bg-surface-secondary/30 transition-colors">
-                        <div className="col-span-4 text-xs font-mono text-text-primary">{row.cve}</div>
-                        <div className="col-span-3 text-xs text-text-secondary">{row.asset}</div>
-                        <div className="col-span-2">
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${row.sev === 'Critical' ? 'bg-error-bg text-error-text' : 'bg-warning-bg text-warning-text'}`}>{row.sev}</span>
-                        </div>
-                        <div className="col-span-2">
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-1/10 text-brand-1">{row.status}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="absolute -inset-4 bg-brand-1/5 blur-3xl -z-10 rounded-full animate-pulse-glow" />
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* ── Features Bento Grid ────────────────────────────────── */}
-      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* Features bento */}
       <section id="features" className="py-24 md:py-32 relative">
         <div className="max-w-7xl mx-auto px-6">
           <div ref={featuresRef} className={`text-center mb-16 transition-all duration-700 ${featuresRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-1 mb-4">Features</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-1 mb-4">What&apos;s included</p>
             <h2 className="text-display text-4xl md:text-5xl lg:text-6xl tracking-tight">
-              <span className="gradient-text">What you get.</span>
+              <span className="gradient-text">Everything you need.</span>
             </h2>
           </div>
 
           <StaggerReveal className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[180px]" staggerDelay={80}>
-            <BentoCard icon={FiRefreshCw} title="Continuous Scanning" description="Schedule automated scans across all environments. Never miss a new vulnerability." span="md:col-span-2" className="md:row-span-2 flex flex-col justify-end" />
-            <BentoCard icon={FiZap} title="AI Triage" description="Built-in security analyst that prioritizes findings and suggests fixes." className="md:row-span-2 flex flex-col justify-end" />
-            <BentoCard icon={FiGrid} title="Multi-Environment" description="Manage dozens of environments from one dashboard." />
-            <BentoCard icon={FiTrendingUp} title="Trend Analysis" description="Track vulnerability trends over time. See if your security posture is improving." span="md:col-span-2" />
-            <BentoCard icon={FiLayers} title="Asset Mapping" description="Visual topology of your infrastructure with vulnerability overlays." className="md:row-span-2 flex flex-col justify-end" />
-            <BentoCard icon={FiCpu} title="CPE Discovery" description="Automatic CPE identification for accurate vulnerability matching." />
-            <BentoCard icon={FiEye} title="Workflow Tracking" description="Kanban-style boards to track vulnerability remediation from open to closed." span="md:col-span-2" className="md:row-span-2 flex flex-col justify-end" />
-            <BentoCard icon={FiTerminal} title="API First" description="Full REST API with Swagger docs. Integrate into your CI/CD pipeline." />
-            <BentoCard icon={FiLock} title="SSO & Auth" description="Google OAuth with JWT cookies. Role-based access control coming soon." />
+            <BentoCard icon={FiLock} title="Authentication" description="Google OAuth 2.0 with JWT cookies. Sign in, sign out, and user profiles — all wired up." span="md:col-span-2" className="md:row-span-2 flex flex-col justify-end" />
+            <BentoCard icon={FiCpu} title="Prisma ORM" description="Type-safe database access with auto-generated client and easy migrations." className="md:row-span-2 flex flex-col justify-end" />
+            <BentoCard icon={FiLayers} title="Monorepo" description="Frontend and backend in one repo with shared types and a unified dev workflow." />
+            <BentoCard icon={FiZap} title="Fast by default" description="Next.js 16, React 19, TailwindCSS 4, and React Query — the modern SaaS stack." span="md:col-span-2" />
+            <BentoCard icon={FiUsers} title="User model" description="UserAccount with Google identity linking, roles, and profile data out of the box." className="md:row-span-2 flex flex-col justify-end" />
+            <BentoCard icon={FiBarChart2} title="UI system" description="Design tokens, dark/light theme, reusable components — your design language, ready." />
+            <BentoCard icon={FiTrendingUp} title="API structure" description="Express routes, response helpers, and JWT guard middleware. Add your own endpoints fast." span="md:col-span-2" className="md:row-span-2 flex flex-col justify-end" />
+            <BentoCard icon={FiGlobe} title="Deploy anywhere" description="Standard Node.js backend and Next.js frontend. Works on any cloud or VPS." />
           </StaggerReveal>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* ── How It Works ───────────────────────────────────────── */}
-      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* How it works */}
       <section id="how" className="py-24 md:py-32 bg-surface-secondary/30 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-brand-1/5 blur-[120px] animate-pulse-glow" />
@@ -466,9 +318,9 @@ export default function Home() {
 
         <div className="max-w-7xl mx-auto px-6 relative">
           <div ref={stepsRef} className={`text-center mb-20 transition-all duration-700 ${stepsRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-1 mb-4">How it works</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-1 mb-4">How to use</p>
             <h2 className="text-display text-4xl md:text-5xl lg:text-6xl tracking-tight">
-              <span className="gradient-text">Get started.</span>
+              <span className="gradient-text">Start in minutes.</span>
             </h2>
           </div>
 
@@ -478,9 +330,9 @@ export default function Home() {
             </div>
 
             {[
-              { num: "01", icon: FiServer, title: "Connect", body: "Add your environments. Cloud, on-prem, or hybrid. Tronnium discovers your assets automatically." },
-              { num: "02", icon: FiActivity, title: "Scan", body: "Run on-demand or schedule recurring scans. Results arrive in minutes, not hours." },
-              { num: "03", icon: FiCheckCircle, title: "Act", body: "AI surfaces what matters. Assign, track, and remediate — all from one board." },
+              { num: "01", icon: FiLock, title: "Clone & configure", body: "Clone the repo, add your Google OAuth credentials and database URL to .env, and you're set." },
+              { num: "02", icon: FiCpu, title: "Run migrations", body: "Run prisma migrate dev to set up your database. Add your own models alongside the User." },
+              { num: "03", icon: FiZap, title: "Ship your product", body: "Add your pages, API routes, and business logic. The boilerplate stays out of your way." },
             ].map((step, i) => (
               <div
                 key={step.num}
@@ -505,134 +357,20 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* ── The Reality (Before / After) ───────────────────────── */}
-      {/* ═══════════════════════════════════════════════════════════ */}
-      <section id="reality" className="py-24 md:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-error-text/5 blur-[120px] animate-pulse-glow" />
-        </div>
-
-        <div className="max-w-5xl mx-auto px-6 relative">
-          <div ref={realityRef} className={`text-center mb-16 transition-all duration-700 ${realityRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-1 mb-4">The Reality</p>
-            <h2 className="text-display text-4xl md:text-5xl tracking-tight mb-4">
-              Every project has <span className="gradient-text">two phases.</span>
-            </h2>
-            <p className="text-text-secondary max-w-md mx-auto">
-              The gap between what you plan and what actually happens.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* BEFORE */}
-            <div
-              className={`group relative overflow-hidden rounded-3xl border border-border bg-surface transition-all duration-700 hover:border-brand-1/20 hover:-translate-y-1 ${realityRevealed ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}
-              style={{ transitionDelay: '200ms' }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-brand-1/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-1/10 text-brand-1 text-xs font-semibold">
-                    <FiCheckCircle className="w-3.5 h-3.5" />
-                    Day 1
-                  </div>
-                  <FiBattery className="w-5 h-5 text-brand-1" />
-                </div>
-
-                <div className="w-full aspect-[4/3] rounded-2xl bg-surface-secondary border border-border mb-6 flex items-center justify-center overflow-hidden relative group-hover:border-brand-1/20 transition-colors">
-                  <div className="text-center">
-                    <div className="w-20 h-20 rounded-full bg-brand-1/10 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-500">
-                      <FiCoffee className="w-8 h-8 text-brand-1" />
-                    </div>
-                    <p className="text-sm text-text-muted font-medium">Your &ldquo;before&rdquo; photo</p>
-                    <p className="text-xs text-text-muted/60 mt-1">Replace this div with your image</p>
-                  </div>
-                </div>
-
-                <h3 className="text-xl font-bold text-text-primary mb-2">Fresh & Optimistic</h3>
-                <p className="text-sm text-text-secondary leading-relaxed mb-4">
-                  &ldquo;This is going to be a clean, well-architected project. I&rsquo;ll document everything. The code will be beautiful.&rdquo;
-                </p>
-                <div className="flex items-center gap-2 text-xs text-brand-1 font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-1 animate-pulse" />
-                  Energy level: 100%
-                </div>
-              </div>
-            </div>
-
-            {/* AFTER */}
-            <div
-              className={`group relative overflow-hidden rounded-3xl border border-error-border/30 bg-surface transition-all duration-700 hover:border-error-border/60 hover:-translate-y-1 ${realityRevealed ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}
-              style={{ transitionDelay: '400ms' }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-error-text/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-error-bg text-error-text text-xs font-semibold">
-                    <FiAlertTriangle className="w-3.5 h-3.5" />
-                    Day 147
-                  </div>
-                  <FiBattery className="w-5 h-5 text-error-text" />
-                </div>
-
-                <div className="w-full aspect-[4/3] rounded-2xl bg-surface-secondary border border-error-border/20 mb-6 flex items-center justify-center overflow-hidden relative group-hover:border-error-border/40 transition-colors">
-                  <div className="text-center">
-                    <div className="w-20 h-20 rounded-full bg-error-bg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-500">
-                      <FiZap className="w-8 h-8 text-error-text" />
-                    </div>
-                    <p className="text-sm text-text-muted font-medium">Your &ldquo;after&rdquo; photo</p>
-                    <p className="text-xs text-text-muted/60 mt-1">Exhausted but victorious</p>
-                  </div>
-                </div>
-
-                <h3 className="text-xl font-bold text-text-primary mb-2">Fully Cooked</h3>
-                <p className="text-sm text-text-secondary leading-relaxed mb-4">
-                  &ldquo;It&rsquo;s done. I don&rsquo;t know how, but it&rsquo;s done. Please don&rsquo;t ask me to explain the middleware. I am become Tronnium, builder of security tools.&rdquo;
-                </p>
-                <div className="flex items-center gap-2 text-xs text-error-text font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-error-text" />
-                  Energy level: 3% (but it&rsquo;s shipping)
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Timeline bar */}
-          <div className={`mt-12 relative transition-all duration-1000 delay-500 ${realityRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-            <div className="h-1 rounded-full bg-border overflow-hidden">
-              <div className="h-full w-[99%] rounded-full bg-gradient-to-r from-brand-1 via-warning-text to-error-text animate-shimmer" />
-            </div>
-            <div className="flex justify-between mt-3 text-xs text-text-muted">
-              <span>Initial commit</span>
-              <span className="text-warning-text">Refactor #7</span>
-              <span className="text-error-text font-semibold">v1.0 shipped</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* ── CTA ────────────────────────────────────────────────── */}
-      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* CTA */}
       <section className="py-24 md:py-32 relative overflow-hidden">
         <div ref={ctaRef} className={`max-w-7xl mx-auto px-6 transition-all duration-700 ${ctaRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <div className={`relative rounded-[32px] overflow-hidden transition-all duration-1000 delay-200 ${ctaRevealed ? 'scale-100' : 'scale-[0.95]'}`}>
             <div className="absolute inset-0 bg-gradient-to-br from-brand-2 via-[#1a3a00] to-brand-2 animate-gradient-shift" />
-            <div className="absolute inset-0 opacity-[0.07]"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              }}
-            />
             <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-brand-1/20 blur-[100px] animate-pulse-glow" />
             <div className="absolute bottom-0 left-0 w-[300px] h-[300px] rounded-full bg-brand-1/10 blur-[80px] animate-pulse-glow" style={{ animationDelay: '1.5s' }} />
 
             <div className="relative px-8 py-20 md:px-16 md:py-24 text-center">
               <h2 className="text-display text-3xl md:text-5xl lg:text-6xl text-brand-1 tracking-tight mb-4">
-                Start securing today.
+                Stop rebuilding the basics.
               </h2>
               <p className="text-brand-1/60 text-base md:text-lg mb-10 max-w-md mx-auto">
-                Free forever for small teams. No credit card required. Setup takes 2 minutes.
+                Fork it, rename it, and ship your idea. The boilerplate handles everything else.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4">
                 {isExternal ? (
@@ -646,8 +384,8 @@ export default function Home() {
                     <FiArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                   </Link>
                 )}
-                <a href="#features" className="inline-flex items-center gap-2 px-8 py-4 rounded-full border border-brand-1/30 text-brand-1 font-semibold text-base hover:bg-brand-1/10 transition-colors hover:scale-105 transition-transform duration-300">
-                  Explore features
+                <a href="#features" className="inline-flex items-center gap-2 px-8 py-4 rounded-full border border-brand-1/30 text-brand-1 font-semibold text-base hover:bg-brand-1/10 transition-colors hover:scale-105 duration-300">
+                  See what&apos;s included
                 </a>
               </div>
             </div>
@@ -655,54 +393,20 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* ── Footer ─────────────────────────────────────────────── */}
-      {/* ═══════════════════════════════════════════════════════════ */}
-      <footer className="border-t border-border py-16 relative">
+      {/* Footer */}
+      <footer className="border-t border-border py-12 relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
-            <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="flex items-center gap-2.5 mb-4">
-                <div className="relative w-7 h-7 rounded-full overflow-hidden">
-                  <Image src="/Tronnium_Main.png" alt="Tronnium" fill className="object-cover" />
-                </div>
-                <span className="text-sm font-bold text-text-primary">Tronnium</span>
-              </Link>
-              <p className="text-xs text-text-muted leading-relaxed max-w-xs">
-                Continuous vulnerability scanning with AI-powered remediation guidance for modern infrastructure.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-text-primary mb-4">Product</h4>
-              <ul className="space-y-3">
-                {['Features', 'Pricing', 'Changelog', 'Roadmap'].map((item) => (
-                  <li key={item}><a href="#" className="text-sm text-text-muted hover:text-text-primary transition-colors">{item}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-text-primary mb-4">Resources</h4>
-              <ul className="space-y-3">
-                {['Documentation', 'API Reference', 'Status', 'Support'].map((item) => (
-                  <li key={item}><a href="#" className="text-sm text-text-muted hover:text-text-primary transition-colors">{item}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-text-primary mb-4">Company</h4>
-              <ul className="space-y-3">
-                {['About', 'Blog', 'Careers', 'Contact'].map((item) => (
-                  <li key={item}><a href="#" className="text-sm text-text-muted hover:text-text-primary transition-colors">{item}</a></li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-text-muted">© 2025 Tronnium. All rights reserved.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="relative w-6 h-6 rounded-full overflow-hidden">
+                <Image src="/Tronnium_Main.png" alt="Logo" fill className="object-cover" />
+              </div>
+              <span className="text-sm font-bold text-text-primary">MyApp</span>
+            </Link>
+            <p className="text-xs text-text-muted">© {new Date().getFullYear()} MyApp. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <a href="#" className="text-xs text-text-muted hover:text-text-primary transition-colors">Privacy</a>
               <a href="#" className="text-xs text-text-muted hover:text-text-primary transition-colors">Terms</a>
-              <a href="#" className="text-xs text-text-muted hover:text-text-primary transition-colors">Security</a>
             </div>
           </div>
         </div>

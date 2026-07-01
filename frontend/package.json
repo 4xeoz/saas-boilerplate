@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "saas-boilerplate-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,12 +11,10 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.20",
     "lucide-react": "^0.564.0",
-    "motion": "^12.34.0",
     "next": "16.0.6",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "react-icons": "^5.5.0",
-    "reactflow": "^11.11.4"
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

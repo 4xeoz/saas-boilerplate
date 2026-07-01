@@ -1,23 +1,22 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { fetchCurrentUser, apiFetch, type User } from './api';
+import { fetchCurrentUser, type User } from './api';
 
 interface UserContextType {
   user: User | null;
   loading: boolean;
   refetchUser: () => Promise<void>;
   logout: () => Promise<void>;
-  toggleDevMode: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export function UserProvider({ 
-  initialUser, 
-  children 
-}: { 
-  initialUser?: User | null;  
+export function UserProvider({
+  initialUser,
+  children,
+}: {
+  initialUser?: User | null;
   children: ReactNode;
 }) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
@@ -28,50 +27,29 @@ export function UserProvider({
     try {
       const response = await fetchCurrentUser();
       setUser(response.data);
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
+    } catch {
       setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleDevMode = async () => {
-    try {
-      const response = await apiFetch<User>("/auth/dev-mode", {
-        method: "POST",
-      });
-      setUser(response.data);
-    } catch (error) {
-      console.error('Failed to toggle dev mode:', error);
-      throw error;
-    }
-  };
-
   const logout = async () => {
     try {
-      const response = await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const result = await response.json();
-      if (result) {
-        setUser(null);
-        window.location.href = '/';
-      }
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      setUser(null);
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
   useEffect(() => {
-    if (!initialUser) {
-      refetchUser();
-    }
+    if (!initialUser) refetchUser();
   }, [initialUser]);
 
   return (
-    <UserContext.Provider value={{ user, loading, refetchUser, logout, toggleDevMode }}>
+    <UserContext.Provider value={{ user, loading, refetchUser, logout }}>
       {children}
     </UserContext.Provider>
   );
@@ -79,8 +57,6 @@ export function UserProvider({
 
 export function useUser() {
   const context = useContext(UserContext);
-  if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
+  if (!context) throw new Error('useUser must be used within a UserProvider');
   return context;
 }

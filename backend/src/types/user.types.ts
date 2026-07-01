@@ -4,5 +4,4 @@ export interface PublicUser {
   name: string | null;
   role: string;
   avatarUrl?: string | null;
-  devMode: boolean;
 }
