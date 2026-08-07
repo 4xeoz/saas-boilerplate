@@ -45,7 +45,9 @@ export function UserProvider({
   };
 
   useEffect(() => {
-    if (!initialUser) refetchUser();
+    if (!initialUser) {
+      void Promise.resolve().then(refetchUser);
+    }
   }, [initialUser]);
 
   return (

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/lib/UserContext";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { Logo } from "@/components/ui/Logo";
 import { FiGrid, FiSettings, FiLogOut, FiBell, FiUser } from "react-icons/fi";
 
 interface NavItemProps {
@@ -59,10 +60,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background flex">
       <aside className="w-[240px] h-screen bg-background-secondary border-r border-border flex flex-col px-3 py-4 fixed top-0 left-0 z-20">
         <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 mb-6">
-          <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0">
-            <Image src="/Tronnium_Main.png" alt="Logo" fill className="object-cover" />
-          </div>
-          <span className="text-[18px] font-extrabold text-text-primary tracking-[-0.5px]">MyApp</span>
+          <Logo className="w-9 h-9 shrink-0" />
+          <span className="text-[18px] font-extrabold text-text-primary tracking-[-0.5px]">SaaS Boilerplate</span>
         </Link>
 
         <nav className="flex-1 flex flex-col gap-1">

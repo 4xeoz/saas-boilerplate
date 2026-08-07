@@ -1,13 +1,18 @@
 {
-  "dependencies": {
-    "@prisma/client": "^7.2.0",
-    "cookie-parser": "^1.4.7",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.2",
-    "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0",
-    "passport-jwt": "^4.0.1",
-    "prisma": "^7.2.0"
+  "name": "saas-boilerplate",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\" --names \"backend,frontend\" --prefix-colors \"cyan,magenta\"",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "type-check": "npm run type-check -w backend && npm run type-check -w frontend"
   },
-  "packageManager": "yarn@4.5.0+sha512.837566d24eec14ec0f5f1411adb544e892b3454255e61fdef8fd05f3429480102806bac7446bc9daff3896b01ae4b62d00096c7e989f1596f2af10b927532f39"
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "packageManager": "npm@10.9.2"
 }

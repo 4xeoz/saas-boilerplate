@@ -11,9 +11,9 @@
 :root,
 [data-theme="light"] {
   /* ── Backgrounds ── */
-  --background:           #ffffff;
-  --background-secondary: #f5f7f3;
-  --background-surface:   #eef1eb;
+  --background:           #fafaf9;
+  --background-secondary: #f5f5f4;
+  --background-surface:   #f0f0ef;
 
   /* ── Brand ── */
   --brand-color-1: #9fe870;   /* Wise Green — buttons, accents */
@@ -23,8 +23,8 @@
 
   /* ── Surfaces ── */
   --surface:           #ffffff;
-  --surface-secondary: #f9fbf6;
-  --surface-tertiary:  #f0f5ea;
+  --surface-secondary: #fafaf9;
+  --surface-tertiary:  #f2f2f1;
 
   /* ── Borders (ring-shadow style) ── */
   --border:           rgba(14, 15, 12, 0.10);
@@ -56,9 +56,9 @@
   --status-error:    #d03238;
 
   /* ── Design System Tokens ── */
-  --color-bg: #ffffff;
-  --color-bg-subtle: #f5f7f3;
-  --color-bg-surface: #eef1eb;
+  --color-bg: #fafaf9;
+  --color-bg-subtle: #f5f5f4;
+  --color-bg-surface: #f0f0ef;
   --color-text-primary: #0e0f0c;
   --color-text-secondary: #454745;
   --color-text-muted: #868685;
@@ -459,6 +459,12 @@ body {
 .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
 .animate-gradient-shift { background-size: 200% 200%; animation: gradient-shift 8s ease infinite; }
 .animate-marquee { animation: marquee 30s linear infinite; }
+
+/* Logo ticker fade edges */
+.ticker-fade {
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
 .animate-border-glow { animation: border-glow 3s ease-in-out infinite; }
 .animate-reveal-up { animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
@@ -500,6 +506,22 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Background grid pattern */
+.bg-grid {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, var(--color-border-token) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-border-token) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 80%);
+}
+
+[data-theme="dark"] .bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(240, 242, 237, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(240, 242, 237, 0.06) 1px, transparent 1px);
 }
 
 /* Mesh gradient bg */

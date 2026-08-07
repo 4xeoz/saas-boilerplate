@@ -1,12 +1,9 @@
 # Dependencies
 node_modules/
 .pnp
-.pnp.js
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+.pnp.cjs
+.pnp.loader.mjs
+.yarn/
 
 # Environment variables
 .env
@@ -63,4 +60,3 @@ Thumbs.db
 # Data files
 *.parquet
 *.tar
-*.sql

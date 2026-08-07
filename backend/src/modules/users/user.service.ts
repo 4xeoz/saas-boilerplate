@@ -1,54 +1,71 @@
 import type { Profile as GoogleProfile } from "passport-google-oauth20";
-import type { UserAccount } from "@prisma/client";
-import prisma from "../../lib/prisma";
+import { desc, eq } from "drizzle-orm";
+import { db } from "../../db";
+import { userAccount, type UserAccount } from "../../db/schema";
 import type { PublicUser } from "../../types/user.types";
 
 class UserService {
   async findById(id: string): Promise<UserAccount | null> {
-    return prisma.userAccount.findUnique({ where: { id } });
+    const row = await db.query.userAccount.findFirst({
+      where: eq(userAccount.id, id),
+    });
+    return row ?? null;
   }
 
   async findByEmail(email: string): Promise<UserAccount | null> {
-    return prisma.userAccount.findUnique({ where: { email } });
+    const row = await db.query.userAccount.findFirst({
+      where: eq(userAccount.email, email),
+    });
+    return row ?? null;
   }
 
   async findByGoogleSubjectId(googleSubjectId: string): Promise<UserAccount | null> {
-    return prisma.userAccount.findUnique({ where: { googleSubjectId } });
+    const row = await db.query.userAccount.findFirst({
+      where: eq(userAccount.googleSubjectId, googleSubjectId),
+    });
+    return row ?? null;
   }
 
   async findOrCreateByGoogleProfile(profile: GoogleProfile): Promise<UserAccount> {
     const email = profile.emails?.[0]?.value;
-    if (!email) throw new Error("Google profile does not contain an email");
-
-    let user = await this.findByGoogleSubjectId(profile.id);
-    if (user) {
-      return prisma.userAccount.update({
-        where: { id: user.id },
-        data: { displayName: profile.displayName, avatarUrl: profile.photos?.[0]?.value },
-      });
+    if (!email) {
+      throw new Error("Google profile does not contain an email");
     }
 
-    user = await this.findByEmail(email);
-    if (user) {
-      return prisma.userAccount.update({
-        where: { id: user.id },
-        data: {
+    const displayName = profile.displayName;
+    const avatarUrl = profile.photos?.[0]?.value;
+
+    // Match on the Google id first, then fall back to the email address so an
+    // account created some other way gets linked instead of duplicated.
+    let existing = await this.findByGoogleSubjectId(profile.id);
+    if (!existing) {
+      existing = await this.findByEmail(email);
+    }
+
+    if (existing) {
+      const updatedRows = await db
+        .update(userAccount)
+        .set({
           googleSubjectId: profile.id,
-          displayName: profile.displayName,
-          avatarUrl: profile.photos?.[0]?.value,
-        },
-      });
+          displayName: displayName,
+          avatarUrl: avatarUrl,
+        })
+        .where(eq(userAccount.id, existing.id))
+        .returning();
+      return updatedRows[0];
     }
 
-    return prisma.userAccount.create({
-      data: {
-        email,
+    const createdRows = await db
+      .insert(userAccount)
+      .values({
+        email: email,
         googleSubjectId: profile.id,
-        displayName: profile.displayName,
-        avatarUrl: profile.photos?.[0]?.value,
+        displayName: displayName,
+        avatarUrl: avatarUrl,
         role: "user",
-      },
-    });
+      })
+      .returning();
+    return createdRows[0];
   }
 
   toPublic(user: UserAccount): PublicUser {
@@ -62,14 +79,24 @@ class UserService {
   }
 
   async updateProfile(id: string, name: string, avatarUrl?: string): Promise<UserAccount> {
-    return prisma.userAccount.update({
-      where: { id },
-      data: { displayName: name, avatarUrl },
-    });
+    const updatedRows = await db
+      .update(userAccount)
+      .set({ displayName: name, avatarUrl: avatarUrl })
+      .where(eq(userAccount.id, id))
+      .returning();
+    return updatedRows[0];
   }
 
   async deleteById(id: string): Promise<void> {
-    await prisma.userAccount.delete({ where: { id } });
+    await db.delete(userAccount).where(eq(userAccount.id, id));
+  }
+
+  async listAll(): Promise<PublicUser[]> {
+    const rows = await db.query.userAccount.findMany({
+      orderBy: [desc(userAccount.createdAt)],
+      limit: 100,
+    });
+    return rows.map((row) => this.toPublic(row));
   }
 }
 
