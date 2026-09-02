@@ -15,6 +15,8 @@ model UserAccount {
 
   pairingSessions PairingSession[]
   connectors      Connector[]
+  consentSessions ConsentSession[] @relation("ConsentAccount")
+  grants          Grant[]          @relation("GrantAccount")
 
   @@map("cr2_user_accounts")
 }
@@ -25,6 +27,8 @@ model DeveloperAccount {
   passwordHash String   @map("password_hash")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+
+  organizations Organization[]
 
   @@map("cr2_developer_accounts")
 }
@@ -46,19 +50,145 @@ model PairingSession {
 }
 
 model Connector {
-  id                String    @id @default(cuid()) @map("connector_id")
-  accountId         String    @map("account_id")
-  pairingSessionId  String    @unique @map("pairing_id")
-  deliveryTargetId  String    @unique @map("delivery_target_id")
-  tokenDigest       String    @unique @map("connector_token_digest")
-  deviceName        String    @map("device_name")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  expiresAt         DateTime  @map("expires_at")
-  revokedAt         DateTime? @map("revoked_at")
+  id               String    @id @default(cuid()) @map("connector_id")
+  accountId        String    @map("account_id")
+  pairingSessionId String    @unique @map("pairing_id")
+  deliveryTargetId String    @unique @map("delivery_target_id")
+  tokenDigest      String    @unique @map("connector_token_digest")
+  deviceName       String    @map("device_name")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
 
-  account        UserAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  pairingSession PairingSession @relation(fields: [pairingSessionId], references: [id], onDelete: Cascade)
+  account             UserAccount          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  pairingSession      PairingSession       @relation(fields: [pairingSessionId], references: [id], onDelete: Cascade)
+  hostSubjectBindings HostSubjectBinding[]
+  grants              Grant[]
 
   @@index([accountId])
   @@map("cr2_connectors")
+}
+
+model Organization {
+  id          String   @id @default(cuid()) @map("organization_id")
+  developerId String   @map("developer_id")
+  name        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  developer       DeveloperAccount     @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  apiKeys         OrganizationApiKey[]
+  hostKeys        HostKey[]
+  consentSessions ConsentSession[]
+  bindings        HostSubjectBinding[]
+  grants          Grant[]
+
+  @@index([developerId])
+  @@map("cr2_organizations")
+}
+
+model OrganizationApiKey {
+  id             String    @id @default(cuid()) @map("api_key_id")
+  organizationId String    @map("organization_id")
+  keyDigest      String    @unique @map("api_key_digest")
+  keyPrefix      String    @map("api_key_prefix")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  expiresAt      DateTime? @map("expires_at")
+  revokedAt      DateTime? @map("revoked_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("cr2_organization_api_keys")
+}
+
+model HostKey {
+  id             String    @id @default(cuid()) @map("host_key_id")
+  organizationId String    @map("organization_id")
+  hostId         String    @map("host_id")
+  issuerOrigin   String    @map("issuer_origin")
+  keyId          String    @map("key_id")
+  publicKeyPem   String    @map("public_key_pem")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  revokedAt      DateTime? @map("revoked_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, issuerOrigin, keyId])
+  @@map("cr2_host_keys")
+}
+
+model ConsentSession {
+  id                   String    @id @default(cuid()) @map("consent_session_id")
+  challengeId          String    @unique @map("challenge_id")
+  tokenDigest          String    @unique @map("consent_token_digest")
+  organizationId       String    @map("organization_id")
+  hostSubjectRefDigest String    @map("host_subject_ref_digest")
+  expectedOrigin       String    @map("expected_origin")
+  manifestId           String    @map("manifest_id")
+  manifestJson         Json      @map("manifest_json")
+  expiresAt            DateTime  @map("expires_at")
+  status               String    @default("pending")
+  decisionAction       String?   @map("decision_action")
+  decisionAt           DateTime? @map("decision_at")
+  accountId            String?   @map("account_id")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  account      UserAccount? @relation("ConsentAccount", fields: [accountId], references: [id], onDelete: SetNull)
+  grant        Grant?
+
+  @@unique([organizationId, manifestId])
+  @@index([organizationId, hostSubjectRefDigest])
+  @@index([organizationId, status])
+  @@map("cr2_consent_sessions")
+}
+
+model HostSubjectBinding {
+  id                   String   @id @default(cuid()) @map("binding_id")
+  organizationId       String   @map("organization_id")
+  hostSubjectRefDigest String   @map("host_subject_ref_digest")
+  connectorId          String   @map("connector_id")
+  deliveryTargetId     String   @map("delivery_target_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  connector    Connector    @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  grants       Grant[]
+
+  @@unique([organizationId, hostSubjectRefDigest])
+  @@index([connectorId])
+  @@map("cr2_host_subject_bindings")
+}
+
+model Grant {
+  id               String    @id @default(cuid()) @map("grant_id")
+  consentSessionId String    @unique @map("consent_session_id")
+  organizationId   String    @map("organization_id")
+  bindingId        String    @map("binding_id")
+  accountId        String    @map("account_id")
+  connectorId      String    @map("connector_id")
+  deliveryTargetId String    @map("delivery_target_id")
+  correlationId    String    @map("correlation_id")
+  issuerOrigin     String    @map("issuer_origin")
+  workflowId       String    @map("workflow_id")
+  workflowType     String    @map("workflow_type")
+  canonicalUrl     String    @map("canonical_url")
+  eventType        String    @map("event_type")
+  humanBoundary    String    @map("human_boundary")
+  expiresAt        DateTime  @map("expires_at")
+  maxRuns          Int       @map("max_runs")
+  runsRemaining    Int       @map("runs_remaining")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  consentSession ConsentSession     @relation(fields: [consentSessionId], references: [id], onDelete: Cascade)
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  binding        HostSubjectBinding @relation(fields: [bindingId], references: [id], onDelete: Cascade)
+  account        UserAccount        @relation("GrantAccount", fields: [accountId], references: [id], onDelete: Cascade)
+  connector      Connector          @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, bindingId])
+  @@index([connectorId])
+  @@map("cr2_grants")
 }

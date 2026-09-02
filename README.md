@@ -23,9 +23,12 @@ hashed with bcrypt. Sessions are signed JWTs in httpOnly cookies. The user and
 developer tables intentionally have separate email uniqueness, so the same
 email can represent one account of each type.
 
-Google OAuth, roles, refresh tokens, organizations, payments, email delivery,
-queues, Redis, Consent, and later delivery business logic are not part of this
-pairing slice.
+Google OAuth, roles, refresh tokens, payments, email delivery, queues, Redis,
+Event ingress, and delivery business logic are not part of this clone. Feature 2
+adds the small organization/API-key fixture, Host-key validation, Consent,
+target binding, Grant status projection, and a private configured-authority
+revocation fence. Public Grant inspection/revocation remains blocked pending
+ADR-0013.
 
 ## Pairing surface
 
@@ -40,8 +43,29 @@ The first v0.1 replacement surface is account-owned Connector pairing:
   `connector_token` entirely.
 
 Pairing codes and Connector tokens are stored only as SHA-256 digests. Consent,
-Host credentials, signed events, leases, acknowledgements, and deployment are
-later gates and are not enabled by this increment.
+Host credentials, and signed Manifests are enabled for the Consent/Target
+increment. Signed events, leases, acknowledgements, public Grant routes, and
+deployment remain later gates.
+
+## Consent and Target surface
+
+Feature 2 adds these bounded routes:
+
+- `POST /v0.1/host-keys` authenticates with an Organization API key and stores
+  only the Host public key.
+- `POST /v0.1/consent-sessions` authenticates with an Organization API key,
+  validates a signed Manifest, and returns an opaque consent URL/session.
+- `GET /consent?token=...` is the User-authenticated consent page.
+- `POST /v0.1/account-consent-decisions` requires the User session, same-origin
+  JSON, and an owned eligible Connector.
+- `GET /v0.1/consent-sessions/:consentSessionId` returns the persisted decision
+  and derived effective Grant status to the Organization.
+
+The first approved Host subject is durably bound to one Connector target. A
+different Connector for the same subject returns
+`host_subject_binding_conflict`. A private service seam can revoke one Grant
+through the configured authority for local verification; there is intentionally
+no public Grant inspection/revocation route and no Event route.
 
 ## Environment
 
@@ -56,6 +80,10 @@ The old Cloud Receiver variable names are accepted:
 - `CLOUD_RECEIVER_CONNECTOR_TOKEN_SECRET` and
   `CLOUD_RECEIVER_VERIFICATION_ORIGIN` remain reserved for later Host/Connector
   composition and are not required by the pairing implementation.
+- `CLOUD_RECEIVER_GRANT_CONTROL_TOKEN` configures the private local Grant
+  revocation authority. It is never persisted or logged.
+- `RECEIVER_PUBLIC_URL` sets the base used in consent URLs and defaults to the
+  local backend URL.
 
 Do not commit `.env.local` or copy production secret values into tracked files.
 The prefixed table names avoid table collisions, but Prisma migration history
@@ -101,7 +129,11 @@ The backend keeps the two auth flows separate:
 - `backend/src/modules/authentication/` owns only shared credential schemas
   and the cookie/JWT session primitive.
 - `backend/src/modules/connectors/` owns the current pairing boundary and its
-  delivery identity guard; later Consent and delivery modules are not present.
+  delivery identity guard.
+- `backend/src/modules/consent/` owns Host-key validation, signed Consent
+  sessions, User decisions, stable target binding, Grant status projection, and
+  the private revocation fence. Event ingress and public Grant control are not
+  present.
 - `backend/prisma/schema.prisma` is the database source of truth.
 
 Health endpoints remain public: `/health` checks Prisma/Postgres and

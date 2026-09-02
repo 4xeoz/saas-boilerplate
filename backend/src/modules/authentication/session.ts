@@ -60,6 +60,10 @@ function readSession(req: Request, kind: AccountKind): string | null {
   }
 }
 
+export function getSessionAccountId(req: Request, kind: AccountKind): string | null {
+  return readSession(req, kind);
+}
+
 export function requireSession(kind: AccountKind) {
   return (req: Request, res: Response, next: NextFunction) => {
     const accountId = readSession(req, kind);

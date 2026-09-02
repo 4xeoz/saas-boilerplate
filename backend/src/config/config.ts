@@ -1,4 +1,5 @@
 import path from "node:path";
+import { randomBytes } from "node:crypto";
 import dotenv from "dotenv";
 import { z } from "zod";
 import type { SignOptions, Secret } from "jsonwebtoken";
@@ -57,6 +58,8 @@ const envSchema = z
       ? z.string().min(1, "is required in production (CORS depends on it)")
       : z.string().default("http://localhost:3000"),
 
+    RECEIVER_PUBLIC_URL: optionalText,
+
     // Set to ".example.com" in production when the frontend and API are on
     // different subdomains. Leave it unset for localhost development.
     COOKIE_DOMAIN: optionalText,
@@ -65,6 +68,7 @@ const envSchema = z
     // They are deliberately optional and unused by this auth-only slice.
     CLOUD_RECEIVER_CONNECTOR_TOKEN_SECRET: optionalText,
     CLOUD_RECEIVER_VERIFICATION_ORIGIN: optionalText,
+    CLOUD_RECEIVER_GRANT_CONTROL_TOKEN: optionalText,
   })
   .superRefine((value, context) => {
     if (!value.CLOUD_RECEIVER_RUNTIME_DATABASE_URL && !value.DATABASE_URL) {
@@ -108,4 +112,11 @@ export const appConfig = {
   jwtExpiresIn: (sessionTtlMs / 1000) as SignOptions["expiresIn"],
   frontendUrl: env.FRONTEND_URL,
   cookieDomain: env.COOKIE_DOMAIN,
+  receiverPublicUrl: env.RECEIVER_PUBLIC_URL ?? `http://localhost:${env.PORT}`,
+  // Production must configure this private authority explicitly. Tests get a
+  // process-local value so the internal revocation seam is usable without
+  // placing a credential in the repository or test output.
+  grantControlToken:
+    env.CLOUD_RECEIVER_GRANT_CONTROL_TOKEN ??
+    (!isProduction ? randomBytes(32).toString("base64url") : undefined),
 };

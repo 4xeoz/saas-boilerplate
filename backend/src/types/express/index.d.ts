@@ -5,6 +5,9 @@ declare global {
         kind: "user" | "developer";
         accountId: string;
       };
+      organizationAuth?: {
+        organizationId: string;
+      };
     }
   }
 }
