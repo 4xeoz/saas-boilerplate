@@ -15,8 +15,8 @@ There are two independent account types and two independent database tables:
 
 | Account | Page | API prefix | Cookie | Table |
 |---|---|---|---|---|
-| User | `/login` | `/v1/auth/users` | `user_session` | `cr2_user_accounts` |
-| Developer | `/developer-login` | `/v1/auth/developers` | `developer_session` | `cr2_developer_accounts` |
+| User | `/user-login` or `/user-register` (`/login` remains compatible) | `/v1/auth/users` | `user_session` | `cr2_user_accounts` |
+| Developer | `/developer-login` or `/developer-register` | `/v1/auth/developers` | `developer_session` | `cr2_developer_accounts` |
 
 Each API prefix supports `register`, `login`, `me`, and `logout`. Passwords are
 hashed with bcrypt. Sessions are signed JWTs in httpOnly cookies. The user and
@@ -38,7 +38,8 @@ The first v0.1 replacement surface is account-owned Connector pairing:
 
 - `POST /v0.1/account/pairing-sessions` requires the `user_session` cookie and
   same-origin JSON `{}`; it returns one short-lived uppercase hexadecimal code.
-- The authenticated `/dashboard` page exposes the `Pair this Mac` action. It
+- The authenticated `/user-dashboard` page exposes the `Pair this Mac` action;
+  `/dashboard` remains compatible. It
   calls the pairing-session route with the browser session and shows the code
   only after a successful response.
 - `POST /v0.1/account/pairing-sessions/claim` accepts only
@@ -134,7 +135,7 @@ staging environment contract:
 | Backend runtime | `NODE_ENV=production`, platform-provided `PORT`, `FRONTEND_URL=https://<frontend-staging-host>`, `RECEIVER_PUBLIC_URL=https://<backend-staging-host>`, `JWT_SECRET` with at least 32 characters, and `CLOUD_RECEIVER_RUNTIME_DATABASE_URL` for the Supabase session-mode pooler |
 | Backend migrations | `DIRECT_URL` for the direct/session migration connection; run Prisma migrations separately from application startup |
 | Frontend build | `NEXT_PUBLIC_BACKEND_URL=https://<backend-staging-host>` as a build-time public value |
-| Cookies | Set `COOKIE_DOMAIN` only when both hosts share the same parent domain; otherwise use a same-host reverse proxy |
+| Cookies | The split-origin preview uses `SameSite=None; Secure`; set `COOKIE_DOMAIN` only when both hosts share the same parent domain; otherwise use a same-host reverse proxy |
 | Client boundary | Do not set Supabase or service-role credentials in frontend variables; no browser client connects to the database |
 
 Deployment protection, the target project, TLS termination, migration order,

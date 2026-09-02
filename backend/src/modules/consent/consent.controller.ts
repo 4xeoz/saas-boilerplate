@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { appConfig } from "../../config/config";
 import { asyncHandler } from "../../lib/async-handler";
 import { getSessionAccountId, requireSession } from "../authentication/session";
 import { ConsentError, createConsentSession, decideConsent, getConsentPrompt, getConsentStatus, registerHostKey, validateConsentPageToken } from "./consent.service";
@@ -163,7 +164,9 @@ export const consentPageController = asyncHandler(async (req: Request, res: Resp
   const accountId = getSessionAccountId(req, "user");
   if (!accountId) {
     const returnTo = `/consent?token=${encodeURIComponent(token)}`;
-    return res.redirect(302, `/login?return_to=${encodeURIComponent(returnTo)}`);
+    const loginUrl = new URL("/login", appConfig.frontendUrl);
+    loginUrl.searchParams.set("return_to", returnTo);
+    return res.redirect(302, loginUrl.toString());
   }
 
   try {

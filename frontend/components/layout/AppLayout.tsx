@@ -15,9 +15,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/login");
+      router.replace(pathname.startsWith("/user-dashboard") ? "/user-login" : "/login");
     }
-  }, [loading, router, user]);
+  }, [loading, pathname, router, user]);
 
   if (loading) {
     return (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { getBackendUrl } from "@/lib/api/client";
 import {
   loginDeveloper,
   registerDeveloper,
@@ -11,6 +12,24 @@ import {
 import { loginUser, registerUser } from "@/lib/api/user-auth";
 
 type AccountKind = "user" | "developer";
+type AuthMode = "login" | "register";
+
+function getSafeConsentReturnTo(): string | null {
+  if (typeof window === "undefined") return null;
+
+  const requested = new URLSearchParams(window.location.search).get("return_to");
+  if (!requested) return null;
+
+  try {
+    const backendOrigin = new URL(getBackendUrl(), window.location.origin).origin;
+    const target = new URL(requested, backendOrigin);
+    if (target.origin !== backendOrigin || target.pathname !== "/consent") return null;
+    if (!target.searchParams.get("token")) return null;
+    return target.toString();
+  } catch {
+    return null;
+  }
+}
 
 const copy: Record<AccountKind, { title: string; description: string; switchPath: string }> = {
   user: {
@@ -25,8 +44,14 @@ const copy: Record<AccountKind, { title: string; description: string; switchPath
   },
 };
 
-export default function AuthPage({ kind }: { kind: AccountKind }) {
-  const [isRegistering, setIsRegistering] = useState(false);
+export default function AuthPage({
+  kind,
+  initialMode = "login",
+}: {
+  kind: AccountKind;
+  initialMode?: AuthMode;
+}) {
+  const [isRegistering, setIsRegistering] = useState(initialMode === "register");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +76,14 @@ export default function AuthPage({ kind }: { kind: AccountKind }) {
         await loginDeveloper(email, password);
       }
 
-      window.location.assign(kind === "user" ? "/dashboard" : "/developer-dashboard");
+      const consentReturnTo = kind === "user" ? getSafeConsentReturnTo() : null;
+      const defaultDestination =
+        kind === "developer"
+          ? "/developer-dashboard"
+          : window.location.pathname.startsWith("/user-")
+            ? "/user-dashboard"
+            : "/dashboard";
+      window.location.assign(consentReturnTo ?? defaultDestination);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to sign in.");
     } finally {

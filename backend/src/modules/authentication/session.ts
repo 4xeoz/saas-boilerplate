@@ -19,7 +19,9 @@ function cookieOptions() {
   return {
     httpOnly: true,
     secure: appConfig.isProduction,
-    sameSite: "lax" as const,
+    // The hosted frontend and backend use different origins. Production
+    // therefore needs cross-site credential delivery; localhost stays Lax.
+    sameSite: appConfig.isProduction ? ("none" as const) : ("lax" as const),
     maxAge: appConfig.sessionTtlMs,
     ...(appConfig.cookieDomain ? { domain: appConfig.cookieDomain } : {}),
   };
@@ -38,7 +40,7 @@ export function clearSessionCookie(res: Response, kind: AccountKind): void {
   res.clearCookie(cookieNames[kind], {
     httpOnly: true,
     secure: appConfig.isProduction,
-    sameSite: "lax",
+    sameSite: appConfig.isProduction ? "none" : "lax",
     ...(appConfig.cookieDomain ? { domain: appConfig.cookieDomain } : {}),
   });
 }

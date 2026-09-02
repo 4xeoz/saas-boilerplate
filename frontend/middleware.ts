@@ -1,19 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export function middleware(req: NextRequest) {
-  const pathname = req.nextUrl.pathname;
-
-  if (pathname.startsWith("/dashboard") && !req.cookies.get("user_session")) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  if (pathname.startsWith("/developer-dashboard") && !req.cookies.get("developer_session")) {
-    return NextResponse.redirect(new URL("/developer-login", req.url));
-  }
-
+export function middleware() {
+  // Sessions are issued by the separate backend origin. A host-only backend
+  // cookie is not visible to this frontend middleware, so the client layouts
+  // must verify /me with credentials and perform the redirect.
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/developer-dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/user-dashboard/:path*", "/developer-dashboard/:path*"],
 };

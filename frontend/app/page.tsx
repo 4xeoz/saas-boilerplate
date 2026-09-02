@@ -15,7 +15,7 @@ export default function HomePage() {
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <Link href="/login" className="rounded-2xl border border-border bg-surface p-6 transition hover:border-brand-1">
+          <Link href="/user-login" className="rounded-2xl border border-border bg-surface p-6 transition hover:border-brand-1">
             <h2 className="text-lg font-bold text-text-primary">User account</h2>
             <p className="mt-2 text-sm text-text-secondary">Sign in or create a user account.</p>
           </Link>
