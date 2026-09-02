@@ -8,6 +8,6 @@ This module owns the first Cloud Receiver v2 Connector boundary:
 - a duplicate claim returns metadata without `connector_token`; and
 - the Receiver stores only SHA-256 digests for pairing and Connector tokens.
 
-The `POST /v0.1/delivery-claims` handler currently contains only the pairing-owned Connector
-identity guard needed by `PAIR-005`. Lease, Event, Consent, Host-key, acknowledgement, and other
-later Cloud Receiver features must be added in separate increments after the pairing closure gate.
+The `POST /v0.1/delivery-claims` route is mounted beside pairing but its claim and lease behavior
+is owned by `modules/deliveries/`. Pairing owns Connector identity issuance and digest lookup; it
+does not own delivery state, acknowledgement, or public Grant behavior.

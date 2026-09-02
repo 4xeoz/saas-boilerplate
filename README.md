@@ -23,12 +23,13 @@ hashed with bcrypt. Sessions are signed JWTs in httpOnly cookies. The user and
 developer tables intentionally have separate email uniqueness, so the same
 email can represent one account of each type.
 
-Google OAuth, roles, refresh tokens, payments, email delivery, queues, Redis,
-Event ingress, and delivery business logic are not part of this clone. Feature 2
-adds the small organization/API-key fixture, Host-key validation, Consent,
-target binding, Grant status projection, and a private configured-authority
-revocation fence. Public Grant inspection/revocation remains blocked pending
-ADR-0013.
+Google OAuth, roles, refresh tokens, payments, email delivery, queues, and Redis
+are not part of this clone. Feature 2 adds the small organization/API-key
+fixture, Host-key validation, Consent, target binding, Grant status projection,
+and a private configured-authority revocation fence. Feature 3 adds signed Event
+ingress and Feature 4 adds target-scoped delivery claims and leases. Public Grant
+inspection/revocation and Delivery Acknowledgement remain blocked pending their
+separate gates.
 
 ## Pairing surface
 
@@ -43,8 +44,8 @@ The first v0.1 replacement surface is account-owned Connector pairing:
   `connector_token` entirely.
 
 Pairing codes and Connector tokens are stored only as SHA-256 digests. Consent,
-Host credentials, and signed Manifests are enabled for the Consent/Target
-increment. Signed events, leases, acknowledgements, public Grant routes, and
+Host credentials, signed Manifests, signed Events, and target-scoped delivery
+leases are enabled. Delivery Acknowledgement, public Grant routes, and
 deployment remain later gates.
 
 ## Consent and Target surface
@@ -65,7 +66,19 @@ The first approved Host subject is durably bound to one Connector target. A
 different Connector for the same subject returns
 `host_subject_binding_conflict`. A private service seam can revoke one Grant
 through the configured authority for local verification; there is intentionally
-no public Grant inspection/revocation route and no Event route.
+no public Grant inspection/revocation route.
+
+## Delivery Claim and Lease surface
+
+Feature 4 adds `POST /v0.1/delivery-claims`. A cookie-free Local Connector sends
+exactly `connector_token` and `claim_token` as JSON. A valid pending delivery
+returns the canonical `200` lease envelope; no work and exhausted delivery both
+return an empty `204` with no `Content-Type`. PostgreSQL stores the target-scoped
+lease, digest-only claim attempts, and the bounded `retry_exhausted` state.
+
+The accepted v2 defaults are three attempts, a 60-second lease, five-second
+Connector polling, and a five-second delivery request timeout. Acknowledgement,
+public Grant routes, and deployment are not included in this increment.
 
 ## Environment
 
@@ -128,12 +141,14 @@ The backend keeps the two auth flows separate:
   handlers.
 - `backend/src/modules/authentication/` owns only shared credential schemas
   and the cookie/JWT session primitive.
-- `backend/src/modules/connectors/` owns the current pairing boundary and its
-  delivery identity guard.
+- `backend/src/modules/connectors/` owns the account pairing boundary.
+- `backend/src/modules/deliveries/` owns target-scoped delivery claim and lease
+  state; it is mounted at the existing v0.1 claim route.
 - `backend/src/modules/consent/` owns Host-key validation, signed Consent
   sessions, User decisions, stable target binding, Grant status projection, and
-  the private revocation fence. Event ingress and public Grant control are not
-  present.
+  the private revocation fence.
+- `backend/src/modules/events/` owns signed Event ingress and pending-delivery
+  creation.
 - `backend/prisma/schema.prisma` is the database source of truth.
 
 Health endpoints remain public: `/health` checks Prisma/Postgres and
