@@ -1,6 +1,5 @@
 import { Router, Request, Response } from "express";
-import { sql } from "drizzle-orm";
-import { db } from "../../db";
+import { prisma } from "../../db";
 import { asyncHandler } from "../../lib/async-handler";
 import { ok, err } from "../../lib/response-helpers";
 
@@ -17,7 +16,7 @@ healthRouter.get(
   "/",
   asyncHandler(async (_req: Request, res: Response) => {
     try {
-      await db.execute(sql`SELECT 1`);
+      await prisma.$queryRaw`SELECT 1`;
     } catch (error) {
       console.error("[health] database unreachable:", error);
       return res.status(503).json(err("DB_UNAVAILABLE", "Database unreachable"));

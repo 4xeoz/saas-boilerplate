@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { fetchCurrentUser, type User } from './api';
+import { fetchCurrentUser, logoutUser, type User } from './api/user-auth';
 
 interface UserContextType {
   user: User | null;
@@ -36,7 +36,7 @@ export function UserProvider({
 
   const logout = async () => {
     try {
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      await logoutUser();
       setUser(null);
       window.location.href = '/';
     } catch (error) {

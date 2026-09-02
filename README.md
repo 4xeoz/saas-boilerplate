@@ -1,144 +1,108 @@
-# SaaS Boilerplate
+# Cloud Receiver 2
 
-A TypeScript monorepo you can start a product from. Express + Drizzle +
-Postgres on the back, Next.js + React Query on the front, with the auth and
-operational plumbing already done.
+A deliberately small successor built from the SaaS boilerplate: Express +
+Prisma + PostgreSQL on the backend, and Next.js on the frontend.
 
 ```
-backend/    Express 4, Drizzle ORM, Passport, JWT
-frontend/   Next.js 16, React 19, Tailwind 4, React Query v5
-shared/     types both sides import (declarations only, no build step)
+backend/    Express API, Prisma ORM, email/password sessions
+frontend/   Next.js pages for users and developers
+shared/     TypeScript API/domain declarations
 ```
 
----
+## Auth surface
 
-## What is already built
+There are two independent account types and two independent database tables:
 
-**Auth**
-- Google OAuth 2.0 sign-in
-- Short-lived access token (15 min) in an httpOnly cookie
-- **Rotating refresh tokens** — only the SHA-256 hash is stored, and replaying
-  a used token revokes the user's entire token family as a theft signal
-- Expired tokens are cleaned up hourly
-- The frontend refreshes transparently, and concurrent 401s share one refresh
-  instead of failing
+| Account | Page | API prefix | Cookie | Table |
+|---|---|---|---|---|
+| User | `/login` | `/v1/auth/users` | `user_session` | `cr2_user_accounts` |
+| Developer | `/developer-login` | `/v1/auth/developers` | `developer_session` | `cr2_developer_accounts` |
 
-**Authorization**
-- Roles: `user` / `admin` / `superadmin`, rank-based so `superadmin` satisfies
-  an `admin` check without being listed everywhere
-- `requireRole(minimum)` middleware
-- Ownership belongs in the `WHERE` clause, and unowned resources return 404
-  rather than 403 so ids cannot be enumerated
+Each API prefix supports `register`, `login`, `me`, and `logout`. Passwords are
+hashed with bcrypt. Sessions are signed JWTs in httpOnly cookies. The user and
+developer tables intentionally have separate email uniqueness, so the same
+email can represent one account of each type.
 
-**API**
-- `/v1` versioning, with a deprecated unversioned mount for old clients
-- One response envelope: `ok(data, message?)` / `err(code, message)`, typed as
-  a discriminated union so TypeScript forces you to check `success`
-- zod validation on request bodies; the parsed value replaces `req.body`
-- Rate limiting on auth and public writes
+Google OAuth, roles, refresh tokens, organizations, payments, email delivery,
+queues, Redis, Consent, and later delivery business logic are not part of this
+pairing slice.
 
-**Operational**
-- **Crash-safe**: every async handler is wrapped so a rejected promise becomes
-  a 500 instead of killing the process, and the pg pool's `error` event is
-  handled
-- Readiness (`/health`, queries the DB) and liveness (`/health/live`) checks
-- Config validated with zod at boot — production refuses to start without its
-  secrets rather than falling back to insecure defaults
-- Graceful shutdown on SIGTERM/SIGINT: stop accepting, drain, exit
-- helmet, CORS locked to one origin
-- Docker + compose with healthchecks
+## Pairing surface
 
----
+The first v0.1 replacement surface is account-owned Connector pairing:
+
+- `POST /v0.1/account/pairing-sessions` requires the `user_session` cookie and
+  same-origin JSON `{}`; it returns one short-lived uppercase hexadecimal code.
+- `POST /v0.1/account/pairing-sessions/claim` accepts only
+  `{ pairing_code, device_name }` without browser or Organization credentials.
+- The first claim returns the raw Connector token once. A duplicate replay
+  returns the same metadata with `duplicate: true` and omits
+  `connector_token` entirely.
+
+Pairing codes and Connector tokens are stored only as SHA-256 digests. Consent,
+Host credentials, signed events, leases, acknowledgements, and deployment are
+later gates and are not enabled by this increment.
+
+## Environment
+
+Copy [`.env.example`](.env.example) to `.env.local` at the repository root.
+
+The old Cloud Receiver variable names are accepted:
+
+- `CLOUD_RECEIVER_RUNTIME_DATABASE_URL` is preferred at runtime. For Supabase,
+  use the session-mode pooler URL.
+- `DIRECT_URL` is preferred by Prisma migrations when provided.
+- `DATABASE_URL` remains the local/generic fallback.
+- `CLOUD_RECEIVER_CONNECTOR_TOKEN_SECRET` and
+  `CLOUD_RECEIVER_VERIFICATION_ORIGIN` remain reserved for later Host/Connector
+  composition and are not required by the pairing implementation.
+
+Do not commit `.env.local` or copy production secret values into tracked files.
+The prefixed table names avoid table collisions, but Prisma migration history
+is still database-wide. Use a fresh Supabase database/project for Cloud
+Receiver 2, or explicitly baseline the existing database before running
+`prisma migrate deploy` against it; do not point the migration command at the
+old Receiver database blindly.
 
 ## Quick start
 
 ```bash
 npm install
-cp backend/.env.example backend/.env      # fill in DATABASE_URL + Google OAuth
-createdb app                              # or use the compose Postgres
-
-cd backend && npm run db:migrate && cd ..
-npm run dev                               # backend :4000, frontend :3000
+cp .env.example .env.local
+# Set DATABASE_URL (or CLOUD_RECEIVER_RUNTIME_DATABASE_URL) in .env.local.
+npm run db:migrate -w backend
+npm run dev
 ```
 
-Google OAuth credentials come from the
-[Google Cloud console](https://console.cloud.google.com/apis/credentials).
-Set the redirect URI to `http://localhost:4000/v1/auth/google/callback`.
+The local Docker database can be started with `docker compose up --build` after
+setting `DB_PASSWORD`, `JWT_SECRET`, `FRONTEND_URL`, and
+`NEXT_PUBLIC_BACKEND_URL` in `.env`.
 
-### Useful commands
+Useful commands:
 
-| Command | Does |
+| Command | Purpose |
 |---|---|
-| `npm run dev` | both apps with reload |
-| `npm run type-check` | typecheck both workspaces |
-| `npm test -w backend` | backend tests (needs a database) |
-| `npm run db:generate -w backend` | schema → SQL migration |
-| `npm run db:migrate -w backend` | apply migrations |
-| `npm run db:studio -w backend` | browse data |
-| `npm run token -w backend -- you@example.com` | print a JWT for Postman/curl |
+| `npm run dev` | Run backend on `:4000` and frontend on `:3000` |
+| `npm run type-check` | Typecheck all workspaces |
+| `npm run build` | Build backend and frontend |
+| `npm test -w backend` | Run backend tests; requires the migrated database |
+| `npm run db:generate -w backend` | Generate the Prisma client |
+| `npm run db:migrate -w backend` | Apply committed Prisma migrations |
+| `npx prisma migrate dev --name <name>` | Create a development migration |
+| `npm run db:studio -w backend` | Open Prisma Studio |
 
----
+## Project shape
 
-## Adding a feature
+The backend keeps the two auth flows separate:
 
-Each feature is a folder under `backend/src/modules/<feature>/`:
+- `backend/src/modules/users/` owns user account queries and handlers.
+- `backend/src/modules/developers/` owns developer account queries and
+  handlers.
+- `backend/src/modules/authentication/` owns only shared credential schemas
+  and the cookie/JWT session primitive.
+- `backend/src/modules/connectors/` owns the current pairing boundary and its
+  delivery identity guard; later Consent and delivery modules are not present.
+- `backend/prisma/schema.prisma` is the database source of truth.
 
-| File | Holds |
-|---|---|
-| `<feature>.routes.ts` | Router and middleware order only |
-| `<feature>.controller.ts` | request/response handling, zod schema |
-| `<feature>.service.ts` | business logic and all database calls |
-| `public.ts` | what other modules may import |
-
-```ts
-router.post(
-  "/",
-  jwtAuthGuard(),              // who are you
-  requireRole("admin"),        // are you allowed
-  validateBody(schema),        // is the input valid
-  asyncHandler(handler),       // a rejection must not kill the process
-);
-```
-
-**`asyncHandler` is not optional.** Express 4 wraps handlers in a `try/catch`,
-but an async handler returns a pending promise before it fails, so the catch
-never sees the error and Node terminates the process.
-
-### Database changes
-
-```bash
-# 1. edit backend/src/db/schema.ts
-npm run db:generate -w backend    # 2. read the SQL it writes
-npm run db:migrate -w backend     # 3. apply it
-```
-
-Migrations are committed and applied automatically on deploy by
-`entrypoint.sh`. Never edit an applied migration — generate a new one.
-
-### Shared types
-
-`shared/index.d.ts` is **declarations only**, so there is no build step and
-both sides `import type` from it. If you need a runtime value there (a const,
-an enum, a function), the package needs a build step — prefer keeping values
-on one side and sharing only their type.
-
----
-
-## Production notes
-
-- Set `COOKIE_DOMAIN` to the shared parent domain (`.example.com`). Without it
-  cookies set by the API subdomain are invisible to the frontend, and every
-  logged-in user gets bounced off protected pages with no error anywhere.
-- `JWT_SECRET` must be ≥32 characters; the app will not boot otherwise.
-- Only loopback ports are published by compose. Put a reverse proxy in front to
-  terminate TLS (Caddy handles certificates automatically).
-- `/health` returns 503 when the database is unreachable — point your
-  healthcheck and uptime monitor at it, not at `/health/live`.
-
----
-
-## Not included
-
-Deliberately absent so you can decide per project: payments, transactional
-email, email/password auth, organizations/multi-tenancy, background job queue,
-and Redis.
+Health endpoints remain public: `/health` checks Prisma/Postgres and
+`/health/live` checks only process liveness.

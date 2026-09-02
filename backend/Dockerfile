@@ -1,6 +1,8 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
+COPY prisma.config.ts ./
+COPY prisma ./prisma
 RUN npm install
 
 FROM node:22-alpine AS builder
@@ -17,7 +19,8 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
-COPY --from=builder --chown=appuser:appgroup /app/drizzle ./drizzle
+COPY --from=builder --chown=appuser:appgroup /app/prisma.config.ts ./
+COPY --from=builder --chown=appuser:appgroup /app/prisma ./prisma
 COPY --from=builder --chown=appuser:appgroup /app/package.json ./
 COPY --chown=appuser:appgroup entrypoint.sh ./
 RUN chmod +x entrypoint.sh

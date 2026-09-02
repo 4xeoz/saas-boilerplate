@@ -38,18 +38,19 @@ export type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
 // ---------------------------------------------------------------- domain types
 
-export type Role = "user" | "admin" | "superadmin";
-
 /**
  * The user as the API exposes it. This is the single definition — the backend
  * returns exactly this shape and the frontend consumes exactly this shape.
  *
- * `name` is nullable on purpose: displayName is optional in the database.
+ * User and developer accounts intentionally expose the same minimal public
+ * projection while remaining separate account types in the database.
  */
 export type PublicUser = {
   id: string;
   email: string;
-  name: string | null;
-  role: Role;
-  avatarUrl?: string | null;
+};
+
+export type PublicDeveloper = {
+  id: string;
+  email: string;
 };

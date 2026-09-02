@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
-node dist/db/migrate.js
+npx prisma migrate deploy
 exec node dist/index.js

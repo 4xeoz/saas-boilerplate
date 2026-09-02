@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model UserAccount {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  pairingSessions PairingSession[]
+  connectors      Connector[]
+
+  @@map("cr2_user_accounts")
+}
+
+model DeveloperAccount {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("cr2_developer_accounts")
+}
+
+model PairingSession {
+  id                String    @id @default(cuid()) @map("pairing_id")
+  accountId         String    @map("account_id")
+  pairingCodeDigest String    @unique @map("pairing_code_digest")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  expiresAt         DateTime  @map("expires_at")
+  failedAttempts    Int       @default(0) @map("failed_attempts")
+  consumedAt        DateTime? @map("consumed_at")
+
+  account   UserAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  connector Connector?
+
+  @@index([accountId])
+  @@map("cr2_pairing_sessions")
+}
+
+model Connector {
+  id                String    @id @default(cuid()) @map("connector_id")
+  accountId         String    @map("account_id")
+  pairingSessionId  String    @unique @map("pairing_id")
+  deliveryTargetId  String    @unique @map("delivery_target_id")
+  tokenDigest       String    @unique @map("connector_token_digest")
+  deviceName        String    @map("device_name")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  expiresAt         DateTime  @map("expires_at")
+  revokedAt         DateTime? @map("revoked_at")
+
+  account        UserAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  pairingSession PairingSession @relation(fields: [pairingSessionId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@map("cr2_connectors")
+}

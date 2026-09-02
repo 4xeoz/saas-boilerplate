@@ -6,20 +6,10 @@ const tooManyRequests = {
   message: "Too many requests, try again later.",
 };
 
-// Login and token refresh. Tight, because these are credential endpoints.
+// Registration and login are credential endpoints, so keep them tight.
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: tooManyRequests,
-});
-
-// Unauthenticated public writes, such as a signup or contact form. Without this the
-// only public write endpoint in the app can be used to insert rows in bulk.
-export const publicWriteRateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: tooManyRequests,

@@ -1,11 +1,8 @@
-import "dotenv/config";
 import express, { Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import passport from "passport";
-import { configurePassport } from "./modules/authentication/passport";
-import { v1Router, rootRouter, markDeprecated } from "./routes";
+import { v01Router, v1Router, rootRouter } from "./routes";
 import { err } from "./lib/response-helpers";
 import { appConfig } from "./config/config";
 
@@ -26,19 +23,15 @@ export function createApp() {
   app.use(express.json());
   app.use(cookieParser());
 
-  app.use(passport.initialize());
-  configurePassport();
-
   // Unversioned: "/" and health checks.
   app.use("/", rootRouter);
 
   // The current API.
   app.use("/v1", v1Router);
 
-  // The same routes at their old unversioned paths, so the frontend and the
-  // published extension keep working. Every response carries a Deprecation
-  // header. Delete this mount once both clients call /v1.
-  app.use("/", markDeprecated, v1Router);
+  // Replacement Cloud Receiver protocol. Pairing is intentionally the only
+  // v0.1 surface enabled in the first increment.
+  app.use("/v0.1", v01Router);
 
   // Nothing matched above, so the route does not exist.
   app.use(function handleNotFound(_req: Request, res: Response) {

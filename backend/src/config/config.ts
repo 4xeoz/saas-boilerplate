@@ -1,50 +1,80 @@
-import "dotenv/config";
+import path from "node:path";
+import dotenv from "dotenv";
 import { z } from "zod";
 import type { SignOptions, Secret } from "jsonwebtoken";
 
+// The backend is commonly started from its workspace, but local secrets are
+// kept in the repository root. Load both locations without overriding values
+// supplied by Docker, Vercel, or the shell.
+dotenv.config({ path: path.resolve(__dirname, "../../../.env.local") });
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../.env.local") });
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config();
+
 /**
- * Environment validation.
+ * Environment validation for the small Cloud Receiver 2 auth service.
  *
- * The rule: in production every secret must be present, and the process
- * refuses to start otherwise. A missing JWT_SECRET that silently fell back to
- * a default would let anyone forge a token for any user, so failing loudly at
- * boot is far safer than running in a broken state.
- *
- * In development the same variables are optional and get obvious placeholder
- * values, so a fresh clone still runs with no setup.
+ * DATABASE_URL remains the generic fallback. The existing receiver uses
+ * CLOUD_RECEIVER_RUNTIME_DATABASE_URL for its Supabase session-pooler URL, so
+ * that name takes precedence when both are supplied.
  */
 
 const isProduction = process.env.NODE_ENV === "production";
 
-const envSchema = z.object({
-  NODE_ENV: z.string().default("development"),
-  PORT: z.coerce.number().default(4000),
+const optionalText = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.string().optional()
+);
 
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-
-  JWT_SECRET: isProduction
-    ? z.string().min(32, "must be at least 32 characters in production")
-    : z.string().min(1).default("dev-only-insecure-jwt-secret"),
-
-  // Minutes, so the cookie maxAge and the JWT expiry can be derived from one
-  // value instead of drifting apart.
-  ACCESS_TOKEN_MINUTES: z.coerce.number().default(15),
-
-  GOOGLE_CLIENT_ID: z.string().default(""),
-  GOOGLE_CLIENT_SECRET: z.string().default(""),
-  GOOGLE_CALLBACK_URL: z
+const optionalPostgresUrl = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z
     .string()
-    .default("http://localhost:4000/auth/google/callback"),
+    .refine(
+      (value) => value.startsWith("postgres://") || value.startsWith("postgresql://"),
+      "must be a PostgreSQL connection URL"
+    )
+    .optional()
+);
 
-  FRONTEND_URL: isProduction
-    ? z.string().min(1, "is required in production (CORS depends on it)")
-    : z.string().default("http://localhost:3000"),
+const envSchema = z
+  .object({
+    NODE_ENV: z.string().default("development"),
+    PORT: z.coerce.number().int().min(0).max(65535).default(4000),
 
-  // Set to ".example.com" in production so cookies issued by the API
-  // subdomain are visible to the frontend subdomain. Left unset in
-  // development, where both run on localhost and are already the same host.
-  COOKIE_DOMAIN: z.string().optional(),
-});
+    DATABASE_URL: optionalPostgresUrl,
+    CLOUD_RECEIVER_RUNTIME_DATABASE_URL: optionalPostgresUrl,
+    DIRECT_URL: optionalPostgresUrl,
+
+    JWT_SECRET: isProduction
+      ? z.string().min(32, "must be at least 32 characters in production")
+      : z.string().min(1).default("dev-only-insecure-jwt-secret"),
+
+    SESSION_DAYS: z.coerce.number().int().min(1).max(30).default(7),
+
+    FRONTEND_URL: isProduction
+      ? z.string().min(1, "is required in production (CORS depends on it)")
+      : z.string().default("http://localhost:3000"),
+
+    // Set to ".example.com" in production when the frontend and API are on
+    // different subdomains. Leave it unset for localhost development.
+    COOKIE_DOMAIN: optionalText,
+
+    // These names are carried forward for the eventual connector surface.
+    // They are deliberately optional and unused by this auth-only slice.
+    CLOUD_RECEIVER_CONNECTOR_TOKEN_SECRET: optionalText,
+    CLOUD_RECEIVER_VERIFICATION_ORIGIN: optionalText,
+  })
+  .superRefine((value, context) => {
+    if (!value.CLOUD_RECEIVER_RUNTIME_DATABASE_URL && !value.DATABASE_URL) {
+      context.addIssue({
+        code: "custom",
+        path: ["DATABASE_URL"],
+        message: "DATABASE_URL or CLOUD_RECEIVER_RUNTIME_DATABASE_URL is required",
+      });
+    }
+  });
 
 const parsed = envSchema.safeParse(process.env);
 
@@ -57,23 +87,25 @@ if (!parsed.success) {
 }
 
 const env = parsed.data;
+const databaseUrl = env.CLOUD_RECEIVER_RUNTIME_DATABASE_URL ?? env.DATABASE_URL;
 
-const accessTokenTtlMs = env.ACCESS_TOKEN_MINUTES * 60 * 1000;
-const refreshTokenTtlMs = 7 * 24 * 60 * 60 * 1000;
+if (!databaseUrl) {
+  // The superRefine above produces the user-facing validation error. This is
+  // only a type-narrowing guard for the exported config object.
+  process.exit(1);
+}
+
+const sessionTtlMs = env.SESSION_DAYS * 24 * 60 * 60 * 1000;
 
 export const appConfig = {
   nodeEnv: env.NODE_ENV,
-  isProduction: isProduction,
+  isProduction,
   port: env.PORT,
-  databaseUrl: env.DATABASE_URL,
+  databaseUrl,
   jwtSecret: env.JWT_SECRET as Secret,
-  accessTokenTtlMs: accessTokenTtlMs,
+  sessionTtlMs,
   // jsonwebtoken accepts a number of SECONDS for expiresIn.
-  jwtExpiresIn: (accessTokenTtlMs / 1000) as SignOptions["expiresIn"],
-  googleClientId: env.GOOGLE_CLIENT_ID,
-  googleClientSecret: env.GOOGLE_CLIENT_SECRET,
-  googleCallbackUrl: env.GOOGLE_CALLBACK_URL,
+  jwtExpiresIn: (sessionTtlMs / 1000) as SignOptions["expiresIn"],
   frontendUrl: env.FRONTEND_URL,
   cookieDomain: env.COOKIE_DOMAIN,
-  refreshTokenTtlMs: refreshTokenTtlMs,
 };

@@ -1,7 +1,7 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { authRouter } from "../modules/authentication/auth.routes";
+import { pairingRouter } from "../modules/connectors/pairing.routes";
 import { healthRouter } from "../modules/system-health/health.routes";
-import { userRouter } from "../modules/users/user.routes";
 
 /**
  * Version 1 of the API. Everything a client calls lives under /v1.
@@ -12,7 +12,14 @@ import { userRouter } from "../modules/users/user.routes";
 export const v1Router = Router();
 
 v1Router.use("/auth", authRouter);
-v1Router.use("/users", userRouter);
+
+/**
+ * Protocol v0.1 routes. Pairing is the first replacement-service increment;
+ * later Consent and delivery modules must be added only after its gate passes.
+ */
+export const v01Router = Router();
+
+v01Router.use(pairingRouter);
 
 /**
  * Unversioned infrastructure routes.
@@ -28,13 +35,3 @@ rootRouter.get("/", (_req: Request, res: Response) => {
 });
 
 rootRouter.use("/health", healthRouter);
-
-/**
- * Marks a response as coming from the deprecated unversioned paths, so old
- * clients are visible in logs and monitoring before the routes are removed.
- */
-export function markDeprecated(_req: Request, res: Response, next: NextFunction) {
-  res.setHeader("Deprecation", "true");
-  res.setHeader("Warning", '299 - "Unversioned API paths are deprecated, use /v1"');
-  next();
-}

@@ -3,4 +3,4 @@
  * usual location, while the single definition lives in shared/index.d.ts and
  * the frontend consumes exactly the same one.
  */
-export type { PublicUser, Role } from "@saas/shared";
+export type { PublicDeveloper, PublicUser } from "@saas/shared";
