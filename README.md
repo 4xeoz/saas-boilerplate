@@ -49,9 +49,11 @@ The first v0.1 replacement surface is account-owned Connector pairing:
   `connector_token` entirely.
 
 Pairing codes and Connector tokens are stored only as SHA-256 digests. Consent,
-Host credentials, signed Manifests, signed Events, and target-scoped delivery
-leases are enabled. Delivery Acknowledgement, public Grant routes, and
-deployment remain later gates.
+Host credentials, signed Manifests, signed Events, target-scoped delivery
+leases, Delivery Acknowledgement, and bounded transport/operations are enabled.
+Public Grant inspection/revocation remains blocked pending its separate
+authority decision. The current Vercel deployment is Preview-only, not a
+production release; see [Current Vercel Preview](#current-vercel-preview-non-production).
 
 ## Consent and Target surface
 
@@ -83,8 +85,8 @@ lease, digest-only claim attempts, and the bounded `retry_exhausted` state.
 
 The accepted v2 defaults are three attempts, a 60-second lease, five-second
 Connector polling, and a five-second delivery request timeout. Delivery
-Acknowledgement and transport/operations are included; public Grant routes and
-deployment remain later gates.
+Acknowledgement and transport/operations are included. Public Grant routes
+remain a later authority decision.
 
 ## Environment
 
@@ -142,6 +144,30 @@ Deployment protection, the target project, TLS termination, migration order,
 rollback target, and health-readback command must be supplied by the release
 owner. The historical root `docker-compose.yml` is a local reference, not a
 production deployment declaration for the retired Receiver.
+
+### Current Vercel Preview (non-production)
+
+The current split-origin integration preview is:
+
+| Surface | URL |
+|---|---|
+| Frontend | <https://re-entry-weld.vercel.app> |
+| Backend | <https://cloud-receiver-delta.vercel.app> |
+
+These are Vercel Preview aliases and are not a production release. The backend
+must use the exact frontend origin in `FRONTEND_URL`; hosted session cookies use
+`SameSite=None; Secure`, and credentialed CORS is limited to that origin.
+
+The following read-only checks were replayed against the Preview on 2026-09-02:
+
+- `OPTIONS /v1/auth/users/login` from the frontend origin returned `204` with
+  the exact `Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials:
+  true`, and no `Location` header.
+- `GET /health` returned database-up evidence.
+
+This proves the original CORS-preflight boundary and database reachability. It
+does not by itself prove a valid-account login, Connector pairing, or a complete
+Host-to-Connector end-to-end run.
 
 ## Quick start
 

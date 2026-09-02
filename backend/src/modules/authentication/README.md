@@ -16,7 +16,8 @@ modules. This module does not own a combined account table or role system.
 - `user_session` is accepted only by user routes.
 - `developer_session` is accepted only by developer routes.
 - Each JWT contains the account id as `sub` and its account type as `kind`.
-- Cookies are httpOnly, `sameSite: "lax"`, and secure in production.
+- Cookies are httpOnly; localhost uses `sameSite: "lax"`, while the split-origin
+  hosted flow uses `sameSite: "none"` and `Secure` in production.
 - There is no Google OAuth, bearer-token fallback, refresh-token table, or
   role middleware.
 

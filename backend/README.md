@@ -27,6 +27,29 @@ Keep the frontend's `NEXT_PUBLIC_BACKEND_URL` pointed at this backend origin.
 The frontend has no database, JWT, Connector-token, Grant-control, or
 Supabase service-role variable.
 
+## Current Vercel Preview
+
+The current non-production integration Preview is available at
+<https://cloud-receiver-delta.vercel.app>. Its paired frontend is
+<https://re-entry-weld.vercel.app>. These aliases are Preview-only and must not
+be treated as production evidence.
+
+For the split-origin browser flow, `FRONTEND_URL` must exactly match the
+frontend origin. Production session cookies use `SameSite=None; Secure`, and
+the API must answer credentialed CORS preflights without redirecting them.
+The read-only regression check is:
+
+```sh
+curl -i -X OPTIONS \
+  -H 'Origin: https://re-entry-weld.vercel.app' \
+  -H 'Access-Control-Request-Method: POST' \
+  -H 'Access-Control-Request-Headers: content-type' \
+  https://cloud-receiver-delta.vercel.app/v1/auth/users/login
+```
+
+Expected: `204`, an exact `Access-Control-Allow-Origin` for the frontend,
+`Access-Control-Allow-Credentials: true`, and no `Location` header.
+
 ## Migration boundary
 
 Run Prisma migrations as a separately authorized release step before routing
