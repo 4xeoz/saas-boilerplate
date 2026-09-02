@@ -639,6 +639,7 @@ export async function getConsentStatus(
 }
 
 export type ConsentPrompt = {
+  consentSessionId: string;
   session: PublicChallenge;
   status: "pending" | "approved" | "declined";
   connectors: Array<{ id: string; deviceName: string; expiresAt: string }>;
@@ -675,6 +676,7 @@ export async function getConsentPrompt(
     orderBy: { createdAt: "asc" },
   });
   return {
+    consentSessionId: session.id,
     session: publicChallenge(session, manifest, now),
     status: session.status as ConsentPrompt["status"],
     connectors: connectors.map((connector) => ({

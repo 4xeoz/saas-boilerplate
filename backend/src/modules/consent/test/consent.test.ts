@@ -1,4 +1,5 @@
 import { generateKeyPairSync, sign, randomBytes } from "node:crypto";
+import { runInNewContext } from "node:vm";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "@jest/globals";
 import { appConfig } from "../../../config/config";
@@ -128,6 +129,71 @@ async function createConnector(deviceName: string): Promise<string> {
   expect(claim.status).toBe(200);
   expect(claim.body.connector_token).toEqual(expect.any(String));
   return claim.body.connector_id as string;
+}
+
+async function runConsentPageDecision(
+  page: string,
+  token: string,
+  action: "approve" | "decline",
+  responseOk: boolean
+): Promise<{
+  messages: Array<{ message: JsonObject; targetOrigin: string }>;
+  requestBody: JsonObject;
+  resultText: string;
+}> {
+  const script = page.match(/<script>\s*([\s\S]*?)\s*<\/script>/)?.[1];
+  expect(script).toBeDefined();
+
+  const clickHandlers = new Map<string, () => void>();
+  const result = { textContent: "" };
+  const connector = { value: firstConnectorId };
+  const button = (selector: string) => ({
+    addEventListener: (_type: string, listener: () => void) => {
+      clickHandlers.set(selector, listener);
+    },
+  });
+  const elements: Record<string, any> = {
+    "#connector": connector,
+    "#result": result,
+    "#approve": button("#approve"),
+    "#decline": button("#decline"),
+  };
+  const messages: Array<{ message: JsonObject; targetOrigin: string }> = [];
+  let requestBody: JsonObject = {};
+
+  runInNewContext(script ?? "", {
+    URLSearchParams,
+    location: {
+      search: `?token=${encodeURIComponent(token)}`,
+      origin: "http://localhost:4000",
+    },
+    window: {
+      location: { origin: "http://localhost:4000" },
+      opener: {
+        postMessage(message: JsonObject, targetOrigin: string) {
+          messages.push({ message, targetOrigin });
+        },
+      },
+    },
+    document: {
+      querySelector(selector: string) {
+        const element = elements[selector];
+        if (!element) throw new Error(`Unexpected selector: ${selector}`);
+        return element;
+      },
+    },
+    fetch: async (_url: string, options: { body: string }) => {
+      requestBody = JSON.parse(options.body) as JsonObject;
+      return { ok: responseOk };
+    },
+  });
+
+  const click = clickHandlers.get(`#${action}`);
+  expect(click).toBeDefined();
+  click?.();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+
+  return { messages, requestBody, resultText: result.textContent };
 }
 
 describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
@@ -542,5 +608,81 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
       .set("Authorization", `Bearer ${organizationApiKey}`)
       .send({});
     expect(eventRoute.status).toBe(404);
+  });
+
+  it("CONSENT-004 sends only the public completion message after a successful popup decision", async () => {
+    const approved = await createConsent(
+      manifestFor(`manifest-consent-004-approved-${suffix}`),
+      `subject-consent-004-approved-${suffix}`
+    );
+    const approvedToken = consentTokenFromUrl(approved.body.consent_url);
+    const approvedPage = await userAgent.get(
+      `/consent?token=${encodeURIComponent(approvedToken)}`
+    );
+    expect(approvedPage.status).toBe(200);
+
+    const approval = await runConsentPageDecision(
+      approvedPage.text,
+      approvedToken,
+      "approve",
+      true
+    );
+    expect(approval.messages).toEqual([
+      {
+        message: {
+          type: "reentry.consent.complete",
+          consent_session_id: approved.body.consent_session_id,
+          status: "approved",
+        },
+        targetOrigin: "http://localhost:4000",
+      },
+    ]);
+    expect(approval.requestBody).toEqual({
+      consent_token: approvedToken,
+      action: "approve",
+      connector_id: firstConnectorId,
+    });
+    expect(approval.resultText).toBe("Decision saved.");
+    expect(JSON.stringify(approval.messages)).not.toContain(approvedToken);
+    expect(JSON.stringify(approval.messages)).not.toContain(firstConnectorId);
+
+    const declined = await createConsent(
+      manifestFor(`manifest-consent-004-declined-${suffix}`),
+      `subject-consent-004-declined-${suffix}`
+    );
+    const declinedToken = consentTokenFromUrl(declined.body.consent_url);
+    const declinedPage = await userAgent.get(
+      `/consent?token=${encodeURIComponent(declinedToken)}`
+    );
+    const decline = await runConsentPageDecision(
+      declinedPage.text,
+      declinedToken,
+      "decline",
+      true
+    );
+    expect(decline.messages).toEqual([
+      {
+        message: {
+          type: "reentry.consent.complete",
+          consent_session_id: declined.body.consent_session_id,
+          status: "declined",
+        },
+        targetOrigin: "http://localhost:4000",
+      },
+    ]);
+    expect(decline.requestBody).toEqual({
+      consent_token: declinedToken,
+      action: "decline",
+    });
+    expect(decline.resultText).toBe("Decision saved.");
+
+    const failed = await runConsentPageDecision(
+      approvedPage.text,
+      approvedToken,
+      "approve",
+      false
+    );
+    expect(failed.messages).toEqual([]);
+    expect(failed.resultText).toBe("Decision could not be saved.");
   });
 });

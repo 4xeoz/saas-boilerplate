@@ -94,6 +94,7 @@ function escapeHtml(value: string): string {
 }
 
 function renderConsentPage(prompt: Awaited<ReturnType<typeof getConsentPrompt>>): string {
+  const consentSessionId = JSON.stringify(prompt.consentSessionId);
   const connectorOptions = prompt.connectors
     .map(
       (connector) =>
@@ -108,6 +109,7 @@ function renderConsentPage(prompt: Awaited<ReturnType<typeof getConsentPrompt>>)
        <p id="result" role="status"></p>
        <script>
          const token = new URLSearchParams(location.search).get("token");
+         const consentSessionId = ${consentSessionId};
          async function decide(action) {
            const body = { consent_token: token, action };
            if (action === "approve") body.connector_id = document.querySelector("#connector").value;
@@ -118,6 +120,16 @@ function renderConsentPage(prompt: Awaited<ReturnType<typeof getConsentPrompt>>)
              body: JSON.stringify(body)
            });
            document.querySelector("#result").textContent = response.ok ? "Decision saved." : "Decision could not be saved.";
+           if (response.ok && window.opener) {
+             window.opener.postMessage(
+               {
+                 type: "reentry.consent.complete",
+                 consent_session_id: consentSessionId,
+                 status: action === "approve" ? "approved" : "declined"
+               },
+               window.location.origin
+             );
+           }
          }
          document.querySelector("#approve").addEventListener("click", () => decide("approve"));
          document.querySelector("#decline").addEventListener("click", () => decide("decline"));
