@@ -60,3 +60,5 @@ Thumbs.db
 # Data files
 *.parquet
 *.tar
+.vercel
+.env*
