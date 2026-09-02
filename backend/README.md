@@ -34,6 +34,11 @@ The current non-production integration Preview is available at
 <https://re-entry-weld.vercel.app>. These aliases are Preview-only and must not
 be treated as production evidence.
 
+The backend does not render account pages. For Connector compatibility,
+`/user-login` and `/user-register` redirect to the matching path on the
+configured `FRONTEND_URL`; the optional `next` value is preserved only when it
+is a relative path.
+
 For the split-origin browser flow, `FRONTEND_URL` must exactly match the
 frontend origin. Production session cookies use `SameSite=None; Secure`, and
 the API must answer credentialed CORS preflights without redirecting them.
