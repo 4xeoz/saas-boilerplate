@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../lib/async-handler";
 import { requireSession } from "../authentication/session";
-import { createPairingSession, claimPairingSession, hasEligibleConnectorToken, PairingError } from "./pairing.service";
+import { createPairingSession, claimPairingSession, PairingError } from "./pairing.service";
 
 function sendPairingError(res: Response, error: PairingError): void {
   res.status(error.statusCode).json({ error: { code: error.code } });
@@ -39,13 +39,4 @@ export const claimPairing = asyncHandler(async (req: Request, res: Response) => 
     }
     throw error;
   }
-});
-
-export const claimDelivery = asyncHandler(async (req: Request, res: Response) => {
-  const eligible = await hasEligibleConnectorToken(req.body.connector_token);
-  if (!eligible) {
-    return res.status(403).json({ error: { code: "connector_identity_invalid" } });
-  }
-  res.set("Cache-Control", "no-store");
-  return res.status(204).end();
 });

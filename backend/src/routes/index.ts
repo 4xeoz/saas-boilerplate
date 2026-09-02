@@ -16,9 +16,9 @@ export const v1Router = Router();
 v1Router.use("/auth", authRouter);
 
 /**
- * Protocol v0.1 routes. Pairing is closed; Feature 2 adds Consent, Target, and
- * the private Grant-control fence. Feature 3 adds signed Event ingress;
- * Delivery, acknowledgement, and public Grant routes remain absent.
+ * Protocol v0.1 routes. Features 1–4 add pairing, Consent/Target, signed Event
+ * ingress, and target-scoped delivery claims. Acknowledgement and public Grant
+ * routes remain absent until their separate decision gates.
  */
 export const v01Router = Router();
 

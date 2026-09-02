@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { validateProtocolBody } from "../../middleware/protocol-validate";
 import { requireSameOriginJson } from "../../middleware/same-origin";
+import { claimDeliveryController } from "../deliveries/delivery.controller";
 import {
-  claimDelivery,
   claimPairing,
   createPairing,
   requireUserSession,
@@ -29,10 +29,8 @@ pairingRouter.post(
   claimPairing,
 );
 
-// Pairing owns the credential identity guard used by the delivery boundary.
-// Actual delivery state and lease behavior are deliberately a later increment.
 pairingRouter.post(
   "/delivery-claims",
   validateProtocolBody(deliveryClaimSchema),
-  claimDelivery,
+  claimDeliveryController,
 );

@@ -64,6 +64,7 @@ model Connector {
   pairingSession      PairingSession       @relation(fields: [pairingSessionId], references: [id], onDelete: Cascade)
   hostSubjectBindings HostSubjectBinding[]
   grants              Grant[]
+  deliveryAttempts    DeliveryAttempt[]
 
   @@index([accountId])
   @@map("cr2_connectors")
@@ -218,16 +219,47 @@ model Event {
 }
 
 model Delivery {
-  deliveryId      String   @id @default(cuid()) @map("delivery_id")
-  eventId         String   @unique @map("event_id")
-  grantId         String   @unique @map("grant_id")
-  deliveryTargetId String  @map("delivery_target_id")
-  status          String   @default("pending")
-  createdAt       DateTime @default(now()) @map("created_at")
+  deliveryId              String             @id @default(cuid()) @map("delivery_id")
+  eventId                 String             @unique @map("event_id")
+  grantId                 String             @unique @map("grant_id")
+  deliveryTargetId        String             @map("delivery_target_id")
+  status                  String             @default("pending")
+  maximumAttempts         Int                @default(3) @map("maximum_attempts")
+  currentAttempt          Int                @default(0) @map("current_attempt")
+  currentConnectorId      String?            @map("current_connector_id")
+  currentClaimTokenDigest String?            @map("current_claim_token_digest")
+  currentLeaseTokenDigest String?            @map("current_lease_token_digest")
+  leaseStartedAt          DateTime?          @map("lease_started_at")
+  leaseExpiresAt          DateTime?          @map("lease_expires_at")
+  terminalReason          String?            @map("terminal_reason")
+  createdAt               DateTime           @default(now()) @map("created_at")
+  updatedAt               DateTime           @default(now()) @updatedAt @map("updated_at")
 
-  event Event @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
-  grant Grant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  event    Event            @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  grant    Grant            @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  attempts DeliveryAttempt[]
 
   @@index([deliveryTargetId, status, createdAt])
+  @@index([status, leaseExpiresAt])
   @@map("cr2_deliveries")
+}
+
+model DeliveryAttempt {
+  attemptId        String   @id @default(cuid()) @map("attempt_id")
+  deliveryId       String   @map("delivery_id")
+  connectorId      String   @map("connector_id")
+  attempt          Int
+  claimTokenDigest String   @unique @map("claim_token_digest")
+  leaseTokenDigest String   @unique @map("lease_token_digest")
+  leaseStartedAt   DateTime @map("lease_started_at")
+  leaseExpiresAt   DateTime @map("lease_expires_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  delivery  Delivery @relation(fields: [deliveryId], references: [deliveryId], onDelete: Cascade)
+  connector Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  @@unique([deliveryId, attempt])
+  @@index([deliveryId])
+  @@index([connectorId])
+  @@map("cr2_delivery_attempts")
 }
