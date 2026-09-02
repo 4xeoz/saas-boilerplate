@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { validateProtocolBody } from "../../middleware/protocol-validate";
 import { requireSameOriginJson } from "../../middleware/same-origin";
-import { claimDeliveryController } from "../deliveries/delivery.controller";
+import {
+  acknowledgeDeliveryController,
+  claimDeliveryController,
+} from "../deliveries/delivery.controller";
+import { deliveryAcknowledgementSchema } from "../deliveries/delivery.schemas";
 import {
   claimPairing,
   createPairing,
@@ -33,4 +37,10 @@ pairingRouter.post(
   "/delivery-claims",
   validateProtocolBody(deliveryClaimSchema),
   claimDeliveryController,
+);
+
+pairingRouter.post(
+  "/delivery-acknowledgements",
+  validateProtocolBody(deliveryAcknowledgementSchema),
+  acknowledgeDeliveryController,
 );

@@ -18,7 +18,12 @@ healthRouter.get(
     try {
       await prisma.$queryRaw`SELECT 1`;
     } catch (error) {
-      console.error("[health] database unreachable:", error);
+      console.error(JSON.stringify({
+        event: "health_check_failed",
+        route: "/health",
+        status: 503,
+        code: "DB_UNAVAILABLE",
+      }));
       return res.status(503).json(err("DB_UNAVAILABLE", "Database unreachable"));
     }
 
@@ -38,3 +43,43 @@ healthRouter.get(
 healthRouter.get("/live", (_req: Request, res: Response) => {
   res.json(ok({ isOk: "ok", uptime: process.uptime() }, "Alive"));
 });
+
+export const operationalHealthRouter = Router();
+
+operationalHealthRouter.get("/healthz", (_req: Request, res: Response) => {
+  res.set({
+    "Cache-Control": "no-store",
+    Pragma: "no-cache",
+    "X-Content-Type-Options": "nosniff",
+  });
+  return res.status(200).json({ status: "ok" });
+});
+
+operationalHealthRouter.get(
+  "/readyz",
+  asyncHandler(async (_req: Request, res: Response) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch {
+      console.error(JSON.stringify({
+        event: "receiver_readiness_failed",
+        route: "/readyz",
+        status: 503,
+        code: "receiver_not_ready",
+      }));
+      res.set({
+        "Cache-Control": "no-store",
+        Pragma: "no-cache",
+        "X-Content-Type-Options": "nosniff",
+      });
+      return res.status(503).json({ error: { code: "receiver_not_ready" } });
+    }
+
+    res.set({
+      "Cache-Control": "no-store",
+      Pragma: "no-cache",
+      "X-Content-Type-Options": "nosniff",
+    });
+    return res.status(200).json({ status: "ready" });
+  })
+);
