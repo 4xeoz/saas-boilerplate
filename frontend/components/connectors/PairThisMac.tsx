@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useEffect } from "react";
-import { FiMonitor } from "react-icons/fi";
+import { FiClock, FiInfo, FiMonitor, FiRefreshCw } from "react-icons/fi";
 import {
   createPairingSession,
   listConnectors,
@@ -11,7 +11,6 @@ import {
 } from "@/lib/api/pairing";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
 
 type PairingState = "pending" | "used" | "expired";
 
@@ -150,18 +149,19 @@ export default function PairThisMac() {
   }
 
   return (
-    <Card hover={false} className="mt-8 max-w-2xl">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-1/10 text-brand-2 dark:text-brand-1">
+    <section
+      id="devices"
+      aria-labelledby="devices-title"
+      className="mt-10 max-w-5xl overflow-hidden rounded-[28px] border border-border bg-surface shadow-[0_24px_80px_rgba(14,15,12,0.08)]"
+    >
+      <div className="flex flex-col gap-4 border-b border-border px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-1/15 text-brand-2 dark:text-brand-1">
             <FiMonitor className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-primary">Pair this Mac</h2>
-            <p className="mt-1 max-w-lg text-sm leading-6 text-text-secondary">
-              Generate a one-time code for the Local Connector. It expires in 10 minutes and is
-              shown only after you request it.
-            </p>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">Connected devices</p>
+            <h2 id="devices-title" className="mt-1 text-xl font-bold tracking-[-0.03em] text-text-primary">Pair a Mac</h2>
           </div>
         </div>
 
@@ -171,88 +171,115 @@ export default function PairThisMac() {
           onClick={() => void handlePairThisMac()}
           isLoading={isSubmitting}
         >
-          {pairing ? "Generate a new code" : "Pair this Mac"}
+          {pairing ? <FiRefreshCw aria-hidden="true" /> : <FiMonitor aria-hidden="true" />}
+          <span>{pairing ? "New code" : "Pair this Mac"}</span>
         </Button>
       </div>
 
-      {pairing ? (
-        <div className="mt-6 rounded-xl border border-brand-1/40 bg-brand-mint p-5 dark:bg-brand-pastel/20">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">
-                One-time pairing code
-              </p>
-              <p
-                aria-label="Pairing code"
-                className="mt-2 font-mono text-3xl font-bold tracking-[0.22em] text-brand-2 dark:text-text-primary"
+      <div className="grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="border-b border-border p-5 sm:p-7 lg:border-b-0 lg:border-r">
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">One-time code</p>
+            {pairing ? (
+              <Badge
+                variant={pairingState === "pending" ? "accent" : pairingState === "used" ? "success" : "warning"}
+                size="md"
               >
-                {pairingState === "pending"
-                  ? pairing.pairing_code
-                  : pairingState === "used"
-                    ? "USED"
-                    : "EXPIRED"}
-              </p>
-            </div>
-            <Badge
-              variant={pairingState === "pending" ? "accent" : pairingState === "used" ? "success" : "warning"}
-              size="md"
-            >
-              {pairingState === "pending" ? "Waiting for Mac" : pairingState === "used" ? "Used" : "Expired"}
-            </Badge>
+                {pairingState === "pending" ? "Waiting" : pairingState === "used" ? "Used" : "Expired"}
+              </Badge>
+            ) : null}
           </div>
-          <p className="mt-3 text-sm text-text-secondary">
-            {pairingState === "pending"
-              ? `Enter this code in the Local Connector before ${formatExpiry(pairing.expires_at)}. The dashboard checks automatically.`
+
+          {pairing ? (
+            <p
+              aria-label="Pairing code"
+              aria-live="polite"
+              className="mt-10 font-mono text-[clamp(36px,5vw,52px)] font-bold leading-none tracking-[0.16em] text-brand-2 dark:text-text-primary"
+            >
+              {pairingState === "pending"
+                ? pairing.pairing_code
+                : pairingState === "used"
+                  ? "USED"
+                  : "EXPIRED"}
+            </p>
+          ) : (
+            <div className="mt-10 flex h-[92px] items-center gap-3 rounded-2xl border border-dashed border-border-secondary bg-background-secondary px-4 text-text-muted">
+              <FiMonitor className="h-5 w-5" aria-hidden="true" />
+              <span className="text-sm">No code yet</span>
+            </div>
+          )}
+
+          <p aria-live="polite" className="mt-5 max-w-sm text-sm leading-6 text-text-secondary">
+            {pairingState === "pending" && pairing
+              ? `Enter it in the Local Connector before ${formatExpiry(pairing.expires_at)}.`
               : pairingState === "used"
                 ? `${pairedConnector?.device_name ?? "Your Mac"} is connected to this account.`
-                : "This code has expired. Generate a new code to pair a Mac."}
+                : pairingState === "expired"
+                  ? "Code expired. Create another."
+                  : "Create a code to connect a Mac."}
           </p>
-        </div>
-      ) : null}
 
-      {pairingError ? (
-        <p role="alert" className="mt-4 rounded-lg border border-error-border bg-error-bg px-3 py-2 text-sm text-error-text">
-          {pairingError}
-        </p>
-      ) : null}
-
-      <Card hover={false} className="mt-6">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold text-text-primary">Paired devices</h2>
-          <p className="text-sm leading-6 text-text-secondary">
-            Macs paired with this account. Paired does not indicate that a device is currently online.
-          </p>
+          {pairingError ? (
+            <p role="alert" className="mt-4 rounded-lg border border-error-border bg-error-bg px-3 py-2 text-sm text-error-text">
+              {pairingError}
+            </p>
+          ) : null}
         </div>
 
-        {isLoadingConnectors ? (
-          <p className="mt-5 text-sm text-text-secondary">Loading paired devices…</p>
-        ) : connectors.length === 0 ? (
-          <p className="mt-5 text-sm text-text-secondary">No Macs are paired yet.</p>
-        ) : (
-          <ul className="mt-5 divide-y divide-border">
-            {connectors.map((connector) => {
-              const status = connectorStatus(connector);
-              return (
-                <li key={connector.connector_id} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
-                  <div>
-                    <p className="font-semibold text-text-primary">{connector.device_name}</p>
-                    <p className="mt-1 text-xs text-text-muted">
-                      Paired {formatDate(connector.created_at)} · Expires {formatDate(connector.expires_at)}
-                    </p>
-                  </div>
-                  <Badge variant={connectorBadgeVariant(status)}>{status}</Badge>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <div className="p-5 sm:p-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">Account devices</p>
+              <h3 className="mt-1 text-xl font-bold tracking-[-0.03em] text-text-primary">Paired devices</h3>
+            </div>
+            <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-background-secondary px-2 font-mono text-xs font-bold text-text-secondary" aria-label={`${connectors.length} paired devices`}>
+              {connectors.length}
+            </span>
+          </div>
 
-        {connectorError ? (
-          <p role="alert" className="mt-4 rounded-lg border border-error-border bg-error-bg px-3 py-2 text-sm text-error-text">
-            {connectorError}
+          {isLoadingConnectors ? (
+            <p className="mt-8 text-sm text-text-secondary">Loading…</p>
+          ) : connectors.length === 0 ? (
+            <div className="mt-8 flex items-center gap-3 text-sm text-text-secondary">
+              <FiClock className="h-4 w-4 text-text-muted" aria-hidden="true" />
+              No Macs paired yet.
+            </div>
+          ) : (
+            <ul className="mt-6 divide-y divide-border">
+              {connectors.map((connector) => {
+                const status = connectorStatus(connector);
+                return (
+                  <li key={connector.connector_id} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-1/10 text-brand-2 dark:text-brand-1">
+                        <FiMonitor className="h-4 w-4" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-text-primary">{connector.device_name}</p>
+                        <p className="mt-1 truncate text-xs text-text-muted">
+                          Added {formatDate(connector.created_at)} · Expires {formatDate(connector.expires_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant={connectorBadgeVariant(status)}>{status}</Badge>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {connectorError ? (
+            <p role="alert" className="mt-4 rounded-lg border border-error-border bg-error-bg px-3 py-2 text-sm text-error-text">
+              {connectorError}
+            </p>
+          ) : null}
+
+          <p className="mt-7 flex items-center gap-2 text-xs text-text-muted">
+            <FiInfo className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            Pairing status is not live presence.
           </p>
-        ) : null}
-      </Card>
-    </Card>
+        </div>
+      </div>
+    </section>
   );
 }
