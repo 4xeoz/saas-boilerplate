@@ -1,0 +1,47 @@
+# Cloud Receiver v2 backend deployment
+
+This directory is the independently deployable backend surface for Cloud
+Receiver v2.
+
+## Vercel project setup
+
+Configure the Vercel project root as:
+
+```text
+saas-boilerplate/backend
+```
+
+Vercel then discovers [`api/index.ts`](api/index.ts) as the Node.js function
+entrypoint. It exports the Express app and deliberately does not call
+`listen()`. The repository-level historical `vercel.json` is not part of this
+deployment surface.
+
+Required production runtime variables are `CLOUD_RECEIVER_RUNTIME_DATABASE_URL`
+(the Supabase session-mode pooler URL) or `DATABASE_URL`, `JWT_SECRET` with at
+least 32 characters, `FRONTEND_URL`, and `RECEIVER_PUBLIC_URL`. Set
+`COOKIE_DOMAIN` only when the frontend and backend share a parent domain.
+`DIRECT_URL` is for Prisma migration commands and is not needed by request
+handling when the runtime URL is configured.
+
+Keep the frontend's `NEXT_PUBLIC_BACKEND_URL` pointed at this backend origin.
+The frontend has no database, JWT, Connector-token, Grant-control, or
+Supabase service-role variable.
+
+## Migration boundary
+
+Run Prisma migrations as a separately authorized release step before routing
+traffic to a deployment:
+
+```sh
+npx prisma migrate deploy
+```
+
+Supply `DIRECT_URL` (or the approved migration fallback) to that command. Do
+not run migrations from the Vercel build, `api/index.ts`, or a function cold
+start. The local `backend/entrypoint.sh` is for the Docker image and is not a
+Vercel startup command.
+
+## Local process
+
+Use `src/index.ts` for the standalone local Express listener. The Vercel
+handler is tested through Supertest and must remain listener-free.
