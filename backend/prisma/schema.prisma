@@ -187,8 +187,47 @@ model Grant {
   binding        HostSubjectBinding @relation(fields: [bindingId], references: [id], onDelete: Cascade)
   account        UserAccount        @relation("GrantAccount", fields: [accountId], references: [id], onDelete: Cascade)
   connector      Connector          @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  events         Event[]
+  deliveries     Delivery[]
 
   @@index([organizationId, bindingId])
   @@index([connectorId])
   @@map("cr2_grants")
+}
+
+model Event {
+  eventId        String   @id @map("event_id")
+  grantId        String   @unique @map("grant_id")
+  bindingId      String   @map("binding_id")
+  correlationId  String   @map("correlation_id")
+  issuerOrigin   String   @map("issuer_origin")
+  workflowId     String   @map("workflow_id")
+  eventType      String   @map("event_type")
+  eventSequence  Int      @map("event_sequence")
+  stateVersion   BigInt   @map("state_version")
+  occurredAt     DateTime @map("occurred_at")
+  canonicalUrl   String   @map("canonical_url")
+  canonicalBody  String   @map("canonical_body")
+  receivedAt     DateTime @default(now()) @map("received_at")
+
+  grant    Grant    @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  delivery Delivery?
+
+  @@index([bindingId])
+  @@map("cr2_events")
+}
+
+model Delivery {
+  deliveryId      String   @id @default(cuid()) @map("delivery_id")
+  eventId         String   @unique @map("event_id")
+  grantId         String   @unique @map("grant_id")
+  deliveryTargetId String  @map("delivery_target_id")
+  status          String   @default("pending")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  grant Grant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryTargetId, status, createdAt])
+  @@map("cr2_deliveries")
 }

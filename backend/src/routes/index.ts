@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { authRouter } from "../modules/authentication/auth.routes";
 import { pairingRouter } from "../modules/connectors/pairing.routes";
 import { consentApiRouter, consentPageRouter } from "../modules/consent/consent.routes";
+import { eventRouter } from "../modules/events/event.routes";
 import { healthRouter } from "../modules/system-health/health.routes";
 
 /**
@@ -16,12 +17,14 @@ v1Router.use("/auth", authRouter);
 
 /**
  * Protocol v0.1 routes. Pairing is closed; Feature 2 adds Consent, Target, and
- * the private Grant-control fence. Event and public Grant routes remain absent.
+ * the private Grant-control fence. Feature 3 adds signed Event ingress;
+ * Delivery, acknowledgement, and public Grant routes remain absent.
  */
 export const v01Router = Router();
 
 v01Router.use(pairingRouter);
 v01Router.use(consentApiRouter);
+v01Router.use(eventRouter);
 v01Router.use((_req: Request, res: Response) => {
   res.status(404).json({ error: { code: "http_route_not_found" } });
 });

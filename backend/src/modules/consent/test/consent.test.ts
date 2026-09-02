@@ -607,7 +607,8 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
       .post("/v0.1/events")
       .set("Authorization", `Bearer ${organizationApiKey}`)
       .send({});
-    expect(eventRoute.status).toBe(404);
+    expect(eventRoute.status).toBe(400);
+    expect(eventRoute.body.error?.code).toBe("http_body_invalid");
   });
 
   it("CONSENT-004 sends only the public completion message after a successful popup decision", async () => {
