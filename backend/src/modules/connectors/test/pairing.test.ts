@@ -11,6 +11,7 @@ const otherUserEmail = `pairing-red-other-${suffix}@example.com`;
 const password = "correct horse battery staple";
 
 const userAgent = request.agent(app);
+const otherUserAgent = request.agent(app);
 let otherUserId: string;
 
 function expectExactKeys(value: object, keys: string[]): void {
@@ -63,6 +64,10 @@ async function claimPairing(pairingCode: string, deviceName: string) {
     .post("/v0.1/account/pairing-sessions/claim")
     .set("Content-Type", "application/json")
     .send({ pairing_code: pairingCode, device_name: deviceName });
+}
+
+async function listConnectors(agent = userAgent) {
+  return agent.get("/v0.1/account/connectors");
 }
 
 async function registerOtherUser(): Promise<string> {
@@ -152,6 +157,56 @@ describe("Cloud Receiver v2 pairing red tests", () => {
     `;
     expect(consumed).toHaveLength(1);
     expect(consumed[0].consumed_at).not.toBeNull();
+  });
+
+  it("PAIR-006 lists only safe Connector metadata for the signed-in account", async () => {
+    const pairing = await createPairing();
+    const claim = await claimPairing(pairing.pairingCode, "Dashboard Mac");
+    expect(claim.status).toBe(200);
+
+    const response = await listConnectors();
+
+    expect(response.status).toBe(200);
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expectExactKeys(response.body, ["type", "protocol_version", "connectors"]);
+    expect(response.body.type).toBe("webmcp.connector_account_connectors");
+    expect(response.body.protocol_version).toBe("0.1");
+
+    const listed = response.body.connectors.find(
+      (connector: { connector_id: string }) => connector.connector_id === claim.body.connector_id,
+    );
+    expect(listed).toBeDefined();
+    if (!listed) throw new Error("claimed Connector was not listed for its account");
+    expectExactKeys(listed, [
+      "connector_id",
+      "pairing_id",
+      "device_name",
+      "created_at",
+      "expires_at",
+      "revoked_at",
+    ]);
+    expect(listed.connector_id).toBe(claim.body.connector_id);
+    expect(listed.pairing_id).toBe(pairing.pairingId);
+    expect(listed.device_name).toBe("Dashboard Mac");
+    expectIsoTimestamp(listed.created_at, "created_at");
+    expectIsoTimestamp(listed.expires_at, "expires_at");
+    expect(listed.revoked_at).toBeNull();
+    expect(JSON.stringify(listed)).not.toContain("connector_token");
+
+    const otherLogin = await otherUserAgent
+      .post("/v1/auth/users/login")
+      .send({ email: otherUserEmail, password });
+    expect(otherLogin.status).toBe(200);
+    const otherList = await listConnectors(otherUserAgent);
+    expect(otherList.status).toBe(200);
+    expect(otherList.body.connectors).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ connector_id: claim.body.connector_id }),
+      ]),
+    );
+
+    const unauthenticated = await request(app).get("/v0.1/account/connectors");
+    expect(unauthenticated.status).toBe(401);
   });
 
   it("PAIR-003 replays metadata without returning the raw token or creating a second target", async () => {

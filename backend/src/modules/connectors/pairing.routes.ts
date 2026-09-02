@@ -9,6 +9,7 @@ import { deliveryAcknowledgementSchema } from "../deliveries/delivery.schemas";
 import {
   claimPairing,
   createPairing,
+  listConnectors,
   requireUserSession,
 } from "./pairing.controller";
 import {
@@ -25,6 +26,12 @@ pairingRouter.post(
   requireSameOriginJson,
   validateProtocolBody(createPairingSessionSchema),
   createPairing,
+);
+
+pairingRouter.get(
+  "/account/connectors",
+  requireUserSession,
+  listConnectors,
 );
 
 pairingRouter.post(

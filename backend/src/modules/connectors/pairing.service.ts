@@ -26,6 +26,21 @@ export type PairingCreated = {
   expires_at: string;
 };
 
+export type ConnectorSummary = {
+  connector_id: string;
+  pairing_id: string;
+  device_name: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+};
+
+export type ConnectorList = {
+  type: "webmcp.connector_account_connectors";
+  protocol_version: "0.1";
+  connectors: ConnectorSummary[];
+};
+
 export type ConnectorCredentials = {
   type: "webmcp.connector_credentials";
   protocol_version: "0.1";
@@ -112,6 +127,34 @@ export async function createPairingSession(accountId: string): Promise<PairingCr
   }
 
   throw new PairingError("receiver_busy", 503);
+}
+
+export async function listAccountConnectors(accountId: string): Promise<ConnectorList> {
+  const connectors = await prisma.connector.findMany({
+    where: { accountId },
+    select: {
+      id: true,
+      pairingSessionId: true,
+      deviceName: true,
+      createdAt: true,
+      expiresAt: true,
+      revokedAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return {
+    type: "webmcp.connector_account_connectors",
+    protocol_version: "0.1",
+    connectors: connectors.map((connector) => ({
+      connector_id: connector.id,
+      pairing_id: connector.pairingSessionId,
+      device_name: connector.deviceName,
+      created_at: connector.createdAt.toISOString(),
+      expires_at: connector.expiresAt.toISOString(),
+      revoked_at: connector.revokedAt?.toISOString() ?? null,
+    })),
+  };
 }
 
 export async function claimPairingSession(

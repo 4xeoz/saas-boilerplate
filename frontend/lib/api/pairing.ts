@@ -8,6 +8,21 @@ export type PairingSession = {
   expires_at: string;
 };
 
+export type ConnectorSummary = {
+  connector_id: string;
+  pairing_id: string;
+  device_name: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+};
+
+export type ConnectorList = {
+  type: "webmcp.connector_account_connectors";
+  protocol_version: "0.1";
+  connectors: ConnectorSummary[];
+};
+
 function isPairingSession(value: unknown): value is PairingSession {
   if (!value || typeof value !== "object") return false;
 
@@ -20,6 +35,36 @@ function isPairingSession(value: unknown): value is PairingSession {
     typeof candidate.expires_at === "string" &&
     Number.isFinite(Date.parse(candidate.expires_at))
   );
+}
+
+function isConnectorList(value: unknown): value is ConnectorList {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Record<string, unknown>;
+  if (
+    candidate.type !== "webmcp.connector_account_connectors" ||
+    candidate.protocol_version !== "0.1" ||
+    !Array.isArray(candidate.connectors)
+  ) {
+    return false;
+  }
+
+  return candidate.connectors.every((connector) => {
+    if (!connector || typeof connector !== "object") return false;
+
+    const item = connector as Record<string, unknown>;
+    return (
+      typeof item.connector_id === "string" &&
+      typeof item.pairing_id === "string" &&
+      typeof item.device_name === "string" &&
+      typeof item.created_at === "string" &&
+      Number.isFinite(Date.parse(item.created_at)) &&
+      typeof item.expires_at === "string" &&
+      Number.isFinite(Date.parse(item.expires_at)) &&
+      (item.revoked_at === null ||
+        (typeof item.revoked_at === "string" && Number.isFinite(Date.parse(item.revoked_at))))
+    );
+  });
 }
 
 function readErrorCode(value: unknown): string | null {
@@ -60,6 +105,32 @@ export async function createPairingSession(): Promise<PairingSession> {
 
   if (!isPairingSession(payload)) {
     throw new Error("The pairing service returned an invalid response.");
+  }
+
+  return payload;
+}
+
+export async function listConnectors(): Promise<ConnectorList> {
+  const response = await fetch(`${getBackendUrl()}/v0.1/account/connectors`, {
+    credentials: "include",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  const payload: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const code = readErrorCode(payload);
+    if (response.status === 401 || code === "session_required") {
+      throw new Error("Sign in to view paired Macs.");
+    }
+    throw new Error("Unable to load paired Macs. Please try again.");
+  }
+
+  if (!isConnectorList(payload)) {
+    throw new Error("The pairing service returned an invalid device list.");
   }
 
   return payload;

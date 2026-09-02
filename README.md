@@ -47,6 +47,15 @@ The first v0.1 replacement surface is account-owned Connector pairing:
 - The first claim returns the raw Connector token once. A duplicate replay
   returns the same metadata with `duplicate: true` and omits
   `connector_token` entirely.
+- `GET /v0.1/account/connectors` requires the `user_session` cookie and returns
+  only account-scoped device metadata (`device_name`, pairing and lifecycle
+  timestamps, and revocation state); it never returns Connector tokens.
+
+After a successful CLI claim, the dashboard polls this list for the active
+`pairing_id`, changes the one-time code to `USED`, and identifies the paired
+device. An unclaimed code changes to `EXPIRED` at its deadline. The device list
+also shows paired, expired, or revoked metadata; it does not claim that a Mac
+is currently online.
 
 Pairing codes and Connector tokens are stored only as SHA-256 digests. Consent,
 Host credentials, signed Manifests, signed Events, target-scoped delivery
