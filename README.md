@@ -27,9 +27,10 @@ Google OAuth, roles, refresh tokens, payments, email delivery, queues, and Redis
 are not part of this clone. Feature 2 adds the small organization/API-key
 fixture, Host-key validation, Consent, target binding, Grant status projection,
 and a private configured-authority revocation fence. Feature 3 adds signed Event
-ingress and Feature 4 adds target-scoped delivery claims and leases. Public Grant
-inspection/revocation and Delivery Acknowledgement remain blocked pending their
-separate gates.
+ingress, Feature 4 adds target-scoped delivery claims and leases, Feature 5 adds
+effect-backed acknowledgement, and Feature 6 adds bounded HTTP transport and
+health/readiness routes. Public Grant inspection/revocation remains blocked
+pending its separate authority decision.
 
 ## Pairing surface
 
@@ -37,6 +38,9 @@ The first v0.1 replacement surface is account-owned Connector pairing:
 
 - `POST /v0.1/account/pairing-sessions` requires the `user_session` cookie and
   same-origin JSON `{}`; it returns one short-lived uppercase hexadecimal code.
+- The authenticated `/dashboard` page exposes the `Pair this Mac` action. It
+  calls the pairing-session route with the browser session and shows the code
+  only after a successful response.
 - `POST /v0.1/account/pairing-sessions/claim` accepts only
   `{ pairing_code, device_name }` without browser or Organization credentials.
 - The first claim returns the raw Connector token once. A duplicate replay
@@ -77,8 +81,9 @@ return an empty `204` with no `Content-Type`. PostgreSQL stores the target-scope
 lease, digest-only claim attempts, and the bounded `retry_exhausted` state.
 
 The accepted v2 defaults are three attempts, a 60-second lease, five-second
-Connector polling, and a five-second delivery request timeout. Acknowledgement,
-public Grant routes, and deployment are not included in this increment.
+Connector polling, and a five-second delivery request timeout. Delivery
+Acknowledgement and transport/operations are included; public Grant routes and
+deployment remain later gates.
 
 ## Environment
 
@@ -104,6 +109,38 @@ is still database-wide. Use a fresh Supabase database/project for Cloud
 Receiver 2, or explicitly baseline the existing database before running
 `prisma migrate deploy` against it; do not point the migration command at the
 old Receiver database blindly.
+
+### Exact local contract
+
+Run the two deployable surfaces separately during local development:
+
+| Surface | Required values |
+|---|---|
+| Backend | `PORT=4000`, `NODE_ENV=development`, `FRONTEND_URL=http://localhost:3000`, `RECEIVER_PUBLIC_URL=http://localhost:4000`, and either `DATABASE_URL` or `CLOUD_RECEIVER_RUNTIME_DATABASE_URL` plus `DIRECT_URL` when migrations use a separate URL |
+| Frontend | `NEXT_PUBLIC_BACKEND_URL=http://localhost:4000` at build/dev-server start |
+| Browser cookies | Leave `COOKIE_DOMAIN` unset on localhost |
+
+The local API owns the `user_session` and `developer_session` httpOnly cookies.
+The frontend never receives a database URL, JWT secret, Connector token, Grant
+control token, or Supabase service-role key.
+
+### Exact staging contract
+
+The frontend and backend are independently deployable and must use the same
+staging environment contract:
+
+| Surface | Required values |
+|---|---|
+| Backend runtime | `NODE_ENV=production`, platform-provided `PORT`, `FRONTEND_URL=https://<frontend-staging-host>`, `RECEIVER_PUBLIC_URL=https://<backend-staging-host>`, `JWT_SECRET` with at least 32 characters, and `CLOUD_RECEIVER_RUNTIME_DATABASE_URL` for the Supabase session-mode pooler |
+| Backend migrations | `DIRECT_URL` for the direct/session migration connection; run Prisma migrations separately from application startup |
+| Frontend build | `NEXT_PUBLIC_BACKEND_URL=https://<backend-staging-host>` as a build-time public value |
+| Cookies | Set `COOKIE_DOMAIN` only when both hosts share the same parent domain; otherwise use a same-host reverse proxy |
+| Client boundary | Do not set Supabase or service-role credentials in frontend variables; no browser client connects to the database |
+
+Deployment protection, the target project, TLS termination, migration order,
+rollback target, and health-readback command must be supplied by the release
+owner. The historical root `docker-compose.yml` is a local reference, not a
+production deployment declaration for the retired Receiver.
 
 ## Quick start
 
