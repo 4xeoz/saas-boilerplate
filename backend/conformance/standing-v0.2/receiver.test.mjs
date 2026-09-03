@@ -394,6 +394,11 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
     retryable: false,
     no_mutation: true,
   });
+  assert.deepEqual(result.concurrency, {
+    duplicate_event_converged: true,
+    accepted_responses: 1,
+    duplicate_responses: 1,
+  });
   assert.equal(currentKeyMaterial, "consented", "fixture_key_material_not_restored");
 });
 
