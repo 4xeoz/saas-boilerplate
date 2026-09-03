@@ -298,12 +298,12 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
         decidedAt: new Date().toISOString(),
       });
     },
-    issueEvent({ binding, ordinal, signer = "consented" }) {
+    issueEvent({ binding, ordinal, signer = "consented", discriminator = "" }) {
       assert.ok(Object.hasOwn(hosts, signer), "fixture_signer_unknown");
       const occurredAt = new Date();
       return hosts[signer].issueEvent({
         binding,
-        eventId: `event_standing_${suffix}_${signer}_${ordinal}`,
+        eventId: `event_standing_${suffix}_${signer}_${ordinal}${discriminator ? `_${discriminator}` : ""}`,
         eventSequence: ordinal,
         occurredAt: occurredAt.toISOString(),
         deliveryTimestamp: String(Math.floor(occurredAt.getTime() / 1_000)),
@@ -395,6 +395,8 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
     no_mutation: true,
   });
   assert.deepEqual(result.concurrency, {
+    distinct_sequence_conflict: true,
+    conflict_responses: 1,
     duplicate_event_converged: true,
     accepted_responses: 1,
     duplicate_responses: 1,
