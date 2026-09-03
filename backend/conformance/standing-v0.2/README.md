@@ -8,8 +8,8 @@ imports from the explicitly selected Core checkout.
 ## Receiver source and upgrade closure: 2026-09-03
 
 Status: **Receiver source committed locally; exact-commit upgrade rehearsal,
-minimum Core-pinned trace, and fresh-process recovery checks passed; full
-release conformance remains open**.
+minimum Core-pinned trace, fresh-process recovery, and transaction-interruption
+checks passed; full release conformance remains open**.
 This section supersedes the earlier source-status snapshots below. The user
 authorized review, bounded corrections, disposable migration verification, and
 local Git closure on the existing `Re-Entry` branch, without push or deployment.
@@ -603,3 +603,32 @@ not production Game authority. The increment does not prove transaction
 interruption at an arbitrary database boundary, supervision, distributed
 ownership, public consent/control routes, release enforcement, deployment or
 hosted recovery. Those remain separate TASK-027/TASK-028/TASK-033 gates.
+
+## Active Receiver transaction-interruption increment: 2026-09-04
+
+The same process-boundary fixture now injects a forced termination immediately
+after the active Receiver writes a standing Delivery inside its Prisma
+transaction. The killed transaction leaves the Grant sequence at `0` and no
+Event or Delivery row committed. A fresh Receiver process accepts the exact same
+signed Event, then a second forced process stop after the committed Delivery is
+followed by a third process that claims the retained Delivery, verifies the
+effect, acknowledges it, and replays the Event as a duplicate. This covers the
+active PostgreSQL transaction boundary and the committed-state recovery path in
+one deterministic trace.
+
+Evidence for this increment:
+
+- focused command: `node --test backend/conformance/standing-v0.2/fresh-process.test.mjs`;
+- focused result: `1/1` passed, with two additional stability reruns also `1/1`;
+- existing pinned active Receiver standing trace: `1/1` passed;
+- pinned Core commit: `1446d73aa3e66533547471728ad8fa5344d51f9e`;
+- selected Core/spec SHA-256: `6210d7724417e0533c77d5989e8ffdd3c404af4063ac9d70d70db9b622f73d45`;
+- Receiver commit: `2429281b7b9f0db56aa8cf8250de18a450ea477f`; and
+- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
+
+The write-after-create kill is a test-only wrapper around Prisma's transaction
+client; it is not production code and does not emulate every possible database
+or host failure. This closes the bounded active Receiver/PostgreSQL transaction
+interruption vector only. Supervision, distributed ownership, production effect
+authority, public controls, lifetime, deployment, release enforcement, and the
+remaining shared v0.1/v0.2 failure matrix stay open.
