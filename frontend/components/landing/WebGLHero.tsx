@@ -42,9 +42,10 @@ const fragmentShaderSource = `
     vec2 pointer = (u_pointer - 0.5 * u_resolution) / scale;
     float time = u_time * 0.22;
 
-    uv -= pointer * 0.055;
+    uv -= pointer * 0.07;
     float radius = length(uv);
-    float angle = atan(uv.y, uv.x);
+    float pointerTwist = (pointer.x * 0.16 - pointer.y * 0.10) * smoothstep(0.9, 0.05, radius);
+    float angle = atan(uv.y, uv.x) + pointerTwist;
     float atmosphere = noise(uv * 3.2 + vec2(time, -time));
     vec2 warped = uv + 0.035 * vec2(
       noise(uv * 4.0 + time),
@@ -54,7 +55,7 @@ const fragmentShaderSource = `
 
     vec3 color = vec3(0.018, 0.035, 0.028);
     color += vec3(0.08, 0.23, 0.12) * exp(-radius * 3.2);
-    color += vec3(0.02, 0.19, 0.17) * exp(-length(uv - pointer * 0.35) * 6.0);
+    color += vec3(0.02, 0.19, 0.17) * exp(-length(uv - pointer * 0.42) * 7.0);
 
     for (int index = 0; index < 3; index += 1) {
       float phase = float(index) * (PI * 2.0 / 3.0);
@@ -132,10 +133,13 @@ function createProgram(gl: WebGLRenderingContext): WebGLProgram {
 
 export default function WebGLHero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const hero = heroRef.current;
+    if (!canvas || !hero) return;
+    const interactionRegion = hero;
 
     const gl = canvas.getContext("webgl", {
       alpha: true,
@@ -186,7 +190,21 @@ export default function WebGLHero() {
     let height = 1;
     let pointerX = 0.5;
     let pointerY = 0.5;
+    let targetPointerX = 0.5;
+    let targetPointerY = 0.5;
     let animationFrame = 0;
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let prefersReducedMotion = reducedMotionQuery.matches;
+
+    function clamp(value: number) {
+      return Math.min(1, Math.max(0, value));
+    }
+
+    function scheduleRender() {
+      if (animationFrame === 0) {
+        animationFrame = window.requestAnimationFrame(render);
+      }
+    }
 
     function resize() {
       const bounds = surface.getBoundingClientRect();
@@ -201,45 +219,79 @@ export default function WebGLHero() {
     }
 
     function updatePointer(event: PointerEvent) {
-      const bounds = surface.getBoundingClientRect();
-      pointerX = (event.clientX - bounds.left) / Math.max(bounds.width, 1);
-      pointerY = 1 - (event.clientY - bounds.top) / Math.max(bounds.height, 1);
+      const bounds = interactionRegion.getBoundingClientRect();
+      const insideHero =
+        event.clientX >= bounds.left &&
+        event.clientX <= bounds.right &&
+        event.clientY >= bounds.top &&
+        event.clientY <= bounds.bottom;
+
+      if (!insideHero) {
+        resetPointer();
+        return;
+      }
+
+      const nextPointerX = clamp((event.clientX - bounds.left) / Math.max(bounds.width, 1));
+      const nextPointerY = clamp(1 - (event.clientY - bounds.top) / Math.max(bounds.height, 1));
+      if (nextPointerX === targetPointerX && nextPointerY === targetPointerY) return;
+
+      targetPointerX = nextPointerX;
+      targetPointerY = nextPointerY;
+      scheduleRender();
     }
 
     function resetPointer() {
-      pointerX = 0.5;
-      pointerY = 0.5;
+      if (targetPointerX === 0.5 && targetPointerY === 0.5) return;
+      targetPointerX = 0.5;
+      targetPointerY = 0.5;
+      scheduleRender();
     }
 
     function render(now: number) {
+      animationFrame = 0;
       resize();
+      const easing = prefersReducedMotion ? 1 : 0.1;
+      pointerX += (targetPointerX - pointerX) * easing;
+      pointerY += (targetPointerY - pointerY) * easing;
       context.uniform2f(resolutionLocation, width, height);
       context.uniform2f(pointerLocation, pointerX * width, pointerY * height);
-      context.uniform1f(timeLocation, now * 0.001);
+      context.uniform1f(timeLocation, prefersReducedMotion ? 0 : now * 0.001);
       context.drawArrays(context.TRIANGLE_STRIP, 0, 4);
-      animationFrame = window.requestAnimationFrame(render);
+
+      const pointerIsSettled =
+        Math.abs(targetPointerX - pointerX) < 0.001 && Math.abs(targetPointerY - pointerY) < 0.001;
+      if (!prefersReducedMotion || !pointerIsSettled) scheduleRender();
     }
 
-    const resizeObserver = new ResizeObserver(resize);
+    function updateMotionPreference(event: MediaQueryListEvent) {
+      prefersReducedMotion = event.matches;
+      scheduleRender();
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      resize();
+      scheduleRender();
+    });
     resizeObserver.observe(surface);
-    surface.addEventListener("pointermove", updatePointer);
-    surface.addEventListener("pointerleave", resetPointer);
+    window.addEventListener("pointermove", updatePointer, { passive: true });
+    window.addEventListener("blur", resetPointer);
+    reducedMotionQuery.addEventListener("change", updateMotionPreference);
     resize();
-    resetPointer();
-    animationFrame = window.requestAnimationFrame(render);
+    scheduleRender();
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
-      surface.removeEventListener("pointermove", updatePointer);
-      surface.removeEventListener("pointerleave", resetPointer);
+      window.removeEventListener("pointermove", updatePointer);
+      window.removeEventListener("blur", resetPointer);
+      reducedMotionQuery.removeEventListener("change", updateMotionPreference);
       context.deleteBuffer(buffer);
       context.deleteProgram(program);
     };
   }, []);
 
   return (
-    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+    <div ref={heroRef} className="absolute inset-0 overflow-hidden" aria-hidden="true">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_42%,rgba(159,232,112,0.17),transparent_22%),radial-gradient(circle_at_18%_65%,rgba(24,119,93,0.16),transparent_30%),linear-gradient(135deg,#09110c_0%,#07100d_48%,#09140c_100%)]" />
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full opacity-90" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(7,16,11,0.1)_55%,rgba(7,16,11,0.86)_100%)]" />
