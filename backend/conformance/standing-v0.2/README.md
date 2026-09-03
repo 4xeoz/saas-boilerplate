@@ -7,8 +7,9 @@ imports from the explicitly selected Core checkout.
 
 ## Receiver source and upgrade closure: 2026-09-03
 
-Status: **Receiver source committed locally; exact-commit upgrade rehearsal
-and minimum Core-pinned trace passed; full release conformance remains open**.
+Status: **Receiver source committed locally; exact-commit upgrade rehearsal,
+minimum Core-pinned trace, and fresh-process recovery checks passed; full
+release conformance remains open**.
 This section supersedes the earlier source-status snapshots below. The user
 authorized review, bounded corrections, disposable migration verification, and
 local Git closure on the existing `Re-Entry` branch, without push or deployment.
@@ -570,3 +571,35 @@ backend aggregate was not rerun for this fixture-only increment; the prior
 one-shot post-write rollback/retry vector, not forced process termination,
 fresh-process recovery, release-enforcement, public-control, lifetime, or
 production gates.
+
+## Active Receiver fresh-process recovery increment: 2026-09-04
+
+The active Receiver now has a test-only process boundary that proves a
+committed standing Delivery survives a forced process stop and can complete
+after a fresh Express/Prisma process opens the same PostgreSQL database. The
+test creates the standing authority and pending Delivery through the active
+service, accepts the signed Event over `/v0.2/events`, terminates the first
+Receiver process with `SIGKILL`, starts a second process, claims the retained
+Delivery, verifies the Host-effect attestation through the child-process
+authority seam, acknowledges it, and replays the exact Event as a duplicate.
+The Grant sequence and Delivery state are read from PostgreSQL before and after
+the restart; Connector, claim, and effect tokens are not persisted in the
+verified state projection.
+
+Evidence for this increment:
+
+- focused command: `node --test backend/conformance/standing-v0.2/fresh-process.test.mjs`;
+- focused result: `1/1` passed, with two additional stability reruns also `1/1`;
+- existing pinned active Receiver trace: `1/1` passed after the new fixture;
+- pinned Core commit: `1446d73aa3e66533547471728ad8fa5344d51f9e`;
+- selected Core/spec SHA-256: `6210d7724417e0533c77d5989e8ffdd3c404af4063ac9d70d70db9b622f73d45`;
+- Receiver commit: `98934c27b19f2423f6a18d2fc0210206477d421d`; and
+- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
+
+This is local evidence against a task-owned disposable loopback PostgreSQL
+instance. The child process loads the active Receiver's Express app and
+Prisma client; its in-memory effect authority is an explicit test seam and is
+not production Game authority. The increment does not prove transaction
+interruption at an arbitrary database boundary, supervision, distributed
+ownership, public consent/control routes, release enforcement, deployment or
+hosted recovery. Those remain separate TASK-027/TASK-028/TASK-033 gates.
