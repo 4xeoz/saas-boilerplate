@@ -13,8 +13,8 @@ This section supersedes the earlier source-status snapshots below. The user
 authorized review, bounded corrections, disposable migration verification, and
 local Git closure on the existing `Re-Entry` branch, without push or deployment.
 
-The later [post-writeback exact-pin refresh](#post-writeback-exact-pin-refresh-2026-09-03)
-records the current Core pin and rerun after parent documentation commits.
+The later [shared ordering-vector increment](#shared-ordering-vector-increment-2026-09-03)
+records the current Core pin and rerun after the parent source change.
 
 Receiver implementation commit:
 `9156e68fe9b988f2ec7423d1c93930da3a105d4e` (28 exact owned paths).
@@ -75,7 +75,7 @@ inspection can read Grant and active-Delivery state across different instants;
 its public snapshot contract remains an explicit control-plane design/test item
 in [the proposal](../../src/modules/standing/CONTROL-PLANE-PROPOSAL.md).
 
-### Post-writeback exact-pin refresh: 2026-09-03
+### Prior post-writeback exact-pin refresh: 2026-09-03
 
 Parent documentation commits after the original pin changed three files inside
 the selected Core/spec inventory. The first pinned Receiver run therefore
@@ -419,3 +419,55 @@ or deployment is included. TASK-027, TASK-028, and TASK-033 remain open in the
 owning project. Parent canonical status and remote release records must be
 reconciled at the cross-repository integration gate; this local test record does
 not close or overwrite those collaborator-owned surfaces.
+
+## Shared ordering-vector increment: 2026-09-03
+
+The pinned shared standing scenario now exercises one additional failure and
+recovery slice: a signed Event with sequence `2` is submitted while sequence
+`1` is still the next expected Event. Both implementations return the exact
+non-retryable `409 event_sequence_out_of_order` error, leave the public Grant
+sequence at `0` with no active Delivery, and later accept that same Event after
+sequence `1` is acknowledged. This verifies rejection, no mutation, and
+eventual acceptance through the same shared oracle.
+
+Evidence for this increment:
+
+- Core scenario contract and cross-layer tests: `24/24` passed;
+- source-pin fixtures: `16/16` passed;
+- pinned Express/PostgreSQL Receiver trace: `1/1` passed;
+- Core commit: `4565ccc5773ee70905b8e5f7bf2b65440f83edfc`;
+- selected Core/spec SHA-256: `583e541ff41884449ebc5547e9655b3eb4ef34f9db4120236c6354a4dbfba499`;
+- Receiver commit: `82e2f5712343625225fe4cda603ede7e2d53c4fb`; and
+- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
+
+The full backend aggregate was not rerun for this oracle-only increment; the
+previous `21/21` suites and `158` tests remain prior evidence because Receiver
+production source, schema, and migration bytes are unchanged. The mandatory
+concurrent race, forced rollback, fresh-process recovery, release-enforcement,
+public-control, lifetime, and production gates remain open under TASK-028.
+
+## Shared ordering-vector increment: 2026-09-03
+
+The pinned shared standing scenario now exercises one additional failure and
+recovery slice: a signed Event with sequence `2` is submitted while sequence
+`1` is still the next expected Event. Both implementations return the exact
+non-retryable `409 event_sequence_out_of_order` error, leave the public Grant
+sequence at `0` with no active Delivery, and later accept that same Event after
+sequence `1` is acknowledged. This verifies rejection, no mutation, and
+eventual acceptance through the same shared oracle.
+
+Evidence for this increment:
+
+- Core scenario contract and cross-layer tests: `24/24` passed;
+- source-pin fixtures: `16/16` passed;
+- pinned Express/PostgreSQL Receiver trace: `1/1` passed;
+- Core commit: `4565ccc5773ee70905b8e5f7bf2b65440f83edfc`;
+- selected Core/spec SHA-256: `583e541ff41884449ebc5547e9655b3eb4ef34f9db4120236c6354a4dbfba499`;
+- Receiver commit: `82e2f5712343625225fe4cda603ede7e2d53c4fb`; and
+- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
+
+The full backend aggregate was not rerun for this oracle-only increment; the
+previous `21/21` suites and `158` tests remain prior evidence because Receiver
+production source, schema, and migration bytes are unchanged. The mandatory
+concurrent race, forced rollback, fresh-process recovery, release-enforcement,
+public-control, lifetime, and production gates remain open under TASK-028.
