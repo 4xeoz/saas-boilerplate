@@ -434,7 +434,7 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
     },
   };
 
-  const claimTokens = Array.from({ length: 3 }, () => randomBytes(32).toString("base64url"));
+  const claimTokens = Array.from({ length: 4 }, () => randomBytes(32).toString("base64url"));
   const result = await scenario.runStandingAuthorizationV02Scenario({ driver, claimTokens });
   assert.equal(result.status, "passed");
   assert.equal(approvalCalls, result.consent_decisions, "fixture_consent_call_count");
@@ -448,6 +448,7 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
   assert.deepEqual(result.rollback, {
     rejected: true,
     no_mutation: true,
+    retried: true,
   });
   assert.deepEqual(result.concurrency, {
     distinct_sequence_conflict: true,
