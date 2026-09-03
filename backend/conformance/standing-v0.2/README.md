@@ -5,12 +5,20 @@ It does not copy the scenario or import Core authority into the production
 Receiver. The scenario, Host SDK, Connector, and Agent Adapter are test-only
 imports from the explicitly selected Core checkout.
 
-## Receiver source-closure candidate: 2026-09-03
+## Receiver source and upgrade closure: 2026-09-03
 
-Status: **locally verified candidate; exact-commit upgrade rehearsal pending**.
+Status: **Receiver source committed locally; exact-commit upgrade rehearsal
+and minimum Core-pinned trace passed; full release conformance remains open**.
 This section supersedes the earlier source-status snapshots below. The user
 authorized review, bounded corrections, disposable migration verification, and
 local Git closure on the existing `Re-Entry` branch, without push or deployment.
+
+Receiver implementation commit:
+`9156e68fe9b988f2ec7423d1c93930da3a105d4e` (28 exact owned paths).
+The subsequent evidence-only update changes no executable, schema, migration,
+dependency, or Core-pin bytes. The shared Express/PostgreSQL trace was rerun
+after the source commit and reported that exact Receiver identity, verified Core
+identity, and explicitly unverified release conformance.
 
 The source review found and corrected two P2 issues:
 
@@ -35,6 +43,28 @@ Express/PostgreSQL shared trace 1/1. The trace still reports
 `5eb4c8c2a94e79b4da68616c921f7d996f53545ce18d559424a908e6b480b73b`
 are unchanged. An isolated exact-commit Core checkout avoids the unrelated Game
 commit now present on shared `main`; no source check was weakened.
+
+The actual exact-commit upgrade rehearsal passed on a new, independently
+verified disposable PostgreSQL `16.14` instance at
+`127.0.0.1:55433/reentry_closure`, using only task-owned tmpfs state:
+
+- six committed baseline migrations applied, then the v0.1 fixture was seeded;
+- the seventh committed migration applied; all seven stored checksums matched;
+- 13 existing table definitions and all 10 fixture rows matched before/after,
+  checked before any post-upgrade seeding and again after the constraint probes;
+- all six reused migration constraint tests passed, without skipped tests;
+- baseline snapshot SHA-256:
+  `5b3521a28cd21d395436c7c14a6fc7c3851967ccc98f5f0737f35b5cc0daf292`;
+- migration SQL SHA-256:
+  `e707a57e7b7330428ba96d0212bfc75516df26ea583904674996d739f70843c1`;
+- upgrade guard/record tests passed 5/5; Prisma schema validation passed; and
+- 28 staged files passed scoped Markdown/link, English, sensitive-pattern,
+  committed-byte, and whitespace checks. The dependency lock was unchanged.
+
+Local migration workspaces, regression fixtures, and the two disposable
+databases are retained; no reset or deletion was performed. Fixture snapshots
+and credentials are not tracked. The existing Next.js middleware deprecation
+warning remains outside this backend increment.
 
 No schema SQL, dependency, lifetime policy, accepted protocol, public control,
 Game, or production deployment change was required by review. An internal
