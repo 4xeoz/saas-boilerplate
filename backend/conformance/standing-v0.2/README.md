@@ -13,8 +13,8 @@ This section supersedes the earlier source-status snapshots below. The user
 authorized review, bounded corrections, disposable migration verification, and
 local Git closure on the existing `Re-Entry` branch, without push or deployment.
 
-The later [shared ordering-vector increment](#shared-ordering-vector-increment-2026-09-03)
-records the current Core pin and rerun after the parent source change.
+The later [shared duplicate-vector increment](#shared-duplicate-vector-increment-2026-09-03)
+records the current Core pin and rerun after each parent source change.
 
 Receiver implementation commit:
 `9156e68fe9b988f2ec7423d1c93930da3a105d4e` (28 exact owned paths).
@@ -446,28 +446,27 @@ production source, schema, and migration bytes are unchanged. The mandatory
 concurrent race, forced rollback, fresh-process recovery, release-enforcement,
 public-control, lifetime, and production gates remain open under TASK-028.
 
-## Shared ordering-vector increment: 2026-09-03
+## Shared duplicate-vector increment: 2026-09-03
 
-The pinned shared standing scenario now exercises one additional failure and
-recovery slice: a signed Event with sequence `2` is submitted while sequence
-`1` is still the next expected Event. Both implementations return the exact
-non-retryable `409 event_sequence_out_of_order` error, leave the public Grant
-sequence at `0` with no active Delivery, and later accept that same Event after
-sequence `1` is acknowledged. This verifies rejection, no mutation, and
-eventual acceptance through the same shared oracle.
+The pinned shared standing scenario now submits the same signed Event envelope
+concurrently twice. The Core reference and pinned Receiver converge on one
+fresh `202` acceptance and one `202` duplicate response for the same Event ID;
+the sequence/Delivery contract therefore creates one activation rather than
+duplicating work. The preceding future-sequence rejection/no-mutation vector
+remains in the same scenario.
 
 Evidence for this increment:
 
 - Core scenario contract and cross-layer tests: `24/24` passed;
 - source-pin fixtures: `16/16` passed;
 - pinned Express/PostgreSQL Receiver trace: `1/1` passed;
-- Core commit: `4565ccc5773ee70905b8e5f7bf2b65440f83edfc`;
-- selected Core/spec SHA-256: `583e541ff41884449ebc5547e9655b3eb4ef34f9db4120236c6354a4dbfba499`;
-- Receiver commit: `82e2f5712343625225fe4cda603ede7e2d53c4fb`; and
+- Core commit: `68a306eef6b977ee530a6ac75754ad4c3a12dd64`;
+- selected Core/spec SHA-256: `0723f2db654bbe6088e46dc970bb482edfb27d59ddf62b8ec2a6e4aafc24b9fb`;
+- Receiver commit: `fa5de9de162f5746d00179200c8ba41320af1408`; and
 - runtime: Node `v26.5.0`, `release_conformance_verified: false`.
 
 The full backend aggregate was not rerun for this oracle-only increment; the
 previous `21/21` suites and `158` tests remain prior evidence because Receiver
 production source, schema, and migration bytes are unchanged. The mandatory
-concurrent race, forced rollback, fresh-process recovery, release-enforcement,
+distinct-Event race, forced rollback, fresh-process recovery, release-enforcement,
 public-control, lifetime, and production gates remain open under TASK-028.
