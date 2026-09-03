@@ -6,6 +6,7 @@ export const PROTOCOL_RESPONSE_MAX_BYTES = 32 * 1_024;
 
 const protocolRoutes = new Set([
   "/v0.1/events",
+  "/v0.1/connectors/disconnect",
   "/v0.1/delivery-claims",
   "/v0.1/delivery-acknowledgements",
 ]);

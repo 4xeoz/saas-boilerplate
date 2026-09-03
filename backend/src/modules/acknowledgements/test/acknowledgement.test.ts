@@ -45,6 +45,7 @@ type DeliveryFixture = {
   workflowId: string;
   canonicalUrl: string;
   humanBoundary: string;
+  instruction: string;
 };
 
 const effectTokens = new Map<string, EffectAttestation | (() => EffectAttestation)>();
@@ -113,6 +114,7 @@ async function seedDelivery(label: string): Promise<DeliveryFixture> {
   const workflowId = `workflow-ack-${label}-${suffix}`;
   const canonicalUrl = `${origin}/workflows/${label}`;
   const humanBoundary = "explicit_receiver_consent";
+  const instruction = `Continue the ${label} workflow.`;
   const now = new Date();
   const occurredAt = new Date(now.getTime() - 1_000);
   const expiresAt = new Date(now.getTime() + 15 * 60 * 1_000);
@@ -150,7 +152,36 @@ async function seedDelivery(label: string): Promise<DeliveryFixture> {
       hostSubjectRefDigest: digestSecret(subject),
       expectedOrigin: origin,
       manifestId: `manifest-ack-${label}-${suffix}`,
-      manifestJson: { fixture: label },
+      manifestJson: {
+        type: "webmcp.reentry_manifest",
+        protocol_version: "0.1",
+        manifest_id: `manifest-ack-${label}-${suffix}`,
+        correlation_id: correlationId,
+        issuer_origin: origin,
+        issued_at: new Date(now.getTime() - 60_000).toISOString(),
+        offer_expires_at: new Date(now.getTime() + 5 * 60_000).toISOString(),
+        workflow: {
+          id: workflowId,
+          type: "review",
+          state_version: 0,
+          canonical_url: canonicalUrl,
+        },
+        display: {
+          title: `Continue ${label}`,
+          reason: instruction,
+        },
+        grant_request: {
+          event_type: "review.requested",
+          grant_expires_at: expiresAt.toISOString(),
+          max_runs: 1,
+          human_boundary: humanBoundary,
+        },
+        signature: {
+          algorithm: "Ed25519",
+          key_id: `host-key-${label}`,
+          value: Buffer.alloc(64, 7).toString("base64url"),
+        },
+      },
       expiresAt,
       status: "approved",
       decisionAction: "approve",
@@ -214,6 +245,7 @@ async function seedDelivery(label: string): Promise<DeliveryFixture> {
     workflowId,
     canonicalUrl,
     humanBoundary,
+    instruction,
   };
 }
 
@@ -304,6 +336,7 @@ describe("Cloud Receiver v2 delivery acknowledgement red tests", () => {
     const fixture = await seedDelivery("001");
     const claimed = await postClaim(fixture, claimToken(1));
     expect(claimed.status).toBe(200);
+    expect(claimed.body.lease.continuation.instruction).toBe(fixture.instruction);
     const row = await readDeliveryRow(fixture.deliveryId);
     expect(row.status).toBe("leased");
     expect(row.acknowledged_at ?? null).toBeNull();

@@ -109,7 +109,7 @@ async function decide(token: string, action: "approve" | "decline", connectorId?
   if (action === "approve") body.connector_id = connectorId;
   return userAgent
     .post("/v0.1/account-consent-decisions")
-    .set("Origin", "http://localhost:3000")
+    .set("Origin", "http://localhost:4000")
     .set("Content-Type", "application/json")
     .send(body);
 }
@@ -147,13 +147,18 @@ async function runConsentPageDecision(
   const clickHandlers = new Map<string, () => void>();
   const result = { textContent: "" };
   const connector = { value: firstConnectorId };
+  const card = { classList: { add: jest.fn() } };
   const button = (selector: string) => ({
+    disabled: false,
     addEventListener: (_type: string, listener: () => void) => {
       clickHandlers.set(selector, listener);
     },
+    remove: jest.fn(),
   });
   const elements: Record<string, any> = {
-    "#connector": connector,
+    'input[name="connector"]': connector,
+    'input[name="connector"]:checked': connector,
+    ".consent-card": card,
     "#result": result,
     "#approve": button("#approve"),
     "#decline": button("#decline"),
@@ -168,7 +173,10 @@ async function runConsentPageDecision(
       origin: "http://localhost:4000",
     },
     window: {
-      location: { origin: "http://localhost:4000" },
+      location: {
+        origin: "http://localhost:4000",
+        search: `?token=${encodeURIComponent(token)}`,
+      },
       opener: {
         postMessage(message: JsonObject, targetOrigin: string) {
           messages.push({ message, targetOrigin });
@@ -184,7 +192,10 @@ async function runConsentPageDecision(
     },
     fetch: async (_url: string, options: { body: string }) => {
       requestBody = JSON.parse(options.body) as JsonObject;
-      return { ok: responseOk };
+      return {
+        ok: responseOk,
+        json: async () => (responseOk ? { status: action === "approve" ? "approved" : "declined" } : {}),
+      };
     },
   });
 
@@ -400,11 +411,13 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
       `/consent?token=${encodeURIComponent(pendingToken)}`
     );
     expect(unauthenticatedPage.status).toBe(302);
-    expect(unauthenticatedPage.headers.location).toContain("/login?return_to=");
+    expect(unauthenticatedPage.headers["cross-origin-opener-policy"]).toBe("unsafe-none");
+    expect(unauthenticatedPage.headers.location).toContain("/user-login?return_to=");
     const authenticatedPage = await userAgent.get(
       `/consent?token=${encodeURIComponent(pendingToken)}`
     );
     expect(authenticatedPage.status).toBe(200);
+    expect(authenticatedPage.headers["cross-origin-opener-policy"]).toBe("unsafe-none");
     expect(authenticatedPage.text).toContain("Review manifest-consent-002-pending");
     expect(authenticatedPage.text).not.toContain(pendingToken);
 
@@ -611,6 +624,48 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
     expect(eventRoute.body.error?.code).toBe("http_body_invalid");
   });
 
+  it("DISCONNECT-003 excludes a remotely disconnected Mac from new consent choices", async () => {
+    const deviceName = `Disconnected Consent Mac ${suffix}`;
+    const pairing = await userAgent
+      .post("/v0.1/account/pairing-sessions")
+      .set("Origin", "http://localhost:3000")
+      .set("Content-Type", "application/json")
+      .send({});
+    expect(pairing.status).toBe(201);
+
+    const claim = await request(app)
+      .post("/v0.1/account/pairing-sessions/claim")
+      .set("Content-Type", "application/json")
+      .send({ pairing_code: pairing.body.pairing_code, device_name: deviceName });
+    expect(claim.status).toBe(200);
+
+    const pending = await createConsent(
+      manifestFor(`manifest-disconnect-003-${suffix}`),
+      `subject-disconnect-003-${suffix}`,
+    );
+    expect(pending.status).toBe(201);
+    const token = consentTokenFromUrl(pending.body.consent_url);
+
+    const beforeDisconnect = await userAgent.get(
+      `/consent?token=${encodeURIComponent(token)}`,
+    );
+    expect(beforeDisconnect.status).toBe(200);
+    expect(beforeDisconnect.text).toContain(deviceName);
+
+    const disconnected = await request(app)
+      .post("/v0.1/connectors/disconnect")
+      .set("Content-Type", "application/json")
+      .send({ connector_token: claim.body.connector_token });
+    expect(disconnected.status).toBe(200);
+
+    const afterDisconnect = await userAgent.get(
+      `/consent?token=${encodeURIComponent(token)}`,
+    );
+    expect(afterDisconnect.status).toBe(200);
+    expect(afterDisconnect.text).not.toContain(deviceName);
+    expect(afterDisconnect.text).toContain("Consent Mac One");
+  });
+
   it("CONSENT-004 sends only the public completion message after a successful popup decision", async () => {
     const approved = await createConsent(
       manifestFor(`manifest-consent-004-approved-${suffix}`),
@@ -635,7 +690,7 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
           consent_session_id: approved.body.consent_session_id,
           status: "approved",
         },
-        targetOrigin: "http://localhost:4000",
+        targetOrigin: origin,
       },
     ]);
     expect(approval.requestBody).toEqual({
@@ -643,7 +698,7 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
       action: "approve",
       connector_id: firstConnectorId,
     });
-    expect(approval.resultText).toBe("Decision saved.");
+    expect(approval.resultText).toBe("Approved. The return path is ready.");
     expect(JSON.stringify(approval.messages)).not.toContain(approvedToken);
     expect(JSON.stringify(approval.messages)).not.toContain(firstConnectorId);
 
@@ -668,14 +723,14 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
           consent_session_id: declined.body.consent_session_id,
           status: "declined",
         },
-        targetOrigin: "http://localhost:4000",
+        targetOrigin: origin,
       },
     ]);
     expect(decline.requestBody).toEqual({
       consent_token: declinedToken,
       action: "decline",
     });
-    expect(decline.resultText).toBe("Decision saved.");
+    expect(decline.resultText).toBe("Declined. Nothing was approved.");
 
     const failed = await runConsentPageDecision(
       approvedPage.text,
@@ -684,6 +739,28 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
       false
     );
     expect(failed.messages).toEqual([]);
-    expect(failed.resultText).toBe("Decision could not be saved.");
+    expect(failed.resultText).toBe("The decision could not be saved. Please try again.");
+  });
+
+  it("CONSENT-005 rejects a decision submitted from the frontend origin", async () => {
+    const response = await createConsent(
+      manifestFor(`manifest-consent-005-${suffix}`),
+      `subject-consent-005-${suffix}`
+    );
+    const token = consentTokenFromUrl(response.body.consent_url);
+
+    const rejected = await userAgent
+      .post("/v0.1/account-consent-decisions")
+      .set("Origin", "http://localhost:3000")
+      .set("Content-Type", "application/json")
+      .send({
+        consent_token: token,
+        action: "approve",
+        connector_id: firstConnectorId,
+      });
+
+    expect(rejected.status).toBe(403);
+    expect(rejected.body).toEqual({ error: { code: "csrf_origin_invalid" } });
+    expect((await getConsentStatus(response.body.consent_session_id)).body.status).toBe("pending");
   });
 });

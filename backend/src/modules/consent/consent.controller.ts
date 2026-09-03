@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { appConfig } from "../../config/config";
 import { asyncHandler } from "../../lib/async-handler";
 import { getSessionAccountId, requireSession } from "../authentication/session";
+import { renderConsentPage } from "./consent-page";
 import { ConsentError, createConsentSession, decideConsent, getConsentPrompt, getConsentStatus, registerHostKey, validateConsentPageToken } from "./consent.service";
 import type { AccountConsentDecision, CreateConsentSession, RegisterHostKey } from "./consent.schemas";
 
@@ -81,75 +82,8 @@ export const accountConsentDecisionController = asyncHandler(async (req: Request
   }
 });
 
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (character) => {
-    const entities: Record<string, string> = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    };
-    return entities[character];
-  });
-}
-
-function renderConsentPage(prompt: Awaited<ReturnType<typeof getConsentPrompt>>): string {
-  const consentSessionId = JSON.stringify(prompt.consentSessionId);
-  const connectorOptions = prompt.connectors
-    .map(
-      (connector) =>
-        `<option value="${escapeHtml(connector.id)}">${escapeHtml(connector.deviceName)}</option>`
-    )
-    .join("");
-  const canDecide = prompt.status === "pending";
-  const controls = canDecide
-    ? `<label>Connector <select id="connector">${connectorOptions}</select></label>
-       <button id="approve" type="button">Approve</button>
-       <button id="decline" type="button">Decline</button>
-       <p id="result" role="status"></p>
-       <script>
-         const token = new URLSearchParams(location.search).get("token");
-         const consentSessionId = ${consentSessionId};
-         async function decide(action) {
-           const body = { consent_token: token, action };
-           if (action === "approve") body.connector_id = document.querySelector("#connector").value;
-           const response = await fetch("/v0.1/account-consent-decisions", {
-             method: "POST",
-             headers: { "Content-Type": "application/json", "Origin": location.origin },
-             credentials: "same-origin",
-             body: JSON.stringify(body)
-           });
-           document.querySelector("#result").textContent = response.ok ? "Decision saved." : "Decision could not be saved.";
-           if (response.ok && window.opener) {
-             window.opener.postMessage(
-               {
-                 type: "reentry.consent.complete",
-                 consent_session_id: consentSessionId,
-                 status: action === "approve" ? "approved" : "declined"
-               },
-               window.location.origin
-             );
-           }
-         }
-         document.querySelector("#approve").addEventListener("click", () => decide("approve"));
-         document.querySelector("#decline").addEventListener("click", () => decide("decline"));
-       </script>`
-    : `<p>This consent session is ${escapeHtml(prompt.status)}.</p>`;
-
-  return `<!doctype html>
-<html><head><meta charset="utf-8"><title>${escapeHtml(prompt.session.display.title)}</title></head>
-<body>
-  <main>
-    <h1>${escapeHtml(prompt.session.display.title)}</h1>
-    <p>${escapeHtml(prompt.session.display.reason)}</p>
-    <p>Requested action: ${escapeHtml(prompt.session.grant_scope.human_boundary)}</p>
-    ${controls}
-  </main>
-</body></html>`;
-}
-
 export const consentPageController = asyncHandler(async (req: Request, res: Response) => {
+  res.set("Cross-Origin-Opener-Policy", "unsafe-none");
   const token = typeof req.query.token === "string" ? req.query.token : "";
   try {
     await validateConsentPageToken(token);
@@ -164,7 +98,7 @@ export const consentPageController = asyncHandler(async (req: Request, res: Resp
   const accountId = getSessionAccountId(req, "user");
   if (!accountId) {
     const returnTo = `/consent?token=${encodeURIComponent(token)}`;
-    const loginUrl = new URL("/login", appConfig.frontendUrl);
+    const loginUrl = new URL("/user-login", appConfig.frontendUrl);
     loginUrl.searchParams.set("return_to", returnTo);
     return res.redirect(302, loginUrl.toString());
   }
@@ -172,7 +106,10 @@ export const consentPageController = asyncHandler(async (req: Request, res: Resp
   try {
     const prompt = await getConsentPrompt(token, accountId);
     res.set("Cache-Control", "no-store");
-    return res.status(200).type("html").send(renderConsentPage(prompt));
+    return res
+      .status(200)
+      .type("html")
+      .send(renderConsentPage(prompt, { frontendUrl: appConfig.frontendUrl }));
   } catch (error) {
     if (error instanceof ConsentError) {
       sendConsentError(res, error);

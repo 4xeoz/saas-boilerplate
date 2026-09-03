@@ -30,6 +30,7 @@ type DeliveryFixture = {
   eventId: string;
   grantId: string;
   bindingId: string;
+  instruction: string;
   grantExpiresAt: Date;
   connectorExpiresAt: Date;
   workflowId: string;
@@ -252,23 +253,36 @@ async function createFixture(label: string, withOtherConnector = false): Promise
   const eventType = "claim.requested";
   const correlationId = `claim-correlation-${suffix}-${label}`;
   const canonicalUrl = `https://claim-host-${suffix}.example/workflows/${label}`;
-  const humanBoundary = "stop before final submission";
+  const humanBoundary = "stop_before_final_submission";
+  const instruction = `Continue the ${label} workflow.`;
   const manifest: Prisma.InputJsonObject = {
     type: "webmcp.reentry_manifest",
     protocol_version: "0.1",
     manifest_id: manifestId,
     correlation_id: correlationId,
     issuer_origin: `https://claim-host-${suffix}.example`,
+    issued_at: new Date(now.getTime() - 1_000).toISOString(),
+    offer_expires_at: new Date(now.getTime() + 30 * 60 * 1_000).toISOString(),
     workflow: {
       id: workflowId,
       type: "review",
+      state_version: 1,
       canonical_url: canonicalUrl,
+    },
+    display: {
+      title: "Review continuation",
+      reason: instruction,
     },
     grant_request: {
       event_type: eventType,
       human_boundary: humanBoundary,
       grant_expires_at: grantExpiresAt.toISOString(),
       max_runs: 1,
+    },
+    signature: {
+      algorithm: "Ed25519",
+      key_id: "fixture-key",
+      value: "A".repeat(86),
     },
   };
   const consent = await prisma.consentSession.create({
@@ -368,6 +382,7 @@ async function createFixture(label: string, withOtherConnector = false): Promise
     eventId: event.eventId,
     grantId: grant.id,
     bindingId: binding.id,
+    instruction,
     grantExpiresAt,
     connectorExpiresAt: connector.expiresAt,
     workflowId,
@@ -568,6 +583,7 @@ describe("Cloud Receiver v2 delivery claim and lease red tests", () => {
         state_version: 1,
         occurred_at: fixture.occurredAt.toISOString(),
         canonical_url: fixture.canonicalUrl,
+        instruction: fixture.instruction,
       });
       expect(lease.receipt).toEqual({
         type: "webmcp.continuation_receipt",

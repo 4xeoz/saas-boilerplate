@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../../db";
 import { isUniqueConstraintError } from "../../lib/prisma-errors";
 import { digestSecret } from "../../middleware/organization-auth";
-import { canonicalJson } from "../consent/manifest";
+import { canonicalJson, parseManifest } from "../consent/manifest";
 
 const LEASE_DURATION_MS = 60 * 1_000;
 const CLAIM_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
@@ -73,6 +73,9 @@ const deliverySelect = {
       humanBoundary: true,
       expiresAt: true,
       revokedAt: true,
+      consentSession: {
+        select: { manifestJson: true },
+      },
     },
   },
 } as const;
@@ -229,6 +232,17 @@ function assertDeliveryContext(delivery: DeliveryRecord): void {
   }
 }
 
+function readContinuationInstruction(delivery: DeliveryRecord): string {
+  try {
+    // The signed Manifest was validated before ConsentSession creation. Parse
+    // the stored projection again at claim time so a corrupted private row
+    // fails closed instead of becoming arbitrary Connector authority.
+    return parseManifest(delivery.grant.consentSession.manifestJson).display.reason;
+  } catch {
+    throw new DeliveryError("delivery_private_state_invalid", 500);
+  }
+}
+
 function buildLeaseResult(
   delivery: DeliveryRecord,
   claimToken: string,
@@ -238,6 +252,7 @@ function buildLeaseResult(
 ): Record<string, unknown> {
   assertDeliveryContext(delivery);
   const event = readCanonicalEvent(delivery);
+  const instruction = readContinuationInstruction(delivery);
   const leaseExpiresAt = delivery.leaseExpiresAt;
   if (!leaseExpiresAt || leaseExpiresAt <= now) {
     throw new DeliveryError("delivery_private_state_invalid", 500);
@@ -283,6 +298,7 @@ function buildLeaseResult(
         state_version: event.state_version,
         occurred_at: event.occurred_at,
         canonical_url: event.canonical_url,
+        instruction,
       },
       receipt,
     },
