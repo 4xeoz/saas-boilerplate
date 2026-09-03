@@ -298,16 +298,16 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
         decidedAt: new Date().toISOString(),
       });
     },
-    issueEvent({ binding, ordinal, signer = "consented", discriminator = "" }) {
+    issueEvent({ binding, ordinal, signer = "consented", discriminator = "", eventId, stateVersion = ordinal }) {
       assert.ok(Object.hasOwn(hosts, signer), "fixture_signer_unknown");
       const occurredAt = new Date();
       return hosts[signer].issueEvent({
         binding,
-        eventId: `event_standing_${suffix}_${signer}_${ordinal}${discriminator ? `_${discriminator}` : ""}`,
+        eventId: eventId ?? `event_standing_${suffix}_${signer}_${ordinal}${discriminator ? `_${discriminator}` : ""}`,
         eventSequence: ordinal,
         occurredAt: occurredAt.toISOString(),
         deliveryTimestamp: String(Math.floor(occurredAt.getTime() / 1_000)),
-        workflow: { id: ids.workflow, stateVersion: ordinal, canonicalUrl },
+        workflow: { id: ids.workflow, stateVersion, canonicalUrl },
       });
     },
     setConsentedKeyMaterialForTest,
@@ -400,6 +400,10 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
     duplicate_event_converged: true,
     accepted_responses: 1,
     duplicate_responses: 1,
+  });
+  assert.deepEqual(result.identity_conflict, {
+    rejected: true,
+    no_mutation: true,
   });
   assert.equal(currentKeyMaterial, "consented", "fixture_key_material_not_restored");
 });
