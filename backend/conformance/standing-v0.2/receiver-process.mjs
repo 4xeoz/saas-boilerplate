@@ -13,6 +13,7 @@ const { serveProfileProcess } = await import(
 
 let runtime;
 const effects = new Map();
+let crashAfterDeliveryWrite = false;
 
 serveProfileProcess({
   start(input) {
@@ -30,9 +31,10 @@ serveProfileProcess({
 
     const require = createRequire(import.meta.url);
     require("ts-node/register/transpile-only");
+    const { prisma } = require(join(input.backendRoot, "src/db/index.ts"));
+    installTransactionFault(prisma);
     const { createApp } = require(join(input.backendRoot, "src/app.ts"));
     const { appConfig } = require(join(input.backendRoot, "src/config/config.ts"));
-    const { prisma } = require(join(input.backendRoot, "src/db/index.ts"));
     const app = createApp();
     app.locals.standingEffectAuthority = {
       verifyEffect({ effectToken, expected }) {
@@ -58,6 +60,7 @@ serveProfileProcess({
       server.listen(0, "127.0.0.1", () => {
         appConfig.receiverPublicUrl = `http://127.0.0.1:${server.address().port}`;
         effects.clear();
+        crashAfterDeliveryWrite = false;
         runtime = { app, prisma, server };
         resolve({
           pid: process.pid,
@@ -72,6 +75,12 @@ serveProfileProcess({
     requireRuntime();
     effects.set(effectToken, effect);
     return { authorized: true };
+  },
+
+  armCrashAfterDeliveryWrite() {
+    requireRuntime();
+    crashAfterDeliveryWrite = true;
+    return { armed: true };
   },
 
   crash() {
@@ -111,6 +120,53 @@ function requireStartInput(value) {
       throw profileError("standing_receiver_process_start_invalid");
     }
   }
+}
+
+function installTransactionFault(prisma) {
+  const transaction = prisma.$transaction.bind(prisma);
+  prisma.$transaction = (callbackOrOperations, ...options) => {
+    if (typeof callbackOrOperations !== "function") {
+      return transaction(callbackOrOperations, ...options);
+    }
+    return transaction(
+      (client) => callbackOrOperations(wrapTransactionClient(client)),
+      ...options,
+    );
+  };
+}
+
+function wrapTransactionClient(client) {
+  let delivery;
+  return new Proxy(client, {
+    get(target, property) {
+      if (property === "standingDelivery") {
+        delivery ??= wrapDeliveryDelegate(Reflect.get(target, property, target));
+        return delivery;
+      }
+      const value = Reflect.get(target, property, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+}
+
+function wrapDeliveryDelegate(delegate) {
+  return new Proxy(delegate, {
+    get(target, property) {
+      const value = Reflect.get(target, property, target);
+      if (property !== "create") {
+        return typeof value === "function" ? value.bind(target) : value;
+      }
+      return async (...args) => {
+        const result = await value.apply(target, args);
+        if (crashAfterDeliveryWrite) {
+          crashAfterDeliveryWrite = false;
+          process.kill(process.pid, "SIGKILL");
+          throw profileError("standing_receiver_process_crash_not_terminated");
+        }
+        return result;
+      };
+    },
+  });
 }
 
 function profileError(code) {

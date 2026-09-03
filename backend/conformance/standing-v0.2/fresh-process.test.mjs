@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { verifyConformanceSource } from "./source-pin.mjs";
 
-test("active Receiver recovers a committed standing Delivery in a fresh process", {
+test("active Receiver rolls back a killed transaction and recovers a committed Delivery", {
   timeout: 30_000,
 }, async (t) => {
   const receiverRoot = await realpath(fileURLToPath(new URL("../../../", import.meta.url)));
@@ -188,6 +188,26 @@ test("active Receiver recovers a committed standing Delivery in a fresh process"
     },
   });
   const envelope = { body: issuedEvent.body, headers: issuedEvent.headers };
+  assert.deepEqual(await child.request("armCrashAfterDeliveryWrite"), { armed: true });
+  await assert.rejects(sendEvent(receiverOrigin, envelope));
+  assert.deepEqual(await child.terminate(), { code: null, signal: "SIGKILL" });
+  children.delete(child);
+  child = undefined;
+
+  const afterTransactionCrash = await readState(
+    prisma,
+    approval.binding.binding_id,
+    issuedEvent.event.event_id,
+  );
+  assert.equal(afterTransactionCrash.grant.lastEventSequence, 0n);
+  assert.equal(afterTransactionCrash.delivery, null);
+
+  child = processRpc.spawnProfileProcess(fixtureUrl, { timeoutMs: 10_000 });
+  children.add(child);
+  const secondStart = await child.request("start", { databaseUrl, backendRoot });
+  assert.notEqual(secondStart.pid, firstStart.pid);
+  receiverOrigin = `http://127.0.0.1:${secondStart.port}`;
+
   const accepted = await sendEvent(receiverOrigin, envelope);
   assert.equal(accepted.statusCode, 202);
   assert.equal(accepted.body.accepted, true);
@@ -205,12 +225,11 @@ test("active Receiver recovers a committed standing Delivery in a fresh process"
 
   const claimToken = randomBytes(32).toString("base64url");
   const effectToken = randomBytes(32).toString("base64url");
-  const secondChild = processRpc.spawnProfileProcess(fixtureUrl, { timeoutMs: 10_000 });
-  child = secondChild;
-  children.add(secondChild);
-  const secondStart = await child.request("start", { databaseUrl, backendRoot });
-  assert.notEqual(secondStart.pid, firstStart.pid);
-  receiverOrigin = `http://127.0.0.1:${secondStart.port}`;
+  child = processRpc.spawnProfileProcess(fixtureUrl, { timeoutMs: 10_000 });
+  children.add(child);
+  const thirdStart = await child.request("start", { databaseUrl, backendRoot });
+  assert.notEqual(thirdStart.pid, secondStart.pid);
+  receiverOrigin = `http://127.0.0.1:${thirdStart.port}`;
 
   const afterRestart = await readState(prisma, approval.binding.binding_id, issuedEvent.event.event_id);
   assert.equal(afterRestart.grant.lastEventSequence, 1n);
@@ -301,7 +320,6 @@ async function readState(prisma, bindingId, eventId) {
     }),
   ]);
   assert.ok(grant, "fresh_process_grant_missing");
-  assert.ok(delivery, "fresh_process_delivery_missing");
   return { grant, delivery };
 }
 
