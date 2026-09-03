@@ -200,6 +200,7 @@ test("active Receiver rolls back a killed transaction and recovers a committed D
     issuedEvent.event.event_id,
   );
   assert.equal(afterTransactionCrash.grant.lastEventSequence, 0n);
+  assert.equal(afterTransactionCrash.event, null);
   assert.equal(afterTransactionCrash.delivery, null);
 
   child = processRpc.spawnProfileProcess(fixtureUrl, { timeoutMs: 10_000 });
@@ -215,6 +216,7 @@ test("active Receiver rolls back a killed transaction and recovers a committed D
 
   const beforeCrash = await readState(prisma, approval.binding.binding_id, issuedEvent.event.event_id);
   assert.equal(beforeCrash.grant.lastEventSequence, 1n);
+  assert.ok(beforeCrash.event);
   assert.equal(beforeCrash.delivery.status, "pending");
   assert.equal(beforeCrash.delivery.currentAttempt, 0);
 
@@ -233,6 +235,7 @@ test("active Receiver rolls back a killed transaction and recovers a committed D
 
   const afterRestart = await readState(prisma, approval.binding.binding_id, issuedEvent.event.event_id);
   assert.equal(afterRestart.grant.lastEventSequence, 1n);
+  assert.ok(afterRestart.event);
   assert.equal(afterRestart.delivery.status, "pending");
   assert.equal(afterRestart.delivery.currentAttempt, 0);
 
@@ -305,10 +308,14 @@ async function sendEvent(receiverOrigin, envelope) {
 }
 
 async function readState(prisma, bindingId, eventId) {
-  const [grant, delivery] = await Promise.all([
+  const [grant, event, delivery] = await Promise.all([
     prisma.standingGrant.findUnique({
       where: { bindingId },
       select: { lastEventSequence: true },
+    }),
+    prisma.standingEvent.findUnique({
+      where: { eventId },
+      select: { eventId: true },
     }),
     prisma.standingDelivery.findUnique({
       where: { eventId },
@@ -320,7 +327,7 @@ async function readState(prisma, bindingId, eventId) {
     }),
   ]);
   assert.ok(grant, "fresh_process_grant_missing");
-  return { grant, delivery };
+  return { grant, event, delivery };
 }
 
 function requireDisposableDatabase() {
