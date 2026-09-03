@@ -623,7 +623,9 @@ Evidence for this increment:
 - existing pinned active Receiver standing trace: `1/1` passed;
 - pinned Core commit: `1446d73aa3e66533547471728ad8fa5344d51f9e`;
 - selected Core/spec SHA-256: `6210d7724417e0533c77d5989e8ffdd3c404af4063ac9d70d70db9b622f73d45`;
-- Receiver commit: `2429281b7b9f0db56aa8cf8250de18a450ea477f`; and
+- Receiver commits: `2429281b7b9f0db56aa8cf8250de18a450ea477f` (fixture),
+  `78e7e561d2779c7779d023b4c6a1461b150f95cf` (state assertion), and
+  `eb2837849dfb7c974a9e2508da2bf0ecbb68eeec` (record); and
 - runtime: Node `v26.5.0`, `release_conformance_verified: false`.
 
 The write-after-create kill is a test-only wrapper around Prisma's transaction
