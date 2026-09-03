@@ -9,6 +9,7 @@ import {
   healthRouter,
   operationalHealthRouter,
 } from "../modules/system-health/health.routes";
+import { standingRouter } from "../modules/standing/standing.routes";
 
 /**
  * Version 1 of the API. Everything a client calls lives under /v1.
@@ -33,6 +34,15 @@ v01Router.use(eventRouter);
 v01Router.use((_req: Request, res: Response) => {
   res.status(404).json({ error: { code: "http_route_not_found" } });
 });
+
+/**
+ * Standing authorization protocol v0.2 kernel routes. Receiver-shell Consent,
+ * account inspection, and revocation remain intentionally outside this router
+ * until their same-user/session/CSRF contract is separately accepted.
+ */
+export const v02Router = Router();
+
+v02Router.use(standingRouter);
 
 /**
  * Unversioned infrastructure routes.

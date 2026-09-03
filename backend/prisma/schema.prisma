@@ -17,6 +17,8 @@ model UserAccount {
   connectors      Connector[]
   consentSessions ConsentSession[] @relation("ConsentAccount")
   grants          Grant[]          @relation("GrantAccount")
+  standingConsentSessions StandingConsentSession[] @relation("StandingConsentAccount")
+  standingGrants          StandingGrant[]          @relation("StandingGrantAccount")
 
   @@map("cr2_user_accounts")
 }
@@ -65,6 +67,9 @@ model Connector {
   hostSubjectBindings HostSubjectBinding[]
   grants              Grant[]
   deliveryAttempts    DeliveryAttempt[]
+  standingGrants           StandingGrant[]
+  standingDeliveries       StandingDelivery[] @relation("StandingDeliveryConnector")
+  standingDeliveryAttempts StandingDeliveryAttempt[]
 
   @@index([accountId])
   @@map("cr2_connectors")
@@ -83,6 +88,8 @@ model Organization {
   consentSessions ConsentSession[]
   bindings        HostSubjectBinding[]
   grants          Grant[]
+  standingConsentSessions StandingConsentSession[]
+  standingGrants          StandingGrant[]
 
   @@index([developerId])
   @@map("cr2_organizations")
@@ -156,6 +163,7 @@ model HostSubjectBinding {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   connector    Connector    @relation(fields: [connectorId], references: [id], onDelete: Cascade)
   grants       Grant[]
+  standingGrants StandingGrant[]
 
   @@unique([organizationId, hostSubjectRefDigest])
   @@index([connectorId])
@@ -265,4 +273,142 @@ model DeliveryAttempt {
   @@index([deliveryId])
   @@index([connectorId])
   @@map("cr2_delivery_attempts")
+}
+
+// Standing v0.2 authority is additive. The frozen v0.1 models above retain
+// their one-Event and one-Delivery-per-Grant constraints.
+model StandingConsentSession {
+  id                      String    @id @default(cuid()) @map("consent_session_id")
+  challengeId             String    @unique @map("challenge_id")
+  tokenDigest             String    @unique @map("consent_token_digest")
+  organizationId          String    @map("organization_id")
+  hostSubjectRefDigest    String    @map("host_subject_ref_digest")
+  expectedOrigin          String    @map("expected_origin")
+  manifestId              String    @map("manifest_id")
+  manifestJson            Json      @map("manifest_json")
+  expiresAt               DateTime  @map("expires_at")
+  effectiveGrantExpiresAt DateTime  @map("effective_grant_expires_at")
+  status                  String    @default("pending")
+  decisionId              String?   @unique @map("decision_id")
+  decisionAction          String?   @map("decision_action")
+  decisionAt              DateTime? @map("decision_at")
+  accountId               String?   @map("account_id")
+  createdAt               DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  account UserAccount? @relation("StandingConsentAccount", fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  grant StandingGrant?
+
+  @@unique([organizationId, manifestId], map: "cr2_standing_consent_org_manifest_key")
+  @@index([organizationId, hostSubjectRefDigest], map: "cr2_standing_consent_org_subject_idx")
+  @@index([accountId, status], map: "cr2_standing_consent_account_status_idx")
+  @@map("cr2_standing_consent_sessions")
+}
+
+model StandingGrant {
+  id                   String    @id @default(cuid()) @map("grant_id")
+  consentSessionId     String    @unique @map("consent_session_id")
+  bindingId            String    @unique @map("binding_id")
+  hostSubjectBindingId String    @map("host_subject_binding_id")
+  organizationId       String    @map("organization_id")
+  accountId            String    @map("account_id")
+  connectorId          String    @map("connector_id")
+  deliveryTargetId     String    @map("delivery_target_id")
+  correlationId        String    @map("correlation_id")
+  issuerOrigin         String    @map("issuer_origin")
+  issuerKeyId          String    @map("issuer_key_id")
+  issuerKeyFingerprint String    @map("issuer_key_fingerprint")
+  workflowId           String    @map("workflow_id")
+  workflowType         String    @map("workflow_type")
+  canonicalUrl         String    @map("canonical_url")
+  eventType            String    @map("event_type")
+  instruction          String
+  humanBoundary        String    @map("human_boundary")
+  continuationMode     String    @default("open_canonical_page_read_current_state") @map("continuation_mode")
+  authorizationMode    String    @default("standing") @map("authorization_mode")
+  maxActiveActivations Int       @default(1) @map("max_active_activations")
+  lastEventSequence    BigInt    @default(0) @map("last_event_sequence")
+  expiresAt            DateTime  @map("expires_at")
+  revokedAt            DateTime? @map("revoked_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  consentSession StandingConsentSession @relation(fields: [consentSessionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  hostSubjectBinding HostSubjectBinding @relation(fields: [hostSubjectBindingId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  account UserAccount @relation("StandingGrantAccount", fields: [accountId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  connector Connector @relation(fields: [connectorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  events StandingEvent[]
+  deliveries StandingDelivery[]
+
+  @@index([accountId, createdAt])
+  @@index([organizationId, hostSubjectBindingId], map: "cr2_standing_grants_org_subject_binding_idx")
+  @@index([connectorId])
+  @@map("cr2_standing_grants")
+}
+
+model StandingEvent {
+  eventId        String   @id @map("event_id")
+  grantId        String   @map("grant_id")
+  eventSequence  BigInt   @map("event_sequence")
+  canonicalBody  String   @map("canonical_body")
+  acceptanceJson String   @map("acceptance_json")
+  receivedAt     DateTime @default(now()) @map("received_at")
+
+  grant StandingGrant @relation(fields: [grantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  delivery StandingDelivery?
+
+  @@unique([grantId, eventSequence])
+  @@unique([eventId, grantId])
+  @@map("cr2_standing_events")
+}
+
+model StandingDelivery {
+  deliveryId              String    @id @default(cuid()) @map("delivery_id")
+  eventId                 String    @unique @map("event_id")
+  grantId                 String    @map("grant_id")
+  deliveryTargetId        String    @map("delivery_target_id")
+  status                  String    @default("pending")
+  maximumAttempts         Int       @default(3) @map("maximum_attempts")
+  currentAttempt          Int       @default(0) @map("current_attempt")
+  currentConnectorId      String?   @map("current_connector_id")
+  currentClaimTokenDigest String?   @map("current_claim_token_digest")
+  currentLeaseTokenDigest String?   @map("current_lease_token_digest")
+  leaseStartedAt          DateTime? @map("lease_started_at")
+  leaseExpiresAt          DateTime? @map("lease_expires_at")
+  effectId                String?   @unique @map("effect_id")
+  effectAttestationJson   String?   @map("effect_attestation_json")
+  acknowledgedAt          DateTime? @map("acknowledged_at")
+  terminalReason          String?   @map("terminal_reason")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  event StandingEvent @relation(fields: [eventId, grantId], references: [eventId, grantId], onDelete: Restrict, onUpdate: Restrict)
+  grant StandingGrant @relation(fields: [grantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  currentConnector Connector? @relation("StandingDeliveryConnector", fields: [currentConnectorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  attempts StandingDeliveryAttempt[]
+
+  @@unique([eventId, grantId])
+  @@index([deliveryTargetId, status, createdAt, deliveryId], map: "cr2_standing_deliveries_target_queue_idx")
+  @@index([status, leaseExpiresAt])
+  // The one-open-activation partial unique index is hand-reviewed migration SQL.
+  @@map("cr2_standing_deliveries")
+}
+
+model StandingDeliveryAttempt {
+  attemptId        String   @id @default(cuid()) @map("attempt_id")
+  deliveryId       String   @map("delivery_id")
+  connectorId      String   @map("connector_id")
+  attempt          Int
+  claimTokenDigest String   @unique @map("claim_token_digest")
+  leaseTokenDigest String   @unique @map("lease_token_digest")
+  leaseStartedAt   DateTime @map("lease_started_at")
+  leaseExpiresAt   DateTime @map("lease_expires_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  delivery StandingDelivery @relation(fields: [deliveryId], references: [deliveryId], onDelete: Restrict, onUpdate: Restrict)
+  connector Connector @relation(fields: [connectorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([deliveryId, attempt])
+  @@index([connectorId])
+  @@map("cr2_standing_delivery_attempts")
 }
