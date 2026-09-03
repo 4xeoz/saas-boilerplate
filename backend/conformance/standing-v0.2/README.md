@@ -13,6 +13,9 @@ This section supersedes the earlier source-status snapshots below. The user
 authorized review, bounded corrections, disposable migration verification, and
 local Git closure on the existing `Re-Entry` branch, without push or deployment.
 
+The later [post-writeback exact-pin refresh](#post-writeback-exact-pin-refresh-2026-09-03)
+records the current Core pin and rerun after parent documentation commits.
+
 Receiver implementation commit:
 `9156e68fe9b988f2ec7423d1c93930da3a105d4e` (28 exact owned paths).
 The subsequent evidence-only update changes no executable, schema, migration,
@@ -71,6 +74,46 @@ Game, or production deployment change was required by review. An internal
 inspection can read Grant and active-Delivery state across different instants;
 its public snapshot contract remains an explicit control-plane design/test item
 in [the proposal](../../src/modules/standing/CONTROL-PLANE-PROPOSAL.md).
+
+### Post-writeback exact-pin refresh: 2026-09-03
+
+Parent documentation commits after the original pin changed three files inside
+the selected Core/spec inventory. The first pinned Receiver run therefore
+stopped before database access with the expected
+`conformance_source_commit_mismatch`. After reviewing those bytes, the fixed
+pin was advanced to Core commit `84f5082c5701c7a2bb4d233b511134898434a249`.
+
+The refreshed pinned checks passed as follows:
+
+| Check | Result | Claim limit |
+| --- | --- | --- |
+| Source-pin fixture suite | 16/16 passed | Fixed Core source identity and drift fencing |
+| Upgrade guard/record suite | 5/5 passed | Exact endpoint, source/lock inputs, and migration-record failures |
+| Pinned real Express/PostgreSQL standing trace | 1/1 passed | Core source identity plus the minimum shared two-signal trace |
+| Full backend aggregate | 21 suites / 158 tests passed, no skips | Local Receiver regression and standing profile; not full release conformance |
+
+The trace ran on Node `v26.5.0` against the task-owned loopback baseline and
+reported:
+
+```json
+{
+  "mode": "pinned",
+  "profile": "standing-authorization-v0.2",
+  "core_commit": "84f5082c5701c7a2bb4d233b511134898434a249",
+  "core_source_sha256": "6c7688a074c3d99bca6cba1945b79200db4b8f4b0455edef55f2f3659095cb65",
+  "source_identity_verified": true,
+  "release_conformance_verified": false,
+  "receiver_commit": "7faf527aca7710a26ee03c2c4beec0e2c7edf8c0",
+  "node": "v26.5.0"
+}
+```
+
+Receiver commit `7faf527` contains the browser logout protection increment;
+the subsequent pin-only commit is `1368741`. The logout change does not alter
+the standing protocol, schema, migration, or conformance implementation. The
+full aggregate and pinned trace are local evidence only; public controls,
+fresh-process recovery, release enforcement, production effect authority,
+deployment, and hosted readback remain open.
 
 ### Rehearsal command and limits
 
