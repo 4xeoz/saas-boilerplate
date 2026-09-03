@@ -113,6 +113,50 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
   let approvalCalls = 0;
   let activationCalls = 0;
   let effectAuthorityCalls = 0;
+  let eventCommitFailure;
+
+  async function armEventCommitFailureForBinding(bindingId) {
+    assert.equal(typeof bindingId, "string", "fixture_rollback_binding_invalid");
+    await clearEventCommitFailure();
+    const grant = await prisma.standingGrant.findUnique({
+      where: { bindingId },
+      select: { id: true },
+    });
+    assert.ok(grant, "fixture_rollback_grant_missing");
+    const suffixPart = randomUUID().replaceAll("-", "");
+    const functionName = `standing_conformance_fail_${suffixPart}`;
+    const triggerName = `standing_conformance_fail_trigger_${suffixPart}`;
+    const quotedFunction = quoteSqlIdentifier(functionName);
+    const quotedTrigger = quoteSqlIdentifier(triggerName);
+    const quotedGrant = quoteSqlLiteral(grant.id);
+    await prisma.$executeRawUnsafe(`
+      CREATE FUNCTION ${quotedFunction}() RETURNS trigger
+      LANGUAGE plpgsql AS $standing_failure$
+      BEGIN
+        IF NEW."grant_id" = ${quotedGrant} THEN
+          RAISE EXCEPTION 'Injected standing Delivery write failure';
+        END IF;
+        RETURN NEW;
+      END;
+      $standing_failure$;
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TRIGGER ${quotedTrigger}
+      BEFORE INSERT ON "cr2_standing_deliveries"
+      FOR EACH ROW EXECUTE FUNCTION ${quotedFunction}();
+    `);
+    eventCommitFailure = { functionName, triggerName };
+  }
+
+  async function clearEventCommitFailure() {
+    const armed = eventCommitFailure;
+    if (!armed) return;
+    eventCommitFailure = undefined;
+    await prisma.$executeRawUnsafe(
+      `DROP TRIGGER IF EXISTS ${quoteSqlIdentifier(armed.triggerName)} ON "cr2_standing_deliveries";`,
+    );
+    await prisma.$executeRawUnsafe(`DROP FUNCTION IF EXISTS ${quoteSqlIdentifier(armed.functionName)}();`);
+  }
 
   async function setConsentedKeyMaterialForTest({ material }) {
     assert.ok(["replacement", "consented"].includes(material), "fixture_key_material_invalid");
@@ -143,6 +187,7 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
 
   t.after(async () => {
     try {
+      await clearEventCommitFailure();
       if (currentKeyMaterial === "replacement") {
         await setConsentedKeyMaterialForTest({ material: "consented" });
       }
@@ -298,6 +343,9 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
         decidedAt: new Date().toISOString(),
       });
     },
+    async armEventCommitFailure({ bindingId }) {
+      await armEventCommitFailureForBinding(bindingId);
+    },
     issueEvent({ binding, ordinal, signer = "consented", discriminator = "", eventId, stateVersion = ordinal }) {
       assert.ok(Object.hasOwn(hosts, signer), "fixture_signer_unknown");
       const occurredAt = new Date();
@@ -319,6 +367,9 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
         redirect: "manual",
         signal: AbortSignal.timeout(2_000),
       });
+      if (eventCommitFailure && response.status === 500) {
+        await clearEventCommitFailure();
+      }
       let body;
       try {
         body = await response.json();
@@ -394,6 +445,10 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
     retryable: false,
     no_mutation: true,
   });
+  assert.deepEqual(result.rollback, {
+    rejected: true,
+    no_mutation: true,
+  });
   assert.deepEqual(result.concurrency, {
     distinct_sequence_conflict: true,
     conflict_responses: 1,
@@ -407,6 +462,14 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
   });
   assert.equal(currentKeyMaterial, "consented", "fixture_key_material_not_restored");
 });
+
+function quoteSqlIdentifier(value) {
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
+function quoteSqlLiteral(value) {
+  return `'${value.replaceAll("'", "''")}'`;
+}
 
 function requireDisposableDatabase() {
   assert.equal(process.env.NODE_ENV, "test", "standing_conformance_requires_node_env_test");
