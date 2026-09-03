@@ -2,13 +2,38 @@
 
 import { useEffect, useRef } from "react";
 
+const MESH_COLUMNS = 64;
+const MESH_ROWS = 48;
+
 const vertexShaderSource = `
   attribute vec2 a_position;
+  uniform vec2 u_resolution;
+  uniform vec2 u_pointer;
+  uniform float u_time;
   varying vec2 v_uv;
 
   void main() {
     v_uv = a_position * 0.5 + 0.5;
-    gl_Position = vec4(a_position, 0.0, 1.0);
+
+    vec2 pointer = u_pointer / u_resolution * 2.0 - 1.0;
+    float aspect = u_resolution.x / max(u_resolution.y, 1.0);
+    vec2 distanceVector = a_position - pointer;
+    distanceVector.x *= aspect;
+    float distanceToPointer = length(distanceVector);
+    vec2 direction = distanceVector / max(distanceToPointer, 0.0001);
+    direction.x /= aspect;
+    float influence = exp(-distanceToPointer * 2.6);
+    float ripple = sin(distanceToPointer * 28.0 - u_time * 3.5) * 0.032 * influence;
+
+    vec2 meshPosition = a_position;
+    meshPosition += direction * ripple;
+    meshPosition -= direction * influence * 0.018;
+    meshPosition += vec2(-direction.y, direction.x)
+      * cos(distanceToPointer * 18.0 - u_time * 2.0)
+      * 0.014
+      * influence;
+
+    gl_Position = vec4(meshPosition, 0.0, 1.0);
   }
 `;
 
@@ -36,7 +61,7 @@ const fragmentShaderSource = `
   }
 
   void main() {
-    vec2 pixel = gl_FragCoord.xy;
+    vec2 pixel = v_uv * u_resolution;
     float scale = min(u_resolution.x, u_resolution.y);
     vec2 uv = (pixel - 0.5 * u_resolution) / scale;
     vec2 pointer = (u_pointer - 0.5 * u_resolution) / scale;
@@ -131,6 +156,43 @@ function createProgram(gl: WebGLRenderingContext): WebGLProgram {
   return program;
 }
 
+function createMesh(columns: number, rows: number) {
+  const vertices = new Float32Array((columns + 1) * (rows + 1) * 2);
+  const indices = new Uint16Array(columns * rows * 6);
+
+  let vertexOffset = 0;
+  for (let row = 0; row <= rows; row += 1) {
+    const y = row / rows * 2 - 1;
+    for (let column = 0; column <= columns; column += 1) {
+      const x = column / columns * 2 - 1;
+      vertices[vertexOffset] = x;
+      vertices[vertexOffset + 1] = y;
+      vertexOffset += 2;
+    }
+  }
+
+  let indexOffset = 0;
+  const rowWidth = columns + 1;
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const topLeft = row * rowWidth + column;
+      const topRight = topLeft + 1;
+      const bottomLeft = topLeft + rowWidth;
+      const bottomRight = bottomLeft + 1;
+
+      indices[indexOffset] = topLeft;
+      indices[indexOffset + 1] = bottomLeft;
+      indices[indexOffset + 2] = topRight;
+      indices[indexOffset + 3] = topRight;
+      indices[indexOffset + 4] = bottomLeft;
+      indices[indexOffset + 5] = bottomRight;
+      indexOffset += 6;
+    }
+  }
+
+  return { vertices, indices };
+}
+
 export default function WebGLHero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -160,14 +222,17 @@ export default function WebGLHero() {
     const resolutionLocation = gl.getUniformLocation(program, "u_resolution");
     const pointerLocation = gl.getUniformLocation(program, "u_pointer");
     const timeLocation = gl.getUniformLocation(program, "u_time");
-    const buffer = gl.createBuffer();
+    const vertexBuffer = gl.createBuffer();
+    const indexBuffer = gl.createBuffer();
+    const mesh = createMesh(MESH_COLUMNS, MESH_ROWS);
 
     if (
       positionLocation < 0 ||
       !resolutionLocation ||
       !pointerLocation ||
       !timeLocation ||
-      !buffer
+      !vertexBuffer ||
+      !indexBuffer
     ) {
       gl.deleteProgram(program);
       return;
@@ -176,15 +241,14 @@ export default function WebGLHero() {
     const surface: HTMLCanvasElement = canvas;
     const context: WebGLRenderingContext = gl;
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
-      gl.STATIC_DRAW,
-    );
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
     gl.useProgram(program);
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    context.clearColor(0, 0, 0, 0);
 
     let width = 1;
     let height = 1;
@@ -256,7 +320,8 @@ export default function WebGLHero() {
       context.uniform2f(resolutionLocation, width, height);
       context.uniform2f(pointerLocation, pointerX * width, pointerY * height);
       context.uniform1f(timeLocation, prefersReducedMotion ? 0 : now * 0.001);
-      context.drawArrays(context.TRIANGLE_STRIP, 0, 4);
+      context.clear(context.COLOR_BUFFER_BIT);
+      context.drawElements(context.TRIANGLES, mesh.indices.length, context.UNSIGNED_SHORT, 0);
 
       const pointerIsSettled =
         Math.abs(targetPointerX - pointerX) < 0.001 && Math.abs(targetPointerY - pointerY) < 0.001;
@@ -285,7 +350,8 @@ export default function WebGLHero() {
       window.removeEventListener("pointermove", updatePointer);
       window.removeEventListener("blur", resetPointer);
       reducedMotionQuery.removeEventListener("change", updateMotionPreference);
-      context.deleteBuffer(buffer);
+      context.deleteBuffer(vertexBuffer);
+      context.deleteBuffer(indexBuffer);
       context.deleteProgram(program);
     };
   }, []);
