@@ -389,6 +389,11 @@ test("active Receiver runs the shared standing v0.2 scenario over Express and Po
   assert.equal(approvalCalls, result.consent_decisions, "fixture_consent_call_count");
   assert.equal(activationCalls, result.deliveries.length, "fixture_activation_call_count");
   assert.equal(effectAuthorityCalls, result.deliveries.length, "fixture_effect_call_count");
+  assert.deepEqual(result.ordering, {
+    out_of_order_rejected: true,
+    retryable: false,
+    no_mutation: true,
+  });
   assert.equal(currentKeyMaterial, "consented", "fixture_key_material_not_restored");
 });
 
