@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authRateLimiter } from "../../middleware/rateLimiter";
+import { requireSameOriginJson } from "../../middleware/same-origin";
 import { validateBody } from "../../middleware/validate";
 import { requireSession } from "../authentication/session";
 import { userCredentialsSchema } from "../authentication/schemas";
@@ -10,4 +11,4 @@ export const userAuthRouter = Router();
 userAuthRouter.post("/register", authRateLimiter, validateBody(userCredentialsSchema), registerUser);
 userAuthRouter.post("/login", authRateLimiter, validateBody(userCredentialsSchema), loginUser);
 userAuthRouter.get("/me", requireSession("user"), getCurrentUser);
-userAuthRouter.post("/logout", logoutUser);
+userAuthRouter.post("/logout", requireSameOriginJson, logoutUser);

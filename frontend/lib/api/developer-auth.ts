@@ -27,5 +27,8 @@ export function fetchCurrentDeveloper(): Promise<ApiSuccess<Developer>> {
 }
 
 export function logoutDeveloper(): Promise<ApiSuccess<null>> {
-  return apiFetch<null>(`${DEVELOPER_AUTH_PATH}/logout`, { method: "POST" });
+  return apiFetch<null>(`${DEVELOPER_AUTH_PATH}/logout`, {
+    method: "POST",
+    body: "{}",
+  });
 }

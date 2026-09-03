@@ -18,6 +18,9 @@ modules. This module does not own a combined account table or role system.
 - Each JWT contains the account id as `sub` and its account type as `kind`.
 - Cookies are httpOnly; localhost uses `sameSite: "lax"`, while the split-origin
   hosted flow uses `sameSite: "none"` and `Secure` in production.
+- Both logout routes are state-changing browser actions: they require the configured frontend
+  `Origin` and an `application/json` request body before clearing only their own cookie. They remain
+  idempotent when the matching session is already absent.
 - There is no Google OAuth, bearer-token fallback, refresh-token table, or
   role middleware.
 

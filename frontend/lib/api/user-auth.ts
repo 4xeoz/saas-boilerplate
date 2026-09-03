@@ -24,5 +24,8 @@ export function fetchCurrentUser(): Promise<ApiSuccess<User>> {
 }
 
 export function logoutUser(): Promise<ApiSuccess<null>> {
-  return apiFetch<null>(`${USER_AUTH_PATH}/logout`, { method: "POST" });
+  return apiFetch<null>(`${USER_AUTH_PATH}/logout`, {
+    method: "POST",
+    body: "{}",
+  });
 }

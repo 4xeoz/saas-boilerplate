@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authRateLimiter } from "../../middleware/rateLimiter";
+import { requireSameOriginJson } from "../../middleware/same-origin";
 import { validateBody } from "../../middleware/validate";
 import { requireSession } from "../authentication/session";
 import { developerCredentialsSchema } from "../authentication/schemas";
@@ -25,4 +26,4 @@ developerAuthRouter.post(
   loginDeveloper
 );
 developerAuthRouter.get("/me", requireSession("developer"), getCurrentDeveloper);
-developerAuthRouter.post("/logout", logoutDeveloper);
+developerAuthRouter.post("/logout", requireSameOriginJson, logoutDeveloper);
