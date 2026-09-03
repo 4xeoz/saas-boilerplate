@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/Button";
 
 type PairingState = "pending" | "used" | "expired";
+const CONNECTOR_REFRESH_INTERVAL_MS = 5_000;
 
 function formatExpiry(value: string): string {
   const expiry = new Date(value);
@@ -33,8 +34,8 @@ function formatDate(value: string): string {
   });
 }
 
-function connectorStatus(connector: ConnectorSummary): "Paired" | "Expired" | "Revoked" {
-  if (connector.revoked_at) return "Revoked";
+function connectorStatus(connector: ConnectorSummary): "Paired" | "Expired" | "Disconnected" {
+  if (connector.revoked_at) return "Disconnected";
   if (Date.parse(connector.expires_at) <= Date.now()) return "Expired";
   return "Paired";
 }
@@ -45,7 +46,7 @@ function pairingBadgeClass(state: PairingState): string {
   return "border-[#f1cf70]/30 bg-[#f1cf70]/10 text-[#f1cf70]";
 }
 
-function connectorBadgeClass(status: "Paired" | "Expired" | "Revoked"): string {
+function connectorBadgeClass(status: "Paired" | "Expired" | "Disconnected"): string {
   if (status === "Paired") return "border-[#a6d193] bg-[#e2f6d5] text-[#286323]";
   if (status === "Expired") return "border-[#e8cf8c] bg-[#fff5d9] text-[#8a5d00]";
   return "border-[#e7aaa2] bg-[#fff1ef] text-[#9b3029]";
@@ -60,12 +61,16 @@ export default function PairThisMac() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pairingError, setPairingError] = useState<string | null>(null);
   const [connectorError, setConnectorError] = useState<string | null>(null);
+  const currentPairedConnector = pairedConnector
+    ? connectors.find((connector) => connector.connector_id === pairedConnector.connector_id) ??
+      pairedConnector
+    : null;
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadConnectors() {
-      setIsLoadingConnectors(true);
+    async function loadConnectors(showLoading = false) {
+      if (showLoading) setIsLoadingConnectors(true);
       try {
         const result = await listConnectors();
         if (cancelled) return;
@@ -77,13 +82,18 @@ export default function PairThisMac() {
           requestError instanceof Error ? requestError.message : "Unable to load paired Macs.",
         );
       } finally {
-        if (!cancelled) setIsLoadingConnectors(false);
+        if (!cancelled && showLoading) setIsLoadingConnectors(false);
       }
     }
 
-    void loadConnectors();
+    void loadConnectors(true);
+    const intervalId = window.setInterval(
+      () => void loadConnectors(),
+      CONNECTOR_REFRESH_INTERVAL_MS,
+    );
     return () => {
       cancelled = true;
+      window.clearInterval(intervalId);
     };
   }, []);
 
@@ -216,7 +226,9 @@ export default function PairThisMac() {
             {pairingState === "pending" && pairing
               ? `Enter it in the Local Connector before ${formatExpiry(pairing.expires_at)}.`
               : pairingState === "used"
-                ? `${pairedConnector?.device_name ?? "Your Mac"} is connected to this account.`
+                ? currentPairedConnector && connectorStatus(currentPairedConnector) === "Disconnected"
+                  ? `${currentPairedConnector.device_name} is disconnected.`
+                  : `${currentPairedConnector?.device_name ?? "Your Mac"} is connected to this account.`
                 : pairingState === "expired"
                   ? "Code expired. Create another."
                   : "Create a code to connect a Mac."}
@@ -233,9 +245,9 @@ export default function PairThisMac() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#4a8e3d]">Account devices</p>
-              <h3 className="mt-1 text-xl font-bold tracking-[-0.03em] text-[#163300]">Paired devices</h3>
+              <h3 className="mt-1 text-xl font-bold tracking-[-0.03em] text-[#163300]">Your devices</h3>
             </div>
-            <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[#dff3d7] px-2 font-mono text-xs font-bold text-[#286323]" aria-label={`${connectors.length} paired devices`}>
+            <span className="flex h-8 min-w-8 items-center justify-center rounded-full bg-[#dff3d7] px-2 font-mono text-xs font-bold text-[#286323]" aria-label={`${connectors.length} devices`}>
               {connectors.length}
             </span>
           </div>
@@ -281,7 +293,7 @@ export default function PairThisMac() {
 
           <p className="mt-7 flex items-center gap-2 text-xs text-[#7b9077]">
             <FiInfo className="h-3.5 w-3.5 shrink-0 text-[#4a8e3d]" aria-hidden="true" />
-            Pairing status is not live presence.
+            Refreshes automatically. Status is not live presence.
           </p>
         </div>
       </div>

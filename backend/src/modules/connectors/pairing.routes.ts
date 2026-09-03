@@ -9,6 +9,7 @@ import { deliveryAcknowledgementSchema } from "../deliveries/delivery.schemas";
 import {
   claimPairing,
   createPairing,
+  disconnectConnectorController,
   listConnectors,
   requireUserSession,
 } from "./pairing.controller";
@@ -16,6 +17,7 @@ import {
   claimPairingSessionSchema,
   createPairingSessionSchema,
   deliveryClaimSchema,
+  disconnectConnectorSchema,
 } from "./pairing.schemas";
 
 export const pairingRouter = Router();
@@ -38,6 +40,12 @@ pairingRouter.post(
   "/account/pairing-sessions/claim",
   validateProtocolBody(claimPairingSessionSchema),
   claimPairing,
+);
+
+pairingRouter.post(
+  "/connectors/disconnect",
+  validateProtocolBody(disconnectConnectorSchema),
+  disconnectConnectorController,
 );
 
 pairingRouter.post(

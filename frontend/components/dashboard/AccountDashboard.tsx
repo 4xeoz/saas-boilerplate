@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 import PairThisMac from "@/components/connectors/PairThisMac";
 
-export default function AccountDashboard() {
+export default function AccountDashboard({ dashboardHref = "/user-dashboard" }: { dashboardHref?: string }) {
   return (
     <div className="relative isolate min-h-full overflow-hidden bg-[#eef7e8] text-[#0e0f0c]">
       <div className="pointer-events-none absolute -right-40 -top-40 -z-10 h-[30rem] w-[30rem] rounded-full bg-[#9fe870]/25 blur-3xl" />
@@ -26,7 +26,7 @@ export default function AccountDashboard() {
             <p className="mt-5 max-w-md text-base leading-7 text-[#587052]">Pair a Mac. Keep the work moving.</p>
           </div>
 
-          <Link href="#devices" className="inline-flex w-fit items-center gap-2 rounded-full border border-[#a6c89c] bg-white/55 px-4 py-2.5 text-sm font-semibold text-[#286323] transition hover:border-[#4b9b42] hover:bg-white hover:text-[#163300]">
+          <Link href={`${dashboardHref}/devices`} className="inline-flex w-fit items-center gap-2 rounded-full border border-[#a6c89c] bg-white/55 px-4 py-2.5 text-sm font-semibold text-[#286323] transition hover:border-[#4b9b42] hover:bg-white hover:text-[#163300]">
             Manage devices
             <FiArrowUpRight aria-hidden="true" />
           </Link>
@@ -73,7 +73,7 @@ export default function AccountDashboard() {
               <h2 className="mt-3 text-3xl font-semibold leading-none tracking-[-0.06em] text-[#163300]">Pair a Mac.</h2>
               <p className="mt-4 text-sm leading-6 text-[#587052]">One code. One approved connection.</p>
             </div>
-            <Link href="#devices" className="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-[#163300] px-4 py-2.5 text-sm font-bold text-[#b9f57b] transition hover:bg-[#214d0a]">
+            <Link href={`${dashboardHref}/devices`} className="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-[#163300] px-4 py-2.5 text-sm font-bold text-[#b9f57b] transition hover:bg-[#214d0a]">
               Open pairing
               <FiArrowUpRight aria-hidden="true" />
             </Link>

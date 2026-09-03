@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { prisma } from "../../db";
 import { isUniqueConstraintError } from "../../lib/prisma-errors";
-import type { ClaimPairingSession } from "./pairing.schemas";
+import type { ClaimPairingSession, DisconnectConnector } from "./pairing.schemas";
 
 const PAIRING_LIFETIME_MS = 10 * 60 * 1_000;
 const CONNECTOR_LIFETIME_MS = 30 * 24 * 60 * 60 * 1_000;
@@ -49,6 +49,13 @@ export type ConnectorCredentials = {
   connector_expires_at: string;
   duplicate: boolean;
   connector_token?: string;
+};
+
+export type ConnectorDisconnected = {
+  type: "webmcp.connector_disconnection";
+  protocol_version: "0.1";
+  status: "disconnected";
+  duplicate: boolean;
 };
 
 function digest(value: string): string {
@@ -216,6 +223,34 @@ export async function claimPairingSession(
       duplicate: false,
     };
   });
+}
+
+export async function disconnectConnector(
+  input: DisconnectConnector
+): Promise<ConnectorDisconnected> {
+  const tokenDigest = digest(input.connector_token);
+  const revoked = await prisma.connector.updateMany({
+    where: {
+      tokenDigest,
+      revokedAt: null,
+    },
+    data: { revokedAt: new Date() },
+  });
+
+  if (revoked.count === 0) {
+    const connector = await prisma.connector.findUnique({
+      where: { tokenDigest },
+      select: { revokedAt: true },
+    });
+    if (!connector) throw new PairingError("connector_identity_invalid", 403);
+  }
+
+  return {
+    type: "webmcp.connector_disconnection",
+    protocol_version: "0.1",
+    status: "disconnected",
+    duplicate: revoked.count === 0,
+  };
 }
 
 export async function hasEligibleConnectorToken(connectorToken: string): Promise<boolean> {

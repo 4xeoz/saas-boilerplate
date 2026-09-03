@@ -31,6 +31,7 @@ type DeliveryFixture = {
   deliveryId: string;
   grantId: string;
   eventId: string;
+  instruction: string;
   connector: ConnectorFixture;
   event: {
     correlation_id: string;
@@ -119,6 +120,37 @@ async function seedDelivery(label: string, connector: ConnectorFixture): Promise
   };
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 15 * 60 * 1_000);
+  const instruction = `Continue the ${label} workflow.`;
+  const manifestJson = {
+    type: "webmcp.reentry_manifest",
+    protocol_version: "0.1",
+    manifest_id: `manifest-${label}-${suffix}`,
+    correlation_id: correlationId,
+    issuer_origin: origin,
+    issued_at: new Date(now.getTime() - 1_000).toISOString(),
+    offer_expires_at: new Date(now.getTime() + 10 * 60 * 1_000).toISOString(),
+    workflow: {
+      id: workflowId,
+      type: "review",
+      state_version: event.state_version,
+      canonical_url: canonicalUrl,
+    },
+    display: {
+      title: "Review continuation",
+      reason: instruction,
+    },
+    grant_request: {
+      event_type: eventType,
+      grant_expires_at: expiresAt.toISOString(),
+      max_runs: 1,
+      human_boundary: "explicit_receiver_consent",
+    },
+    signature: {
+      algorithm: "Ed25519",
+      key_id: "fixture-key",
+      value: "A".repeat(86),
+    },
+  };
 
   await prisma.hostSubjectBinding.create({
     data: {
@@ -139,7 +171,7 @@ async function seedDelivery(label: string, connector: ConnectorFixture): Promise
       hostSubjectRefDigest: digestSecret(`subject-${label}-${suffix}`),
       expectedOrigin: origin,
       manifestId: `manifest-${label}-${suffix}`,
-      manifestJson: { fixture: label },
+      manifestJson,
       expiresAt,
       status: "approved",
       decisionAction: "approve",
@@ -201,6 +233,7 @@ async function seedDelivery(label: string, connector: ConnectorFixture): Promise
     deliveryId: delivery.deliveryId,
     grantId: grant.id,
     eventId,
+    instruction,
     connector,
     event: {
       correlation_id: correlationId,
@@ -423,6 +456,7 @@ describe("Cloud Receiver v2 delivery claim red tests", () => {
       state_version: fixture.event.state_version,
       occurred_at: fixture.event.occurred_at,
       canonical_url: fixture.event.canonical_url,
+      instruction: fixture.instruction,
     });
     expect(response.body.lease.receipt).toEqual({
       type: "webmcp.continuation_receipt",

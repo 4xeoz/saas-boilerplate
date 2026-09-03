@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   FiArrowLeft,
   FiArrowUpRight,
@@ -14,8 +14,10 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import WebGLHero from "@/components/landing/WebGLHero";
 import { Logo } from "@/components/ui/Logo";
+import { useUser } from "@/lib/UserContext";
 import { getBackendUrl } from "@/lib/api/client";
 import {
+  fetchCurrentDeveloper,
   loginDeveloper,
   registerDeveloper,
 } from "@/lib/api/developer-auth";
@@ -80,12 +82,40 @@ export default function AuthPage({
   kind: AccountKind;
   initialMode?: AuthMode;
 }) {
+  const { user, loading: userLoading } = useUser();
   const [isRegistering, setIsRegistering] = useState(initialMode === "register");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [developerSessionLoading, setDeveloperSessionLoading] = useState(true);
+  const checkingSession = kind === "user" ? userLoading : developerSessionLoading;
   const accountCopy = copy[kind];
+
+  useEffect(() => {
+    if (kind !== "user" || userLoading) return;
+    if (user) {
+      const consentReturnTo = getSafeConsentReturnTo();
+      window.location.replace(consentReturnTo ?? "/user-dashboard");
+    }
+  }, [kind, user, userLoading]);
+
+  useEffect(() => {
+    if (kind !== "developer") return;
+    let active = true;
+    void fetchCurrentDeveloper()
+      .then(() => {
+        if (!active) return;
+        window.location.replace("/developer-dashboard");
+      })
+      .catch(() => {
+        if (active) setDeveloperSessionLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [kind]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -181,14 +211,23 @@ export default function AuthPage({
                 <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#839a7c]">Re-entry Cloud</span>
               </div>
 
-              <div className="mt-8">
-                <h1 className="text-[clamp(38px,5vw,56px)] font-semibold leading-[0.94] tracking-[-0.065em] text-[#163300]">
-                  {isRegistering ? "Enter the loop." : accountCopy.title}
-                </h1>
-                <p className="mt-4 max-w-sm text-base leading-7 text-[#587052]">{accountCopy.description}</p>
-              </div>
+              {checkingSession ? (
+                <div className="flex min-h-[410px] items-center justify-center" role="status">
+                  <div className="flex items-center gap-3 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#5f7b59]">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#4b9b42] shadow-[0_0_12px_rgba(75,155,66,0.45)]" />
+                    Restoring session
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="mt-8">
+                    <h1 className="text-[clamp(38px,5vw,56px)] font-semibold leading-[0.94] tracking-[-0.065em] text-[#163300]">
+                      {isRegistering ? "Enter the loop." : accountCopy.title}
+                    </h1>
+                    <p className="mt-4 max-w-sm text-base leading-7 text-[#587052]">{accountCopy.description}</p>
+                  </div>
 
-              <form onSubmit={handleSubmit} className="mt-9 space-y-5">
+                  <form onSubmit={handleSubmit} className="mt-9 space-y-5">
                 <label className="block space-y-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#3f613a]">
                   Email
                   <Input
@@ -231,24 +270,26 @@ export default function AuthPage({
                   {isRegistering ? "Create account" : "Sign in"}
                   <FiArrowUpRight aria-hidden="true" />
                 </Button>
-              </form>
+                  </form>
 
-              <div className="mt-7 flex flex-col gap-4 border-t border-[#dbe8d7] pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
-                <button
-                  type="button"
-                  className="text-left font-semibold text-[#587052] transition hover:text-[#163300]"
-                  onClick={() => {
-                    setIsRegistering((current) => !current);
-                    setError(null);
-                  }}
-                >
-                  {isRegistering ? "Already have an account? Sign in" : "Need an account? Register"}
-                </button>
-                <Link href={accountCopy.switchPath} className="inline-flex items-center gap-1.5 font-semibold text-[#3b7c35] transition hover:text-[#163300]">
-                  {accountCopy.switchLabel}
-                  {kind === "developer" ? <FiCode aria-hidden="true" /> : <FiArrowUpRight aria-hidden="true" />}
-                </Link>
-              </div>
+                  <div className="mt-7 flex flex-col gap-4 border-t border-[#dbe8d7] pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
+                    <button
+                      type="button"
+                      className="text-left font-semibold text-[#587052] transition hover:text-[#163300]"
+                      onClick={() => {
+                        setIsRegistering((current) => !current);
+                        setError(null);
+                      }}
+                    >
+                      {isRegistering ? "Already have an account? Sign in" : "Need an account? Register"}
+                    </button>
+                    <Link href={accountCopy.switchPath} className="inline-flex items-center gap-1.5 font-semibold text-[#3b7c35] transition hover:text-[#163300]">
+                      {accountCopy.switchLabel}
+                      {kind === "developer" ? <FiCode aria-hidden="true" /> : <FiArrowUpRight aria-hidden="true" />}
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
 
             <p className="mt-5 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#7c9376]">

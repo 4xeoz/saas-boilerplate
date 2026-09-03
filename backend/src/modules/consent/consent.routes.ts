@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireOrganizationApiKey } from "../../middleware/organization-auth";
 import { validateProtocolBody } from "../../middleware/protocol-validate";
-import { requireSameOriginJson } from "../../middleware/same-origin";
+import { requireReceiverOriginJson } from "../../middleware/same-origin";
 import { requireSession } from "../authentication/session";
 import {
   accountConsentDecisionController,
@@ -41,7 +41,7 @@ consentApiRouter.get(
 consentApiRouter.post(
   "/account-consent-decisions",
   requireSession("user"),
-  requireSameOriginJson,
+  requireReceiverOriginJson,
   validateProtocolBody(accountConsentDecisionSchema),
   accountConsentDecisionController
 );

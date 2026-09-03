@@ -66,6 +66,13 @@ async function claimPairing(pairingCode: string, deviceName: string) {
     .send({ pairing_code: pairingCode, device_name: deviceName });
 }
 
+async function disconnectConnector(connectorToken: string) {
+  return request(app)
+    .post("/v0.1/connectors/disconnect")
+    .set("Content-Type", "application/json")
+    .send({ connector_token: connectorToken });
+}
+
 async function listConnectors(agent = userAgent) {
   return agent.get("/v0.1/account/connectors");
 }
@@ -207,6 +214,85 @@ describe("Cloud Receiver v2 pairing red tests", () => {
 
     const unauthenticated = await request(app).get("/v0.1/account/connectors");
     expect(unauthenticated.status).toBe(401);
+  });
+
+  it("DISCONNECT-001 irreversibly revokes one Connector and exposes the lifecycle change", async () => {
+    const pairing = await createPairing();
+    const claim = await claimPairing(pairing.pairingCode, "Disconnected Mac");
+    expect(claim.status).toBe(200);
+
+    const response = await disconnectConnector(claim.body.connector_token);
+
+    expect(response.status).toBe(200);
+    expectExactKeys(response.body, ["type", "protocol_version", "status", "duplicate"]);
+    expect(response.body).toEqual({
+      type: "webmcp.connector_disconnection",
+      protocol_version: "0.1",
+      status: "disconnected",
+      duplicate: false,
+    });
+    expect(response.text).not.toContain(claim.body.connector_token);
+
+    const revoked = await prisma.connector.findUnique({
+      where: { id: claim.body.connector_id },
+      select: { revokedAt: true },
+    });
+    expect(revoked?.revokedAt).toBeInstanceOf(Date);
+
+    const listed = await listConnectors();
+    const connector = listed.body.connectors.find(
+      (item: { connector_id: string }) => item.connector_id === claim.body.connector_id,
+    );
+    expectIsoTimestamp(connector?.revoked_at, "revoked_at");
+
+    const claimAfterDisconnect = await request(app)
+      .post("/v0.1/delivery-claims")
+      .set("Content-Type", "application/json")
+      .send({
+        connector_token: claim.body.connector_token,
+        claim_token: "A".repeat(43),
+      });
+    expect(claimAfterDisconnect.status).toBe(403);
+    expect(claimAfterDisconnect.body).toEqual({
+      error: { code: "connector_identity_invalid" },
+    });
+  });
+
+  it("DISCONNECT-002 replays exactly and rejects an unknown Connector token", async () => {
+    const pairing = await createPairing();
+    const claim = await claimPairing(pairing.pairingCode, "Replay Mac");
+    expect(claim.status).toBe(200);
+    await prisma.connector.update({
+      where: { id: claim.body.connector_id },
+      data: { expiresAt: new Date(Date.now() - 1_000) },
+    });
+
+    const first = await disconnectConnector(claim.body.connector_token);
+    expect(first.status).toBe(200);
+    const firstRevokedAt = await prisma.connector.findUnique({
+      where: { id: claim.body.connector_id },
+      select: { revokedAt: true },
+    });
+
+    const replay = await disconnectConnector(claim.body.connector_token);
+    expect(replay.status).toBe(200);
+    expect(replay.body).toEqual({
+      type: "webmcp.connector_disconnection",
+      protocol_version: "0.1",
+      status: "disconnected",
+      duplicate: true,
+    });
+    const replayedRevokedAt = await prisma.connector.findUnique({
+      where: { id: claim.body.connector_id },
+      select: { revokedAt: true },
+    });
+    expect(replayedRevokedAt?.revokedAt?.toISOString()).toBe(
+      firstRevokedAt?.revokedAt?.toISOString(),
+    );
+
+    const unknown = await disconnectConnector("B".repeat(43));
+    expect(unknown.status).toBe(403);
+    expect(unknown.body).toEqual({ error: { code: "connector_identity_invalid" } });
   });
 
   it("PAIR-003 replays metadata without returning the raw token or creating a second target", async () => {

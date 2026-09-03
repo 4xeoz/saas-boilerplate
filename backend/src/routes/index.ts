@@ -4,6 +4,7 @@ import { authRouter } from "../modules/authentication/auth.routes";
 import { pairingRouter } from "../modules/connectors/pairing.routes";
 import { consentApiRouter, consentPageRouter } from "../modules/consent/consent.routes";
 import { eventRouter } from "../modules/events/event.routes";
+import { developerPortalRouter } from "../modules/developer-portal/developer-portal.routes";
 import {
   healthRouter,
   operationalHealthRouter,
@@ -68,3 +69,7 @@ rootRouter.get("/user-register", (req: Request, res: Response) =>
 rootRouter.use(operationalHealthRouter);
 rootRouter.use("/health", healthRouter);
 rootRouter.use(consentPageRouter);
+
+// Developer control-plane routes use the separate DeveloperAccount session.
+// They are not protocol routes and do not expose public Grant control.
+rootRouter.use("/api", developerPortalRouter);

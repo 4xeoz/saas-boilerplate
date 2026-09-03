@@ -42,6 +42,16 @@ is a relative path.
 For the split-origin browser flow, `FRONTEND_URL` must exactly match the
 frontend origin. Production session cookies use `SameSite=None; Secure`, and
 the API must answer credentialed CORS preflights without redirecting them.
+
+## Connector lifecycle
+
+The active v2 Connector signs itself out with
+`POST /v0.1/connectors/disconnect` and an exact JSON body containing only its
+saved `connector_token`. The Receiver stamps `revoked_at` once, retains the
+Connector row, rejects future claims, and returns a replay-safe disconnected
+response. The route uses no browser cookie or Organization credential and
+never returns the raw token.
+
 The read-only regression check is:
 
 ```sh

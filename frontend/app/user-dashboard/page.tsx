@@ -4,7 +4,7 @@ import AccountDashboard from "@/components/dashboard/AccountDashboard";
 export default function UserDashboardPage() {
   return (
     <AppLayout>
-      <AccountDashboard />
+      <AccountDashboard dashboardHref="/user-dashboard" />
     </AppLayout>
   );
 }

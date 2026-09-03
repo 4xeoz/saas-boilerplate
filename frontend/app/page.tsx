@@ -9,6 +9,12 @@ import {
   FiZap,
 } from "react-icons/fi";
 import WebGLHero from "@/components/landing/WebGLHero";
+import {
+  LandingFinalAction,
+  LandingHeaderActions,
+  LandingHeroActions,
+  LandingSessionProvider,
+} from "@/components/landing/LandingSession";
 import { Logo } from "@/components/ui/Logo";
 
 export const metadata = {
@@ -25,7 +31,8 @@ const loopStages: { number: string; label: string; title: string; icon: IconType
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#08110b] text-[#efffe7] selection:bg-[#b9f57b] selection:text-[#163300]">
+    <LandingSessionProvider>
+      <main className="min-h-screen overflow-hidden bg-[#08110b] text-[#efffe7] selection:bg-[#b9f57b] selection:text-[#163300]">
       <header className="relative z-20 border-b border-white/10">
         <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between gap-5 px-5 sm:px-8">
           <Link href="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap" aria-label="re-entry cloud home">
@@ -39,19 +46,7 @@ export default function HomePage() {
             <Link className="transition hover:text-white" href="/docs">Docs</Link>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Link className="hidden text-sm font-semibold text-white/70 transition hover:text-white sm:inline" href="/user-login">
-              Sign in
-            </Link>
-            <Link
-              className="inline-flex items-center gap-2 rounded-full bg-[#b9f57b] px-4 py-2.5 text-sm font-bold text-[#163300] transition hover:bg-[#d5ffad] hover:shadow-[0_0_30px_rgba(185,245,123,0.2)]"
-              href="/user-register"
-            >
-              <span className="hidden sm:inline">Start connecting</span>
-              <span className="sm:hidden">Start</span>
-              <FiArrowUpRight aria-hidden="true" />
-            </Link>
-          </div>
+          <LandingHeaderActions />
         </div>
       </header>
 
@@ -76,20 +71,8 @@ export default function HomePage() {
               A clear, human-approved return path for the next generation of web agents.
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              <Link
-                href="/user-register"
-                className="inline-flex items-center gap-2 rounded-full bg-[#b9f57b] px-5 py-3 text-sm font-bold text-[#163300] transition hover:bg-[#d5ffad] hover:shadow-[0_0_34px_rgba(185,245,123,0.25)]"
-              >
-                Enter the loop
-                <FiArrowUpRight aria-hidden="true" />
-              </Link>
-              <a
-                href="#loop"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-white/75 transition hover:border-white/35 hover:text-white"
-              >
-                See how it works
-              </a>
+            <div className="mt-9">
+              <LandingHeroActions />
             </div>
 
             <div className="mt-11 flex flex-wrap gap-x-5 gap-y-3 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-white/42">
@@ -179,10 +162,7 @@ export default function HomePage() {
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#3e6e36]">Ready when you are</p>
             <h2 className="mt-4 max-w-2xl text-[clamp(40px,5vw,70px)] font-semibold leading-[0.95] tracking-[-0.065em]">Make the browser part of the agent loop.</h2>
           </div>
-          <Link href="/user-register" className="inline-flex w-fit items-center gap-2 rounded-full bg-[#163300] px-5 py-3 text-sm font-bold text-[#b9f57b] transition hover:bg-[#274d0c]">
-            Create your loop
-            <FiArrowUpRight aria-hidden="true" />
-          </Link>
+          <LandingFinalAction />
         </div>
       </section>
 
@@ -193,6 +173,7 @@ export default function HomePage() {
           <Link className="transition hover:text-white" href="/docs">Read the docs <FiArrowUpRight className="ml-1 inline" /></Link>
         </div>
       </footer>
-    </main>
+      </main>
+    </LandingSessionProvider>
   );
 }

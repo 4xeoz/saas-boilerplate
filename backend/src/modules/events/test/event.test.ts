@@ -101,7 +101,7 @@ async function createConsent(manifest: JsonObject, subject: string) {
 async function decide(token: string, connectorId: string) {
   return userAgent
     .post("/v0.1/account-consent-decisions")
-    .set("Origin", "http://localhost:3000")
+    .set("Origin", "http://localhost:4000")
     .set("Content-Type", "application/json")
     .send({ consent_token: token, action: "approve", connector_id: connectorId });
 }

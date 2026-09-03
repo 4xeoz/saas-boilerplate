@@ -48,6 +48,18 @@ describe("Cloud Receiver v2 transport and operations red tests", () => {
     expect(wrongMethod.status).toBe(405);
     expect(wrongMethod.headers.allow).toBe("POST");
     expect(wrongMethod.body).toEqual({ error: { code: "http_method_not_allowed" } });
+
+    const disconnectWrongMethod = await request(app).get("/v0.1/connectors/disconnect");
+    expect(disconnectWrongMethod.status).toBe(405);
+    expect(disconnectWrongMethod.headers.allow).toBe("POST");
+    expect(disconnectWrongMethod.body).toEqual({ error: { code: "http_method_not_allowed" } });
+
+    const disconnectExtraField = await request(app)
+      .post("/v0.1/connectors/disconnect")
+      .set("Content-Type", "application/json")
+      .send({ connector_token: "A".repeat(43), extra: true });
+    expect(disconnectExtraField.status).toBe(400);
+    expect(disconnectExtraField.body).toEqual({ error: { code: "http_body_invalid" } });
   });
 
   it("HTTP-002 keeps typed protocol failures bounded and stable", async () => {
@@ -158,5 +170,12 @@ describe("Cloud Receiver v2 transport and operations red tests", () => {
       });
     expect(acknowledgement.status).toBe(501);
     expectProtocolHeaders(acknowledgement);
+
+    const disconnection = await request(app)
+      .post("/v0.1/connectors/disconnect")
+      .set("Content-Type", "application/json")
+      .send({ connector_token: "A".repeat(43) });
+    expect(disconnection.status).toBe(403);
+    expectProtocolHeaders(disconnection);
   });
 });
