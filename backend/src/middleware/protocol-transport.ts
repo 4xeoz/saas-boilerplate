@@ -13,11 +13,41 @@ const v01ProtocolRoutes = new Set([
   "/v0.1/delivery-acknowledgements",
 ]);
 
-const v02ProtocolRoutes = new Set([
+const v02PostProtocolRoutes = new Set([
   "/v0.2/events",
   "/v0.2/delivery-claims",
   "/v0.2/delivery-acknowledgements",
+  "/v0.2/delivery-notification-handoffs",
+  "/v0.2/host-keys",
+  "/v0.2/consent-sessions",
+  "/v0.2/account-consent-decisions",
 ]);
+
+const v02GetProtocolRoutes = new Set([
+  "/v0.2/consent-sessions",
+  "/v0.2/grants",
+]);
+
+const v02ProtocolRoutes = new Set([
+  ...v02PostProtocolRoutes,
+  ...v02GetProtocolRoutes,
+]);
+
+const v02DynamicRoutePatterns = [
+  /^\/v0\.2\/consent-sessions\/[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/,
+  /^\/v0\.2\/grants\/[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/,
+  /^\/v0\.2\/grants\/[A-Za-z0-9][A-Za-z0-9._:-]{0,159}\/revoke$/,
+];
+
+function standingRouteMethod(target: string): "POST" | "GET" | null {
+  if (v02PostProtocolRoutes.has(target)) return "POST";
+  if (v02GetProtocolRoutes.has(target)) return "GET";
+  if (v02DynamicRoutePatterns[0].test(target) || v02DynamicRoutePatterns[1].test(target)) {
+    return "GET";
+  }
+  if (v02DynamicRoutePatterns[2].test(target)) return "POST";
+  return null;
+}
 
 const STANDING_RESPONSE_POLICY_APPLIED = "__webmcpStandingResponsePolicyApplied";
 const STANDING_TRANSPORT_GUARD_APPLIED = "__webmcpStandingTransportGuardApplied";
@@ -99,14 +129,18 @@ function applyProtocolTransportGuard(
   // content metadata. Unknown v0.2 paths therefore cannot be used as a JSON
   // parser oracle and always produce the same bounded route failure.
   const routeTarget = standing ? req.originalUrl : req.path;
-  if (standing && !v02ProtocolRoutes.has(routeTarget)) {
+  const standingMethod = standing ? standingRouteMethod(routeTarget) : null;
+  if (standing && standingMethod === null) {
     sendTransportError(res, 404, "http_route_not_found", true);
     return;
   }
 
   const selectedRoutes = standing ? v02ProtocolRoutes : v01ProtocolRoutes;
-  if (selectedRoutes.has(routeTarget) && req.method !== "POST") {
-    res.set("Allow", "POST");
+  if (
+    (standing && req.method !== standingMethod) ||
+    (!standing && selectedRoutes.has(routeTarget) && req.method !== "POST")
+  ) {
+    res.set("Allow", standing ? standingMethod ?? "POST" : "POST");
     sendTransportError(res, 405, "http_method_not_allowed", standing);
     return;
   }
@@ -162,6 +196,10 @@ export function standingJsonBodyDecoder(
   next: NextFunction
 ): void {
   if (!isV02RequestTarget(req.originalUrl, req.path)) {
+    next();
+    return;
+  }
+  if (req.method !== "POST") {
     next();
     return;
   }

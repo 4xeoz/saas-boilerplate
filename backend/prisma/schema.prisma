@@ -392,6 +392,10 @@ model StandingDelivery {
   effectAttestationJson   String?   @map("effect_attestation_json")
   acknowledgedAt          DateTime? @map("acknowledged_at")
   terminalReason          String?   @map("terminal_reason")
+  handoffId               String?   @unique @map("handoff_id")
+  runtimeAdmissionJson    String?   @map("runtime_admission_json")
+  handoffReceiptJson      String?   @map("handoff_receipt_json")
+  handoffAcceptedAt       DateTime? @map("handoff_accepted_at")
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
 

@@ -11,6 +11,7 @@ The public protocol router exposes only these exact request targets:
 - `POST /v0.2/events`
 - `POST /v0.2/delivery-claims`
 - `POST /v0.2/delivery-acknowledgements`
+- `POST /v0.2/delivery-notification-handoffs`
 
 The transport resolves the raw request target before method, headers, or body.
 It requires one JSON content type, no content encoding, fatal UTF-8 decoding,
@@ -20,10 +21,11 @@ rejection; they never become accepted routes and cannot bypass pre-parser or
 pre-CORS policy.
 There is no version negotiation or fallback to v0.1.
 
-Consent enrollment, approval, inspection, and revocation currently exist only
-as typed service functions for a trusted Receiver shell. They are intentionally
-not public routes: their same-user session, CSRF, page-token, and renewal UX
-contract is not yet accepted.
+Consent enrollment and status are exposed to the Host through organization-key
+protected routes. Account approval, Grant inspection, and revocation are
+exposed through authenticated same-user/session/CSRF controls. These routes are
+additive to v0.1 and do not create a fresh task or permit a client-selected
+binding.
 
 The [non-authoritative control-plane proposal](CONTROL-PLANE-PROPOSAL.md) describes
 candidate Receiver-owned pages and shell APIs. It is not an accepted public
@@ -49,7 +51,10 @@ contract; lifetime policy and the public security boundary remain decision gates
 5. Acknowledgement requires a separately injected Host-effect authority and a
    correlated effect confirmed inside the lease, Grant, Connector, and
    revocation windows. Agent output by itself is not effect evidence.
-6. Revocation fences future Events and claims while preserving history and
+6. Notification handoff requires a separately injected server-side runtime
+   admission authority. The default app has no authority and fails closed;
+   Connector authentication or process exit is never runtime proof.
+7. Revocation fences future Events and claims while preserving history and
    exact accepted replay behavior.
 
 PostgreSQL enforces separate standing tables, safe `BIGINT` sequences, unique
@@ -88,9 +93,9 @@ for the checked runtime, commands, results, and exact evidence limitations.
 ## Deliberate non-claims
 
 This kernel is not yet a production standing-mode release. It does not provide
-the account Consent/revoke shell, a production Host-effect authority, Local
-Connector capability selection, Receiver rate/quota policy, a pinned
-cross-repository release gate, Sleepless Kingdom signal mapping, or deployment
-evidence. The shared conformance runner verifies an exact reviewed Core pin;
-Receiver source closure and migration evidence are recorded separately in the
-verification record. Source identity alone is not full release conformance.
+a production runtime-admission authority, Local Connector capability selection,
+Receiver rate/quota policy, a pinned cross-repository release gate, Sleepless
+Kingdom signal mapping, or deployment evidence. The shared conformance runner
+verifies an exact reviewed Core pin; Receiver source closure and migration
+evidence are recorded separately in the verification record. Source identity
+and an injected interface alone are not full release conformance.

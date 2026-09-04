@@ -5,6 +5,12 @@ import { getSessionAccountId, requireSession } from "../authentication/session";
 import { renderConsentPage } from "./consent-page";
 import { ConsentError, createConsentSession, decideConsent, getConsentPrompt, getConsentStatus, registerHostKey, validateConsentPageToken } from "./consent.service";
 import type { AccountConsentDecision, CreateConsentSession, RegisterHostKey } from "./consent.schemas";
+import { renderStandingConsentPage } from "../standing/standing-consent-page";
+import {
+  getStandingConsentPrompt,
+  StandingReceiverError,
+  validateStandingConsentPageToken,
+} from "../standing/standing.service";
 
 function sendConsentError(res: Response, error: ConsentError): void {
   res.status(error.statusCode).json({ error: { code: error.code } });
@@ -85,14 +91,18 @@ export const accountConsentDecisionController = asyncHandler(async (req: Request
 export const consentPageController = asyncHandler(async (req: Request, res: Response) => {
   res.set("Cross-Origin-Opener-Policy", "unsafe-none");
   const token = typeof req.query.token === "string" ? req.query.token : "";
+  let v01Token = true;
   try {
     await validateConsentPageToken(token);
   } catch (error) {
-    if (error instanceof ConsentError) {
+    if (error instanceof ConsentError && error.code === "consent_token_invalid") {
+      v01Token = false;
+    } else if (error instanceof ConsentError) {
       sendConsentError(res, error);
       return;
+    } else {
+      throw error;
     }
-    throw error;
   }
 
   const accountId = getSessionAccountId(req, "user");
@@ -103,16 +113,36 @@ export const consentPageController = asyncHandler(async (req: Request, res: Resp
     return res.redirect(302, loginUrl.toString());
   }
 
+  if (v01Token) {
+    try {
+      const prompt = await getConsentPrompt(token, accountId);
+      res.set("Cache-Control", "no-store");
+      return res
+        .status(200)
+        .type("html")
+        .send(renderConsentPage(prompt, { frontendUrl: appConfig.frontendUrl }));
+    } catch (error) {
+      if (error instanceof ConsentError) {
+        sendConsentError(res, error);
+        return;
+      }
+      throw error;
+    }
+  }
+
   try {
-    const prompt = await getConsentPrompt(token, accountId);
+    await validateStandingConsentPageToken(token);
+    const prompt = await getStandingConsentPrompt(token, accountId);
     res.set("Cache-Control", "no-store");
     return res
       .status(200)
       .type("html")
-      .send(renderConsentPage(prompt, { frontendUrl: appConfig.frontendUrl }));
+      .send(renderStandingConsentPage(prompt, { frontendUrl: appConfig.frontendUrl }));
   } catch (error) {
-    if (error instanceof ConsentError) {
-      sendConsentError(res, error);
+    if (error instanceof StandingReceiverError) {
+      res.status(error.statusCode).json({
+        error: { code: error.code, retryable: error.retryable },
+      });
       return;
     }
     throw error;

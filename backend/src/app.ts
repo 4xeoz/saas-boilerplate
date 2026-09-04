@@ -16,9 +16,44 @@ import {
   isV02RequestTarget,
   standingJsonBodyDecoder,
 } from "./middleware/protocol-transport";
+import type { StandingRuntimeAdmissionAuthority } from "./modules/standing/standing.service";
 
-export function createApp() {
+export type AppOptions = Readonly<{
+  /**
+   * Server-side authority for the standing notification handoff route.
+   *
+   * The default is intentionally absent: a deployment must compose a real
+   * runtime/Adapter authority explicitly before handoff can be accepted.
+   */
+  standingRuntimeAdmissionAuthority?: StandingRuntimeAdmissionAuthority;
+}>;
+
+function validateAppOptions(options: AppOptions): void {
+  if (!options || typeof options !== "object" || Array.isArray(options)) {
+    throw new TypeError("createApp options must be an object");
+  }
+  const authority = options.standingRuntimeAdmissionAuthority;
+  if (
+    authority !== undefined &&
+    (!authority || typeof authority !== "object" || typeof authority.verifyAdmission !== "function")
+  ) {
+    throw new TypeError(
+      "standingRuntimeAdmissionAuthority must implement verifyAdmission"
+    );
+  }
+}
+
+export function createApp(options: AppOptions = {}) {
+  validateAppOptions(options);
   const app = express();
+
+  // Keep the default serverless/local app fail-closed. Only an explicit
+  // release composition may provide a real runtime-owned authority; the
+  // Receiver never derives one from a token, process exit, or caller boolean.
+  if (options.standingRuntimeAdmissionAuthority) {
+    app.locals.standingRuntimeAdmissionAuthority =
+      options.standingRuntimeAdmissionAuthority;
+  }
 
   // Security headers (HSTS, X-Frame-Options, no-sniff, etc). This is a JSON
   // API, so the default Content-Security-Policy — which is aimed at HTML — is
@@ -60,8 +95,9 @@ export function createApp() {
   // The current API.
   app.use("/v1", v1Router);
 
-  // Replacement Cloud Receiver v2 protocol. Public Grant inspection and
-  // revocation routes remain intentionally absent pending ADR-0013.
+  // Replacement Cloud Receiver v2 protocol. Standing account inspection and
+  // revocation are exposed only through the authenticated same-user controls
+  // mounted below; v0.1 routes remain unchanged.
   app.use("/v0.1", v01Router);
 
   // Additive standing authorization kernel. It is selected only through the

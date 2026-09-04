@@ -4,6 +4,7 @@ import { appConfig } from "../../config/config";
 import { prisma } from "../../db";
 import { isUniqueConstraintError } from "../../lib/prisma-errors";
 import { digestSecret } from "../../middleware/organization-auth";
+import { normalizeOrigin, validatePublicKeyPem } from "../consent/manifest";
 import {
   CONTINUATION_MODE,
   STANDING_AUTHORIZATION_MODE,
@@ -23,6 +24,13 @@ import {
   type StandingPublicBinding,
   type StandingReentryManifest,
 } from "./standing.protocol";
+import {
+  normalizeNotificationHandoffReceipt,
+  normalizeRuntimeAdmissionAttestation,
+  StandingNotificationHandoffValidationError,
+  type StandingNotificationHandoffReceipt,
+  type StandingRuntimeAdmissionAttestation,
+} from "./standing-notification-handoff";
 
 const CONSENT_LIFETIME_MS = 10 * 60 * 1_000;
 const LEASE_DURATION_MS = 60 * 1_000;
@@ -92,8 +100,46 @@ export type StandingConsentChallenge = {
 };
 
 export type StandingConsentEnrollment = {
+  type: "webmcp.reentry_consent_session";
+  protocol_version: "0.2";
+  consent_session_id: string;
   challenge: StandingConsentChallenge;
+  consent_url: string;
+  expires_at: string;
   duplicate: boolean;
+};
+
+export type StandingHostKeyRegistration = {
+  type: "webmcp.reentry_host_key";
+  protocol_version: "0.2";
+  host_id: string;
+  issuer_origin: string;
+  key_id: string;
+  status: "active";
+  duplicate: boolean;
+};
+
+export type StandingConsentStatus = {
+  type: "webmcp.reentry_consent_status";
+  protocol_version: "0.2";
+  consent_session_id: string;
+  challenge_id: string;
+  status: "pending" | "approved" | "declined" | "expired";
+  effective_status: "active" | "revoked" | "expired" | null;
+  expires_at: string;
+  binding: StandingPublicBinding | null;
+};
+
+export type StandingConsentPrompt = {
+  consentSessionId: string;
+  session: StandingConsentChallenge & {
+    issuer_origin: string;
+    workflow_id: string;
+    title: string;
+    reason: string;
+  };
+  status: "pending" | "approved" | "declined" | "expired";
+  connectors: Array<{ id: string; deviceName: string; expiresAt: string }>;
 };
 
 type CreateStandingConsentInput = {
@@ -102,6 +148,21 @@ type CreateStandingConsentInput = {
   expectedOrigin: string;
   manifest: unknown;
   maximumGrantLifetimeMs: number;
+};
+
+type RegisterStandingHostKeyInput = {
+  hostId: string;
+  issuerOrigin: string;
+  keyId: string;
+  publicKeyPem: string;
+};
+
+type StandingAccountConsentDecisionInput = {
+  consentToken: string;
+  action: "approve" | "decline";
+  connectorId?: string;
+  decisionId: string;
+  decidedAt: string;
 };
 
 type DecideStandingConsentInput = {
@@ -131,6 +192,32 @@ type AcknowledgeStandingDeliveryInput = {
   effectAuthority?: StandingEffectAuthority;
 };
 
+export type StandingRuntimeAdmissionExpected = {
+  delivery_id: string;
+  event_id: string;
+  grant_id: string;
+  connector_id: string;
+  delivery_target_id: string;
+  correlation_id: string;
+  workflow_id: string;
+};
+
+export type StandingRuntimeAdmissionAuthority = {
+  verifyAdmission(input: {
+    attestation: StandingRuntimeAdmissionAttestation;
+    expected: StandingRuntimeAdmissionExpected;
+  }): StandingRuntimeAdmissionAttestation | Promise<StandingRuntimeAdmissionAttestation>;
+};
+
+type HandoffStandingDeliveryInput = {
+  connectorToken: string;
+  deliveryId: string;
+  leaseToken: string;
+  handoffId: string;
+  runtimeAdmissionAttestation: unknown;
+  runtimeAdmissionAuthority?: StandingRuntimeAdmissionAuthority;
+};
+
 const standingDeliverySelect = {
   deliveryId: true,
   eventId: true,
@@ -148,6 +235,10 @@ const standingDeliverySelect = {
   effectAttestationJson: true,
   acknowledgedAt: true,
   terminalReason: true,
+  handoffId: true,
+  runtimeAdmissionJson: true,
+  handoffReceiptJson: true,
+  handoffAcceptedAt: true,
   createdAt: true,
   updatedAt: true,
   event: {
@@ -351,6 +442,35 @@ function consentTokenForSession(sessionId: string): string {
     .digest("base64url");
 }
 
+function standingConsentUrl(sessionId: string): string {
+  const base = appConfig.receiverPublicUrl.replace(/\/$/, "");
+  return `${base}/consent?token=${encodeURIComponent(consentTokenForSession(sessionId))}`;
+}
+
+function standingConsentSessionResponse(
+  session: {
+    id: string;
+    challengeId: string;
+    manifestId: string;
+    expiresAt: Date;
+    effectiveGrantExpiresAt: Date;
+    status: string;
+  },
+  manifest: StandingReentryManifest,
+  duplicate: boolean,
+  now: Date,
+): StandingConsentEnrollment {
+  return {
+    type: "webmcp.reentry_consent_session",
+    protocol_version: STANDING_PROTOCOL_VERSION,
+    consent_session_id: session.id,
+    challenge: publicChallenge(session, manifest, now),
+    consent_url: standingConsentUrl(session.id),
+    expires_at: session.expiresAt.toISOString(),
+    duplicate,
+  };
+}
+
 function publicChallenge(
   session: {
     challengeId: string;
@@ -480,6 +600,80 @@ async function verifyManifestForOrganization(
   });
 }
 
+/** Register the exact public key used by a standing Host Manifest/Event signer. */
+export async function registerStandingHostKey(
+  organizationId: string,
+  input: RegisterStandingHostKeyInput,
+): Promise<StandingHostKeyRegistration> {
+  const normalizedOrganizationId = requireIdentifier(organizationId, "organizationId");
+  const hostId = requireIdentifier(input.hostId, "hostId");
+  const keyId = requireIdentifier(input.keyId, "keyId");
+  let issuerOrigin: string;
+  try {
+    issuerOrigin = normalizeOrigin(input.issuerOrigin);
+    validatePublicKeyPem(input.publicKeyPem);
+  } catch {
+    throw receiverFailure("host_key_invalid", 400);
+  }
+  if (
+    typeof input.publicKeyPem !== "string" ||
+    input.publicKeyPem.length === 0 ||
+    Buffer.byteLength(input.publicKeyPem, "utf8") > 16 * 1_024
+  ) {
+    throw receiverFailure("host_key_invalid", 400);
+  }
+
+  const where = {
+    organizationId_issuerOrigin_keyId: {
+      organizationId: normalizedOrganizationId,
+      issuerOrigin,
+      keyId,
+    },
+  } as const;
+  const existing = await prisma.hostKey.findUnique({ where });
+  if (existing) {
+    if (
+      existing.hostId === hostId &&
+      existing.publicKeyPem === input.publicKeyPem &&
+      existing.revokedAt === null
+    ) {
+      return {
+        type: "webmcp.reentry_host_key",
+        protocol_version: STANDING_PROTOCOL_VERSION,
+        host_id: existing.hostId,
+        issuer_origin: existing.issuerOrigin,
+        key_id: existing.keyId,
+        status: "active",
+        duplicate: true,
+      };
+    }
+    throw receiverFailure("host_key_conflict", 409);
+  }
+  try {
+    const created = await prisma.hostKey.create({
+      data: {
+        organizationId: normalizedOrganizationId,
+        hostId,
+        issuerOrigin,
+        keyId,
+        publicKeyPem: input.publicKeyPem,
+      },
+    });
+    return {
+      type: "webmcp.reentry_host_key",
+      protocol_version: STANDING_PROTOCOL_VERSION,
+      host_id: created.hostId,
+      issuer_origin: created.issuerOrigin,
+      key_id: created.keyId,
+      status: "active",
+      duplicate: false,
+    };
+  } catch (error) {
+    if (isUniqueConstraintError(error)) throw receiverFailure("host_key_conflict", 409);
+    throw error;
+  }
+}
+
 export async function createStandingConsentSession(
   input: CreateStandingConsentInput
 ): Promise<StandingConsentEnrollment> {
@@ -532,14 +726,12 @@ export async function createStandingConsentSession(
     if (!sameManifestIdentity(existing, subjectDigest, expectedOrigin, manifest)) {
       throw receiverFailure("manifest_identity_conflict", 409);
     }
-    return {
-      challenge: publicChallenge(
-        existing,
-        parseStandingReentryManifest(existing.manifestJson),
-        now
-      ),
-      duplicate: true,
-    };
+    return standingConsentSessionResponse(
+      existing,
+      parseStandingReentryManifest(existing.manifestJson),
+      true,
+      now,
+    );
   }
 
   const sessionId = randomUUID();
@@ -559,10 +751,7 @@ export async function createStandingConsentSession(
         effectiveGrantExpiresAt,
       },
     });
-    return {
-      challenge: publicChallenge(session, manifest, now),
-      duplicate: false,
-    };
+    return standingConsentSessionResponse(session, manifest, false, now);
   } catch (error) {
     if (!isUniqueConstraintError(error)) throw error;
     const raced = await prisma.standingConsentSession.findUnique({
@@ -577,15 +766,146 @@ export async function createStandingConsentSession(
     if (!sameManifestIdentity(raced, subjectDigest, expectedOrigin, manifest)) {
       throw receiverFailure("manifest_identity_conflict", 409);
     }
-    return {
-      challenge: publicChallenge(
-        raced,
-        parseStandingReentryManifest(raced.manifestJson),
-        now
-      ),
-      duplicate: true,
-    };
+    return standingConsentSessionResponse(
+      raced,
+      parseStandingReentryManifest(raced.manifestJson),
+      true,
+      now,
+    );
   }
+}
+
+/** Read standing Consent/Grant state for the Host confirmation poll. */
+export async function getStandingConsentStatus(
+  organizationId: string,
+  consentSessionId: string,
+): Promise<StandingConsentStatus> {
+  const normalizedOrganizationId = requireIdentifier(organizationId, "organizationId");
+  const normalizedSessionId = requireIdentifier(consentSessionId, "consentSessionId");
+  const session = await prisma.standingConsentSession.findFirst({
+    where: { id: normalizedSessionId, organizationId: normalizedOrganizationId },
+    include: { grant: true },
+  });
+  if (!session) throw receiverFailure("consent_session_not_found", 404);
+
+  const now = readNow();
+  const status = session.status === "pending" && session.expiresAt <= now
+    ? "expired"
+    : session.status;
+  if (!["pending", "approved", "declined", "expired"].includes(status)) {
+    throw receiverFailure("challenge_status_invalid", 500);
+  }
+  let effectiveStatus: StandingConsentStatus["effective_status"] = null;
+  let binding: StandingPublicBinding | null = null;
+  if (status === "pending") {
+    effectiveStatus = null;
+  } else if (status === "expired") {
+    effectiveStatus = "expired";
+  } else if (status === "approved") {
+    if (!session.grant) throw receiverFailure("approved_grant_missing", 500);
+    effectiveStatus = standingGrantStatus(session.grant, now);
+    binding = publicBinding(session.grant, now);
+  }
+  return {
+    type: "webmcp.reentry_consent_status",
+    protocol_version: STANDING_PROTOCOL_VERSION,
+    consent_session_id: session.id,
+    challenge_id: session.challengeId,
+    status: status as StandingConsentStatus["status"],
+    effective_status: effectiveStatus,
+    expires_at: session.expiresAt.toISOString(),
+    binding,
+  };
+}
+
+/** Validate a standing consent URL token without exposing whether it belongs to a user. */
+export async function validateStandingConsentPageToken(token: string): Promise<void> {
+  if (typeof token !== "string" || !CLAIM_TOKEN_PATTERN.test(token)) {
+    throw receiverFailure("consent_token_invalid", 404);
+  }
+  const session = await prisma.standingConsentSession.findUnique({
+    where: { tokenDigest: digestSecret(token) },
+    select: { status: true, expiresAt: true },
+  });
+  if (!session) throw receiverFailure("consent_token_invalid", 404);
+  if (session.status === "pending" && session.expiresAt <= readNow()) {
+    throw receiverFailure("consent_session_expired", 410);
+  }
+}
+
+/** Data needed by the authenticated standing Consent page; no token is echoed. */
+export async function getStandingConsentPrompt(
+  token: string,
+  accountId: string,
+): Promise<StandingConsentPrompt> {
+  if (typeof token !== "string" || !CLAIM_TOKEN_PATTERN.test(token)) {
+    throw receiverFailure("consent_token_invalid", 404);
+  }
+  const normalizedAccountId = requireIdentifier(accountId, "accountId");
+  const session = await prisma.standingConsentSession.findUnique({
+    where: { tokenDigest: digestSecret(token) },
+  });
+  if (!session) throw receiverFailure("consent_token_invalid", 404);
+  const now = readNow();
+  if (session.status === "pending" && session.expiresAt <= now) {
+    throw receiverFailure("consent_session_expired", 410);
+  }
+  const manifest = parseStandingReentryManifest(session.manifestJson);
+  const connectors = await prisma.connector.findMany({
+    where: { accountId: normalizedAccountId, revokedAt: null, expiresAt: { gt: now } },
+    select: { id: true, deviceName: true, expiresAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const status = session.status === "pending" && session.expiresAt <= now
+    ? "expired"
+    : session.status;
+  if (!["pending", "approved", "declined", "expired"].includes(status)) {
+    throw receiverFailure("challenge_status_invalid", 500);
+  }
+  return {
+    consentSessionId: session.id,
+    session: {
+      ...publicChallenge(session, manifest, now),
+      issuer_origin: manifest.issuer_origin,
+      workflow_id: manifest.workflow.id,
+      title: manifest.display.title,
+      reason: manifest.display.reason,
+    },
+    status: status as StandingConsentPrompt["status"],
+    connectors: connectors.map((connector) => ({
+      id: connector.id,
+      deviceName: connector.deviceName,
+      expiresAt: connector.expiresAt.toISOString(),
+    })),
+  };
+}
+
+/** Translate the browser token into the strict challenge-based standing decision call. */
+export async function decideStandingConsentByToken(
+  accountId: string,
+  input: StandingAccountConsentDecisionInput,
+): Promise<Record<string, unknown>> {
+  const normalizedAccountId = requireIdentifier(accountId, "accountId");
+  const token = requireClaimToken(input.consentToken, "Consent token");
+  const session = await prisma.standingConsentSession.findUnique({
+    where: { tokenDigest: digestSecret(token) },
+    select: { id: true, challengeId: true },
+  });
+  if (!session) throw receiverFailure("consent_token_invalid", 403);
+  const result = await decideStandingConsent({
+    challengeId: session.challengeId,
+    accountId: normalizedAccountId,
+    connectorId: input.connectorId,
+    action: input.action,
+    decisionId: input.decisionId,
+    decidedAt: input.decidedAt,
+  });
+  return {
+    type: "webmcp.reentry_account_consent_decision",
+    protocol_version: STANDING_PROTOCOL_VERSION,
+    consent_session_id: session.id,
+    ...result,
+  };
 }
 
 async function lockStandingConsent(
@@ -1566,6 +1886,292 @@ function assertCurrentLease(
     delivery.currentLeaseTokenDigest !== leaseTokenDigest
   ) {
     throw receiverFailure("delivery_lease_invalid", 403);
+  }
+}
+
+function mapNotificationHandoffValidation(error: unknown): never {
+  if (error instanceof StandingNotificationHandoffValidationError) {
+    throw receiverFailure(error.code, 403);
+  }
+  throw error;
+}
+
+function assertNotificationHandoffLease(
+  connector: ConnectorIdentity,
+  delivery: StandingDeliveryRecord,
+  leaseTokenDigest: string,
+  now: Date,
+): void {
+  assertConnectorScope(connector, delivery);
+  if (delivery.status !== "leased") {
+    throw receiverFailure("delivery_not_handoffable", 409);
+  }
+  if (
+    delivery.currentConnectorId !== connector.id ||
+    delivery.currentLeaseTokenDigest !== leaseTokenDigest
+  ) {
+    throw receiverFailure("delivery_lease_invalid", 403);
+  }
+  if (!delivery.leaseStartedAt || !delivery.leaseExpiresAt || delivery.leaseExpiresAt <= now) {
+    throw receiverFailure("delivery_lease_expired", 409);
+  }
+  const authorityEndReason = grantAuthorityEndReason(delivery, now);
+  if (authorityEndReason) throw receiverFailure(authorityEndReason, 410);
+}
+
+function assertNotificationHandoffWindow(
+  attestation: StandingRuntimeAdmissionAttestation,
+  delivery: StandingDeliveryRecord,
+  now: Date,
+): void {
+  if (!delivery.leaseStartedAt || !delivery.leaseExpiresAt) {
+    throw receiverFailure("delivery_private_state_invalid", 500);
+  }
+  const acceptedAt = Date.parse(attestation.accepted_at);
+  if (
+    acceptedAt < delivery.leaseStartedAt.getTime() ||
+    acceptedAt >= delivery.leaseExpiresAt.getTime() ||
+    acceptedAt >= delivery.grant.expiresAt.getTime() ||
+    acceptedAt > now.getTime() + AUTHORITY_FUTURE_SKEW_MS ||
+    (delivery.grant.revokedAt !== null && acceptedAt >= delivery.grant.revokedAt.getTime())
+  ) {
+    throw receiverFailure("runtime_admission_time_invalid", 403);
+  }
+}
+
+function notificationHandoffReceipt(
+  delivery: StandingDeliveryRecord,
+  attestation: StandingRuntimeAdmissionAttestation,
+  duplicate: boolean,
+): StandingNotificationHandoffReceipt {
+  try {
+    return normalizeNotificationHandoffReceipt({
+      type: "webmcp.notification_handoff_receipt",
+      protocol_version: STANDING_PROTOCOL_VERSION,
+      delivery_id: delivery.deliveryId,
+      event_id: delivery.eventId,
+      handoff_id: attestation.handoff_id,
+      correlation_id: delivery.grant.correlationId,
+      workflow_id: delivery.grant.workflowId,
+      status: "handed_off",
+      duplicate,
+      runtime_admission_ref: attestation.admission_id,
+    });
+  } catch (error) {
+    mapNotificationHandoffValidation(error);
+  }
+}
+
+function parseStoredNotificationHandoff(
+  delivery: StandingDeliveryRecord,
+  duplicate: boolean,
+): StandingNotificationHandoffReceipt {
+  if (
+    delivery.status !== "handed_off" ||
+    !delivery.handoffReceiptJson ||
+    !delivery.runtimeAdmissionJson ||
+    !delivery.handoffId
+  ) {
+    throw receiverFailure("delivery_private_state_invalid", 500);
+  }
+  try {
+    const receiptValue = JSON.parse(delivery.handoffReceiptJson) as unknown;
+    const receipt = normalizeNotificationHandoffReceipt(receiptValue, {
+      deliveryId: delivery.deliveryId,
+      eventId: delivery.eventId,
+      handoffId: delivery.handoffId,
+    });
+    if (canonicalJson(receipt) !== delivery.handoffReceiptJson) {
+      throw new Error("noncanonical receipt");
+    }
+    const storedAttestation = normalizeRuntimeAdmissionAttestation(
+      JSON.parse(delivery.runtimeAdmissionJson),
+      {
+        deliveryId: delivery.deliveryId,
+        eventId: delivery.eventId,
+        handoffId: delivery.handoffId,
+      },
+    );
+    if (
+      canonicalJson(storedAttestation) !== delivery.runtimeAdmissionJson ||
+      receipt.runtime_admission_ref !== storedAttestation.admission_id
+    ) {
+      throw new Error("runtime admission receipt reference mismatch");
+    }
+    return Object.freeze({ ...receipt, duplicate });
+  } catch (error) {
+    if (error instanceof StandingReceiverError) throw error;
+    throw receiverFailure("delivery_private_state_invalid", 500);
+  }
+}
+
+export async function handoffStandingDelivery(
+  input: HandoffStandingDeliveryInput,
+): Promise<StandingNotificationHandoffReceipt> {
+  const connectorToken = requireOpaqueToken(input.connectorToken, "connector_token_invalid");
+  const deliveryId = requireIdentifier(input.deliveryId, "deliveryId");
+  const leaseToken = requireClaimToken(input.leaseToken, "Delivery lease token");
+  const handoffId = requireIdentifier(input.handoffId, "handoffId");
+  const leaseTokenDigest = digestSecret(leaseToken);
+  let suppliedAttestation: StandingRuntimeAdmissionAttestation;
+  try {
+    suppliedAttestation = normalizeRuntimeAdmissionAttestation(input.runtimeAdmissionAttestation, {
+      deliveryId,
+      handoffId,
+      now: readNow(),
+    });
+  } catch (error) {
+    mapNotificationHandoffValidation(error);
+  }
+
+  const initial = await prisma.$transaction(async (transaction) => {
+    const connector = await resolveConnector(transaction, connectorToken, readNow());
+    const existingByHandoff = await transaction.standingDelivery.findUnique({
+      where: { handoffId },
+      select: standingDeliverySelect,
+    });
+    if (existingByHandoff && existingByHandoff.deliveryId !== deliveryId) {
+      throw receiverFailure("notification_handoff_identity_conflict", 409);
+    }
+    const delivery = existingByHandoff ?? await transaction.standingDelivery.findUnique({
+      where: { deliveryId },
+      select: standingDeliverySelect,
+    });
+    if (!delivery) throw receiverFailure("delivery_not_found", 404);
+    assertConnectorScope(connector, delivery);
+    if (delivery.handoffId !== null) {
+      if (delivery.handoffId !== handoffId) {
+        throw receiverFailure("notification_handoff_identity_conflict", 409);
+      }
+      let storedAttestation: StandingRuntimeAdmissionAttestation;
+      try {
+        if (!delivery.runtimeAdmissionJson) throw new Error("missing admission");
+        storedAttestation = normalizeRuntimeAdmissionAttestation(
+          JSON.parse(delivery.runtimeAdmissionJson),
+          { deliveryId, eventId: delivery.eventId, handoffId, now: readNow() },
+        );
+      } catch (error) {
+        if (error instanceof StandingReceiverError) throw error;
+        throw receiverFailure("delivery_private_state_invalid", 500);
+      }
+      if (canonicalJson(storedAttestation) !== canonicalJson(suppliedAttestation)) {
+        throw receiverFailure("notification_handoff_identity_conflict", 409);
+      }
+      return { connector, delivery, replay: true as const };
+    }
+    const now = readNow();
+    assertNotificationHandoffLease(connector, delivery, leaseTokenDigest, now);
+    const eventId = delivery.eventId;
+    try {
+      suppliedAttestation = normalizeRuntimeAdmissionAttestation(
+        suppliedAttestation,
+        { deliveryId, eventId, handoffId, now },
+      );
+    } catch (error) {
+      mapNotificationHandoffValidation(error);
+    }
+    return { connector, delivery, replay: false as const };
+  });
+
+  if (initial.replay) {
+    return parseStoredNotificationHandoff(initial.delivery, true);
+  }
+  if (!input.runtimeAdmissionAuthority) {
+    throw receiverFailure("runtime_admission_authority_unavailable", 501);
+  }
+  const expected: StandingRuntimeAdmissionExpected = {
+    delivery_id: initial.delivery.deliveryId,
+    event_id: initial.delivery.eventId,
+    grant_id: initial.delivery.grantId,
+    connector_id: initial.delivery.grant.connectorId,
+    delivery_target_id: initial.delivery.deliveryTargetId,
+    correlation_id: initial.delivery.grant.correlationId,
+    workflow_id: initial.delivery.grant.workflowId,
+  };
+  let verifiedAttestation: StandingRuntimeAdmissionAttestation;
+  try {
+    verifiedAttestation = normalizeRuntimeAdmissionAttestation(
+      await input.runtimeAdmissionAuthority.verifyAdmission({
+        attestation: suppliedAttestation,
+        expected,
+      }),
+      { deliveryId, eventId: expected.event_id, handoffId, now: readNow() },
+    );
+  } catch (error) {
+    if (error instanceof StandingNotificationHandoffValidationError) {
+      mapNotificationHandoffValidation(error);
+    }
+    throw receiverFailure("runtime_admission_invalid", 403);
+  }
+  if (canonicalJson(verifiedAttestation) !== canonicalJson(suppliedAttestation)) {
+    throw receiverFailure("runtime_admission_invalid", 403);
+  }
+  assertNotificationHandoffWindow(verifiedAttestation, initial.delivery, readNow());
+  const runtimeAdmissionJson = canonicalJson(verifiedAttestation);
+
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      if (!(await lockStandingGrantById(transaction, initial.delivery.grantId))) {
+        throw receiverFailure("delivery_disappeared", 500);
+      }
+      if (!(await lockStandingDeliveryById(transaction, deliveryId))) {
+        throw receiverFailure("delivery_disappeared", 500);
+      }
+      const { connector, now } = await lockConnectorIdentity(
+        transaction,
+        connectorToken,
+        initial.delivery.grant.connectorId,
+      );
+      const current = await transaction.standingDelivery.findUnique({
+        where: { deliveryId },
+        select: standingDeliverySelect,
+      });
+      if (!current) throw receiverFailure("delivery_disappeared", 500);
+      if (current.handoffId !== null) {
+        if (
+          current.handoffId !== handoffId ||
+          current.runtimeAdmissionJson !== runtimeAdmissionJson
+        ) {
+          throw receiverFailure("notification_handoff_identity_conflict", 409);
+        }
+        return parseStoredNotificationHandoff(current, true);
+      }
+      assertNotificationHandoffLease(connector, current, leaseTokenDigest, now);
+      assertNotificationHandoffWindow(verifiedAttestation, current, now);
+      const receipt = notificationHandoffReceipt(current, verifiedAttestation, false);
+      const receiptJson = canonicalJson(receipt);
+      const changed = await transaction.standingDelivery.updateMany({
+        where: {
+          deliveryId,
+          status: "leased",
+          currentAttempt: current.currentAttempt,
+          currentConnectorId: current.currentConnectorId,
+          currentClaimTokenDigest: current.currentClaimTokenDigest,
+          currentLeaseTokenDigest: current.currentLeaseTokenDigest,
+          leaseExpiresAt: current.leaseExpiresAt,
+          handoffId: null,
+        },
+        data: {
+          status: "handed_off",
+          handoffId,
+          runtimeAdmissionJson,
+          handoffReceiptJson: receiptJson,
+          handoffAcceptedAt: now,
+          terminalReason: null,
+          updatedAt: now,
+        },
+      });
+      if (changed.count !== 1) {
+        throw receiverFailure("notification_handoff_race", 409, true);
+      }
+      return receipt;
+    });
+  } catch (error) {
+    if (error instanceof StandingReceiverError) throw error;
+    if (isUniqueConstraintError(error)) {
+      throw receiverFailure("notification_handoff_identity_conflict", 409);
+    }
+    throw error;
   }
 }
 

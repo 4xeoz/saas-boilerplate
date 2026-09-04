@@ -36,9 +36,9 @@ v01Router.use((_req: Request, res: Response) => {
 });
 
 /**
- * Standing authorization protocol v0.2 kernel routes. Receiver-shell Consent,
- * account inspection, and revocation remain intentionally outside this router
- * until their same-user/session/CSRF contract is separately accepted.
+ * Standing authorization protocol v0.2 routes. Host enrollment uses the
+ * organization API-key boundary; account inspection and revocation use the
+ * authenticated same-user/session/CSRF boundary in the standing router.
  */
 export const v02Router = Router();
 

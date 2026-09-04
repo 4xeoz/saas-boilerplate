@@ -5,6 +5,7 @@ import type { AddressInfo } from "node:net";
 import request from "supertest";
 import { createApp } from "../../../app";
 import * as standingService from "../standing.service";
+import type { StandingRuntimeAdmissionAuthority } from "../standing.service";
 
 async function rawRequest(input: {
   path: string;
@@ -50,6 +51,30 @@ async function rawRequest(input: {
 }
 
 describe("standing authorization v0.2 transport", () => {
+  it("keeps the default app fail-closed and accepts an explicit runtime authority seam", () => {
+    const defaultApp = createApp();
+    expect(defaultApp.locals.standingRuntimeAdmissionAuthority).toBeUndefined();
+
+    const authority: StandingRuntimeAdmissionAuthority = {
+      verifyAdmission: async ({ attestation }) => attestation,
+    };
+    const composedApp = createApp({
+      standingRuntimeAdmissionAuthority: authority,
+    });
+
+    expect(composedApp.locals.standingRuntimeAdmissionAuthority).toBe(authority);
+  });
+
+  it("rejects an invalid runtime authority before constructing the app", () => {
+    expect(() =>
+      createApp({
+        standingRuntimeAdmissionAuthority: {} as never,
+      })
+    ).toThrow(
+      "standingRuntimeAdmissionAuthority must implement verifyAdmission"
+    );
+  });
+
   it.each(["POST", "OPTIONS"])(
     "rejects absolute-form standing aliases before parsing or CORS: %s",
     async (method) => {
@@ -233,6 +258,66 @@ describe("standing authorization v0.2 transport", () => {
     expect(invalidValue.body).toEqual({
       error: { code: "delivery_claim_token_invalid", retryable: false },
     });
+  });
+
+  it("maps the additive notification handoff request without using effect acknowledgement", async () => {
+    const service = jest
+      .spyOn(standingService, "handoffStandingDelivery")
+      .mockResolvedValue({
+        type: "webmcp.notification_handoff_receipt",
+        protocol_version: "0.2",
+        delivery_id: "delivery_001",
+        event_id: "event_001",
+        handoff_id: "handoff_001",
+        correlation_id: "correlation_001",
+        workflow_id: "workflow_001",
+        status: "handed_off",
+        duplicate: false,
+        runtime_admission_ref: "admission_001",
+      });
+    try {
+      const runtimeAdmissionAuthority: StandingRuntimeAdmissionAuthority = {
+        verifyAdmission: async ({ attestation }) => attestation,
+      };
+      const runtimeAdmissionAttestation = {
+        type: "webmcp.runtime_admission_attestation",
+        protocol_version: "0.2",
+        admission_id: "admission_001",
+        adapter_id: "codex_desktop_v1",
+        binding_generation: "a".repeat(64),
+        delivery_id: "delivery_001",
+        event_id: "event_001",
+        handoff_id: "handoff_001",
+        accepted_at: "2026-09-04T12:00:00.000Z",
+      };
+      const response = await request(createApp({ standingRuntimeAdmissionAuthority: runtimeAdmissionAuthority }))
+        .post("/v0.2/delivery-notification-handoffs")
+        .set("Content-Type", "application/json")
+        .send({
+          connector_token: "connector_secret",
+          delivery_id: "delivery_001",
+          lease_token: "A".repeat(43),
+          handoff_id: "handoff_001",
+          runtime_admission_attestation: runtimeAdmissionAttestation,
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        type: "webmcp.notification_handoff_receipt",
+        status: "handed_off",
+        duplicate: false,
+      });
+      expect(service).toHaveBeenCalledWith({
+        connectorToken: "connector_secret",
+        deliveryId: "delivery_001",
+        leaseToken: "A".repeat(43),
+        handoffId: "handoff_001",
+        runtimeAdmissionAttestation,
+        runtimeAdmissionAuthority,
+      });
+    } finally {
+      service.mockRestore();
+    }
   });
 
   it("rejects a body larger than the standing request limit", async () => {
