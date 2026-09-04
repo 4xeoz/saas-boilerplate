@@ -8,6 +8,7 @@ import {
   FiClipboard,
   FiCode,
   FiExternalLink,
+  FiFileText,
   FiGrid,
   FiKey,
   FiLogOut,
@@ -31,18 +32,20 @@ import {
   createApiKey,
   createOrganization,
   listApiKeys,
+  listConsentHistory,
   listEventHistory,
   listOrganizations,
   revokeApiKey,
   type DeveloperApiKey,
   type DeveloperApiKeyReveal,
+  type DeveloperConsent,
   type DeveloperEvent,
   type DeveloperOrganization,
 } from "@/lib/api/developer-portal";
 import { formatDateTime } from "@/lib/utils/format";
 import type { Developer } from "@/lib/api/developer-auth";
 
-type TabId = "overview" | "api-keys" | "sdk-guide" | "events";
+type TabId = "overview" | "api-keys" | "sdk-guide" | "consents" | "events";
 
 type DeveloperPortalProps = {
   developer: Developer;
@@ -53,6 +56,7 @@ const TABS: Array<{ id: TabId; label: string; icon: typeof FiGrid }> = [
   { id: "overview", label: "Overview", icon: FiGrid },
   { id: "api-keys", label: "API Keys", icon: FiKey },
   { id: "sdk-guide", label: "SDK Guide", icon: FiBookOpen },
+  { id: "consents", label: "Consents", icon: FiFileText },
   { id: "events", label: "Events", icon: FiActivity },
 ];
 
@@ -72,14 +76,37 @@ function statusClass(key: DeveloperApiKey): string {
 
 function deliveryStateLabel(state: string | null): string {
   if (state === "pending") return "Queued";
+  if (state === "leased") return "In progress";
+  if (state === "acknowledged") return "Delivered";
+  if (state === "retry_exhausted") return "Failed";
+  if (state === "cancelled") return "Cancelled";
   if (!state) return "Not created";
   return state.replaceAll("_", " ");
+}
+
+function consentStatusLabel(consent: DeveloperConsent): string {
+  if (consent.status === "declined") return "Declined";
+  if (consent.status === "pending") return "Pending";
+  if (consent.grant_status === "exhausted") return "Used once";
+  if (consent.grant_status === "expired" || consent.status === "expired") return "Expired";
+  if (consent.grant_status === "revoked") return "Revoked";
+  if (consent.grant_status === "active") return "Active";
+  return "Approved";
+}
+
+function lifecycleClass(label: string): string {
+  return label === "Active" || label === "Delivered"
+    ? "border-[#a6c89c] bg-[#e2f6d5] text-[#286323]"
+    : label === "Failed" || label === "Declined"
+      ? "border-[#e2b7b7] bg-[#fff0f0] text-[#8f252c]"
+      : "border-[#dbe8d7] bg-[#f7fbf4] text-[#587052]";
 }
 
 export default function DeveloperPortal({ developer, onLogout }: DeveloperPortalProps) {
   const [organizations, setOrganizations] = useState<DeveloperOrganization[]>([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState("");
   const [apiKeys, setApiKeys] = useState<DeveloperApiKey[]>([]);
+  const [consents, setConsents] = useState<DeveloperConsent[]>([]);
   const [events, setEvents] = useState<DeveloperEvent[]>([]);
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [organizationName, setOrganizationName] = useState("");
@@ -123,10 +150,15 @@ export default function DeveloperPortal({ developer, onLogout }: DeveloperPortal
     }
 
     let current = true;
-    void Promise.all([listApiKeys(selectedOrganizationId), listEventHistory(selectedOrganizationId)])
-      .then(([keyResponse, eventResponse]) => {
+    void Promise.all([
+      listApiKeys(selectedOrganizationId),
+      listConsentHistory(selectedOrganizationId),
+      listEventHistory(selectedOrganizationId),
+    ])
+      .then(([keyResponse, consentResponse, eventResponse]) => {
         if (!current) return;
         setApiKeys(keyResponse.data.api_keys);
+        setConsents(consentResponse.data.consents);
         setEvents(eventResponse.data.events);
       })
       .catch((requestError: unknown) => {
@@ -364,7 +396,7 @@ export default function DeveloperPortal({ developer, onLogout }: DeveloperPortal
         {selectedOrganization ? (
           <div className="relative mt-8" id={`developer-panel-${activeTab}`} role="tabpanel" aria-labelledby={`developer-tab-${activeTab}`}>
             {activeTab === "overview" ? (
-              <OverviewPanel organization={selectedOrganization} apiKeys={apiKeys} events={events} onTabChange={setActiveTab} />
+              <OverviewPanel organization={selectedOrganization} apiKeys={apiKeys} consents={consents} events={events} onTabChange={setActiveTab} />
             ) : null}
             {activeTab === "api-keys" ? (
               <ApiKeysPanel
@@ -379,6 +411,7 @@ export default function DeveloperPortal({ developer, onLogout }: DeveloperPortal
               />
             ) : null}
             {activeTab === "sdk-guide" ? <SdkDocumentation /> : null}
+            {activeTab === "consents" ? <ConsentsPanel consents={consents} loading={loadingOrganizationData} /> : null}
             {activeTab === "events" ? <EventsPanel events={events} loading={loadingOrganizationData} /> : null}
           </div>
         ) : null}
@@ -420,11 +453,13 @@ function OrganizationForm({
 function OverviewPanel({
   organization,
   apiKeys,
+  consents,
   events,
   onTabChange,
 }: {
   organization: DeveloperOrganization;
   apiKeys: DeveloperApiKey[];
+  consents: DeveloperConsent[];
   events: DeveloperEvent[];
   onTabChange: (tab: TabId) => void;
 }) {
@@ -445,8 +480,8 @@ function OverviewPanel({
 
       <div className="grid gap-4 md:grid-cols-3">
         <Metric label="Active API keys" value={activeKeys} icon={<FiKey aria-hidden="true" />} />
-        <Metric label="Recorded Events" value={events.length} icon={<FiActivity aria-hidden="true" />} />
-        <Metric label="Boundary" value="Server" icon={<FiShield aria-hidden="true" />} />
+        <Metric label="Consent records" value={consents.length} icon={<FiFileText aria-hidden="true" />} />
+        <Metric label="Events received" value={events.length} icon={<FiActivity aria-hidden="true" />} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
@@ -583,19 +618,53 @@ function EventsPanel({ events, loading }: { events: DeveloperEvent[]; loading: b
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#587052]">A redacted history of accepted Events and their Delivery state. Event bodies, bindings, tokens, Connector credentials, and private receipts stay outside this view.</p>
       </div>
       <Card padding="none" className="bg-white/75" hover={false}>
-        {loading ? <LoadingLine label="Loading Event history" /> : events.length === 0 ? <EmptyState icon={<FiActivity aria-hidden="true" />} title="No Events recorded" description="Accepted Host Events will appear here with their redacted Delivery state." /> : (
-          <Table className="overflow-x-auto">
-            <Thead><Th>Event</Th><Th>Origin</Th><Th>Workflow</Th><Th>Received</Th><Th>Delivery</Th><Th>Attempt</Th><Th>Acknowledged</Th></Thead>
-            <Tbody>
+        {loading ? <LoadingLine label="Loading Event history" /> : events.length === 0 ? <EmptyState icon={<FiActivity aria-hidden="true" />} title="No Events recorded" description="Approvals appear under Consents. Accepted Host Events will appear here after the Host sends one." /> : (
+            <Table className="overflow-x-auto">
+            <Thead><Th>Event</Th><Th>Website</Th><Th>Received</Th><Th>Delivery</Th><Th>Attempts</Th></Thead>
+              <Tbody>
               {events.map((event) => (
                 <Tr key={event.event_id}>
-                  <Td><div className="min-w-[170px]"><strong className="block text-sm text-[#163300]">{event.event_type}</strong><code className="font-mono text-[10px] text-[#71876c]">{event.event_id}</code></div></Td>
+                  <Td><strong className="block min-w-[150px] text-sm text-[#163300]">{event.event_type}</strong></Td>
                   <Td className="max-w-[190px] truncate text-xs text-[#587052]">{event.issuer_origin}</Td>
-                  <Td><code className="font-mono text-xs text-[#286323]">{event.workflow_id}</code></Td>
                   <Td className="whitespace-nowrap text-xs text-[#587052]">{formatDateTime(event.received_at)}</Td>
-                  <Td><span className="rounded-full border border-[#cddfc8] bg-[#eef7e8] px-2.5 py-1 text-xs font-semibold capitalize text-[#286323]">{deliveryStateLabel(event.delivery_state)}</span></Td>
+                  <Td>
+                    <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${lifecycleClass(deliveryStateLabel(event.delivery_state))}`}>
+                      {deliveryStateLabel(event.delivery_state)}
+                    </span>
+                    {event.terminal_reason ? <span className="mt-1 block max-w-[150px] text-[11px] text-[#8f252c]">{event.terminal_reason.replaceAll("_", " ")}</span> : null}
+                  </Td>
                   <Td className="text-sm text-[#587052]">{event.delivery_attempt ?? "—"}</Td>
-                  <Td className="whitespace-nowrap text-xs text-[#587052]">{formatDateTime(event.acknowledged_at)}</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function ConsentsPanel({ consents, loading }: { consents: DeveloperConsent[]; loading: boolean }) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#4a8e3d]">Organization approval surface</p>
+        <h2 className="mt-2 text-4xl font-semibold tracking-[-0.06em] text-[#163300]">Consents</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#587052]">A safe record of consent decisions and the Grant created from each approval. Event bodies, users, bindings, tokens, and Connector credentials stay outside this view.</p>
+      </div>
+      <Card padding="none" className="bg-white/75" hover={false}>
+        {loading ? <LoadingLine label="Loading consent history" /> : consents.length === 0 ? <EmptyState icon={<FiFileText aria-hidden="true" />} title="No consent records" description="Approved and declined consent decisions will appear here." /> : (
+            <Table className="overflow-x-auto">
+            <Thead><Th>Website</Th><Th>Permission</Th><Th>Status</Th><Th>Approved</Th><Th>Expires</Th><Th>Uses</Th></Thead>
+              <Tbody>
+              {consents.map((consent) => (
+                <Tr key={consent.consent_session_id}>
+                  <Td><div className="min-w-[170px]"><strong className="block text-sm text-[#163300]">{consent.site_name}</strong><span className="block truncate text-xs text-[#71876c]">{consent.site_origin}</span></div></Td>
+                  <Td><div className="min-w-[180px]"><strong className="block text-sm text-[#163300]">{consent.title ?? "Consent review"}</strong><span className="block text-xs text-[#71876c]">{consent.reason ?? "No additional details"}</span></div></Td>
+                  <Td><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${lifecycleClass(consentStatusLabel(consent))}`}>{consentStatusLabel(consent)}</span></Td>
+                  <Td className="whitespace-nowrap text-xs text-[#587052]">{formatDateTime(consent.approved_at)}</Td>
+                  <Td className="whitespace-nowrap text-xs text-[#587052]">{formatDateTime(consent.expires_at)}</Td>
+                  <Td className="text-sm text-[#587052]">{consent.runs_remaining ?? "—"}</Td>
                 </Tr>
               ))}
             </Tbody>

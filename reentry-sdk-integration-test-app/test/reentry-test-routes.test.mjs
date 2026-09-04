@@ -4,6 +4,7 @@ import test from "node:test";
 
 import { POST as createConsent } from "../app/api/reentry/consent/route.js";
 import { POST as confirmConsent } from "../app/api/reentry/consent/status/route.js";
+import { POST as triggerEvent } from "../app/api/reentry/trigger/route.js";
 import {
   getApprovedContinuation,
   TEST_PROMPT,
@@ -14,7 +15,7 @@ const RECEIVER_ORIGIN = "https://receiver.example";
 const ORGANIZATION_API_KEY = "org-key-reentry-sdk-test";
 const PRIVATE_KEY_MARKER = "PRIVATE KEY";
 
-test("the test button path signs consent, confirms approval, and stores only an opaque continuation", async () => {
+test("the test button path signs consent, confirms approval, and sends one accepted Event", async () => {
   const sessionId = "consent_session_test_001";
   const calls = installReceiverHarness({ sessionId, status: "approved" });
 
@@ -56,7 +57,15 @@ test("the test button path signs consent, confirms approval, and stores only an 
   assert.equal(stored.binding.runs_remaining, 1);
   assert.equal(stored.workflow.canonicalUrl, `${HOST_ORIGIN}/`);
   assert.equal(JSON.stringify(stored).includes(ORGANIZATION_API_KEY), false);
-  assert.equal(calls.some((call) => call.path === "/v0.1/events"), false);
+
+  const eventResponse = await triggerEvent(requestWithJson({ continuation_id: sessionId }));
+  assert.equal(eventResponse.status, 202);
+  const eventAcceptance = await eventResponse.json();
+  assert.deepEqual(Object.keys(eventAcceptance).sort(), ["duplicate", "event_id", "status"]);
+  assert.equal(eventAcceptance.status, "accepted");
+  assert.equal(eventAcceptance.duplicate, false);
+  assert.match(eventAcceptance.event_id, /^event_/);
+  assert.equal(calls.some((call) => call.path === "/v0.1/events"), true);
 });
 
 test("pending consent is visible and does not store a continuation", async () => {
@@ -135,8 +144,21 @@ function installReceiverHarness({ sessionId, status }) {
             runs_remaining: 1,
             status: "active",
           }
-          : null,
+        : null,
       }, 200);
+    }
+    if (parsed.pathname === "/v0.1/events") {
+      const envelope = JSON.parse(String(options.body));
+      const event = JSON.parse(envelope.body);
+      return jsonResponse({
+        type: "webmcp.continuation_acceptance",
+        protocol_version: "0.1",
+        event_id: event.event_id,
+        correlation_id: event.correlation_id,
+        accepted: true,
+        duplicate: false,
+        status: "accepted",
+      }, 202);
     }
     throw new Error(`Unexpected Receiver path: ${parsed.pathname}`);
   };

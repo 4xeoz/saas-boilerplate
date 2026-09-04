@@ -6,6 +6,7 @@ import {
   createApiKeyController,
   createOrganizationController,
   listApiKeysController,
+  listConsentHistoryController,
   listEventHistoryController,
   listOrganizationsController,
   revokeApiKeyController,
@@ -42,4 +43,8 @@ developerPortalRouter.post(
 developerPortalRouter.get(
   "/organizations/:organizationId/events",
   listEventHistoryController
+);
+developerPortalRouter.get(
+  "/organizations/:organizationId/consents",
+  listConsentHistoryController
 );

@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { Organization, OrganizationApiKey, Prisma } from "@prisma/client";
 import { prisma } from "../../db";
 import { digestSecret } from "../../middleware/organization-auth";
+import { deriveEffectiveGrantStatus, type EffectiveGrantStatus } from "../consent/grant-control";
 import type { CreateOrganization } from "./developer-portal.schemas";
 
 const EVENT_HISTORY_LIMIT = 100;
@@ -45,6 +46,22 @@ export type DeveloperEventSummary = {
   delivery_attempt: number | null;
   acknowledged_at: string | null;
   terminal_reason: string | null;
+};
+
+export type DeveloperConsentSummary = {
+  consent_session_id: string;
+  site_origin: string;
+  site_name: string;
+  title: string | null;
+  reason: string | null;
+  workflow_id: string | null;
+  event_type: string | null;
+  status: string;
+  grant_status: EffectiveGrantStatus | null;
+  created_at: string;
+  approved_at: string | null;
+  expires_at: string;
+  runs_remaining: number | null;
 };
 
 function organizationSummary(organization: Pick<Organization, "id" | "name" | "createdAt" | "updatedAt">): OrganizationSummary {
@@ -210,6 +227,112 @@ const eventHistorySelect = {
 } as const;
 
 type EventHistoryRecord = Prisma.EventGetPayload<{ select: typeof eventHistorySelect }>;
+
+const consentHistorySelect = {
+  id: true,
+  status: true,
+  decisionAt: true,
+  expiresAt: true,
+  createdAt: true,
+  manifestJson: true,
+  grant: {
+    select: {
+      issuerOrigin: true,
+      workflowId: true,
+      eventType: true,
+      humanBoundary: true,
+      runsRemaining: true,
+      expiresAt: true,
+      revokedAt: true,
+    },
+  },
+} as const;
+
+type ConsentHistoryRecord = Prisma.ConsentSessionGetPayload<{ select: typeof consentHistorySelect }>;
+
+function jsonRecord(value: Prisma.JsonValue): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function nestedRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function textValue(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function siteName(origin: string): string {
+  try {
+    return new URL(origin).hostname;
+  } catch {
+    return origin;
+  }
+}
+
+function consentDisplayFields(manifestJson: Prisma.JsonValue): {
+  siteOrigin: string | null;
+  title: string | null;
+  reason: string | null;
+  workflowId: string | null;
+  eventType: string | null;
+} {
+  const manifest = jsonRecord(manifestJson);
+  const display = nestedRecord(manifest?.display);
+  const workflow = nestedRecord(manifest?.workflow);
+  const grantRequest = nestedRecord(manifest?.grant_request);
+  return {
+    siteOrigin: textValue(manifest?.issuer_origin),
+    title: textValue(display?.title),
+    reason: textValue(display?.reason),
+    workflowId: textValue(workflow?.id),
+    eventType: textValue(grantRequest?.event_type),
+  };
+}
+
+export async function listConsentHistory(
+  developerId: string,
+  organizationId: string
+): Promise<{ consents: DeveloperConsentSummary[] }> {
+  await requireOwnedOrganization(developerId, organizationId);
+  const sessions = await prisma.consentSession.findMany({
+    where: { organizationId },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: EVENT_HISTORY_LIMIT,
+    select: consentHistorySelect,
+  });
+  const now = new Date();
+
+  return {
+    consents: sessions.map((session: ConsentHistoryRecord) => {
+      const display = consentDisplayFields(session.manifestJson);
+      const grant = session.grant;
+      const status = session.status === "pending" && session.expiresAt <= now
+        ? "expired"
+        : session.status;
+      const siteOrigin = grant?.issuerOrigin ?? display.siteOrigin ?? "Unknown origin";
+      return {
+        consent_session_id: session.id,
+        site_origin: siteOrigin,
+        site_name: siteName(siteOrigin),
+        title: display.title,
+        reason: display.reason,
+        workflow_id: grant?.workflowId ?? display.workflowId,
+        event_type: grant?.eventType ?? display.eventType,
+        status,
+        grant_status: grant ? deriveEffectiveGrantStatus(grant, now) : null,
+        created_at: session.createdAt.toISOString(),
+        approved_at: session.decisionAt?.toISOString() ?? null,
+        expires_at: session.expiresAt.toISOString(),
+        runs_remaining: grant?.runsRemaining ?? null,
+      };
+    }),
+  };
+}
 
 export async function listEventHistory(
   developerId: string,

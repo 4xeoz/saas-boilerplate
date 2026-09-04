@@ -8,6 +8,7 @@ import {
   consentPageController,
   createConsentSessionController,
   getConsentStatusController,
+  listAccountContractsController,
   registerHostKeyController,
 } from "./consent.controller";
 import {
@@ -36,6 +37,12 @@ consentApiRouter.get(
   "/consent-sessions/:consentSessionId",
   requireOrganizationApiKey,
   getConsentStatusController
+);
+
+consentApiRouter.get(
+  "/account/contracts",
+  requireSession("user"),
+  listAccountContractsController
 );
 
 consentApiRouter.post(

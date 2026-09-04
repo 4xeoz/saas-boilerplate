@@ -433,5 +433,48 @@ describe("Cloud Receiver v2 developer portal", () => {
     );
     expectFailure(crossOwner, 404, "ORGANIZATION_NOT_FOUND");
     expect(crossOwner.text).not.toContain(fixture.eventId);
+
+    const consents = await ownerAgent.get(
+      `/api/organizations/${created.organization.organization_id}/consents`
+    );
+    const consentData = expectSuccess(consents, 200) as { consents: Array<Record<string, unknown>> };
+    expect(Object.keys(consentData).sort()).toEqual(["consents"]);
+    expect(consentData.consents).toHaveLength(1);
+    expect(Object.keys(consentData.consents[0]).sort()).toEqual([
+      "approved_at",
+      "consent_session_id",
+      "created_at",
+      "event_type",
+      "expires_at",
+      "grant_status",
+      "reason",
+      "runs_remaining",
+      "site_name",
+      "site_origin",
+      "status",
+      "title",
+      "workflow_id",
+    ]);
+    expect(consentData.consents[0]).toEqual(expect.objectContaining({
+      site_origin: "https://portal-host.example",
+      site_name: "portal-host.example",
+      event_type: "review.requested",
+      workflow_id: expect.stringMatching(/^portal-workflow-/),
+      status: "approved",
+      grant_status: "exhausted",
+      runs_remaining: 0,
+      title: null,
+      reason: null,
+    }));
+    expect(consents.text).not.toContain(fixture.privateBody);
+    expect(consents.text).not.toContain(fixture.bindingId);
+    expect(consents.text).not.toContain(fixture.grantId);
+    expect(consents.text).not.toContain(fixture.connectorToken);
+    expect(consents.text).not.toContain("manifest-secret-must-not-appear");
+
+    const crossOwnerConsents = await otherAgent.get(
+      `/api/organizations/${created.organization.organization_id}/consents`
+    );
+    expectFailure(crossOwnerConsents, 404, "ORGANIZATION_NOT_FOUND");
   });
 });

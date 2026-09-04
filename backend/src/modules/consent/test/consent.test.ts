@@ -373,6 +373,44 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
       })
     );
 
+    const accountContracts = await userAgent.get("/v0.1/account/contracts");
+    expect(accountContracts.status).toBe(200);
+    expectExactKeys(accountContracts.body, ["type", "protocol_version", "contracts"]);
+    expect(accountContracts.body.type).toBe("webmcp.reentry_account_contracts");
+    expect(accountContracts.body.contracts).toHaveLength(1);
+    expectExactKeys(accountContracts.body.contracts[0], [
+      "approved_at",
+      "connector_device_name",
+      "contract_id",
+      "event_type",
+      "expires_at",
+      "human_boundary",
+      "protocol_version",
+      "reason",
+      "runs_remaining",
+      "site_name",
+      "site_origin",
+      "status",
+      "title",
+      "type",
+      "workflow_id",
+    ]);
+    expect(accountContracts.body.contracts[0]).toEqual(expect.objectContaining({
+      site_origin: origin,
+      title: `Review manifest-consent-002-approved-${suffix}`,
+      event_type: "review.requested",
+      status: "active",
+      runs_remaining: 1,
+      connector_device_name: "Consent Mac One",
+    }));
+    expectNoPrivateHostValues(
+      accountContracts.body,
+      userId,
+      firstConnectorId,
+      firstDeliveryTargetId,
+      approvedToken
+    );
+
     const approvalReplay = await decide(approvedToken, "approve", firstConnectorId);
     expect(approvalReplay.status).toBe(200);
     expect(approvalReplay.body.duplicate).toBe(true);

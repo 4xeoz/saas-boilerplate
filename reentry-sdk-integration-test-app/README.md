@@ -3,16 +3,17 @@
 This is a deliberately isolated, test-only Next.js consumer for checking the published
 `@4xeoz/re-entry-sdk` consent flow against a Re-entry Cloud Receiver.
 
-It intentionally stops after:
+It intentionally covers only the consent-to-queued-Event path:
 
 ```text
 button -> signed Manifest + consent session -> Re-entry consent -> Host status confirmation
        -> approved opaque continuation retained in the test server's memory
+       -> second button -> signed Event -> Re-entry acceptance (202 / queued)
 ```
 
-It does not register a WebMCP tool, send a later Event, update application workflow state, launch
-an Agent, or provide a fallback path. The in-memory store is only a placeholder for a real Host
-database and is cleared when the Next.js process restarts.
+It does not register a WebMCP tool, update application workflow state, launch an Agent, or provide
+a fallback path. The in-memory store is only a placeholder for a real Host database and is cleared
+when the Next.js process restarts.
 
 ## Run locally
 
@@ -30,7 +31,13 @@ lines.
 
 Open [http://localhost:3000](http://localhost:3000) and select **Sign a test contract**. The SDK
 opens the Receiver consent page in a popup. After approval, the Host status route confirms the
-Receiver state and stores the opaque continuation in memory. No later action is sent.
+Receiver state and stores the opaque continuation in memory. Select **Trigger test Event** to model
+the trusted Host business-event handler; the SDK sends one signed Event and displays the Receiver's
+`202 / accepted / queued` response.
+
+The Receiver should record a ConsentSession, HostSubjectBinding, and Grant after approval. After
+the second button it should also record one Event and one pending Delivery, and the Grant should
+have zero remaining runs. A `202` means queued acceptance, not delivery or acknowledgement.
 
 ## Verify
 

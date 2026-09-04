@@ -138,6 +138,30 @@ export type ConsentStatusResult = {
   binding: PublicBinding | null;
 };
 
+export type AccountContractSummary = {
+  type: "webmcp.reentry_account_contract";
+  protocol_version: "0.1";
+  contract_id: string;
+  site_origin: string;
+  site_name: string;
+  title: string;
+  reason: string;
+  workflow_id: string;
+  event_type: string;
+  human_boundary: string;
+  approved_at: string;
+  expires_at: string;
+  runs_remaining: number;
+  status: EffectiveGrantStatus;
+  connector_device_name: string;
+};
+
+export type AccountContractsResult = {
+  type: "webmcp.reentry_account_contracts";
+  protocol_version: "0.1";
+  contracts: AccountContractSummary[];
+};
+
 function translateManifestError(error: unknown, invalidCode: string = "manifest_invalid"): never {
   if (error instanceof ManifestError) {
     const statusCode =
@@ -635,6 +659,49 @@ export async function getConsentStatus(
     effective_status: effectiveStatus,
     expires_at: session.expiresAt.toISOString(),
     binding,
+  };
+}
+
+export async function listAccountContracts(accountId: string): Promise<AccountContractsResult> {
+  const grants = await prisma.grant.findMany({
+    where: { accountId },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: 100,
+    include: {
+      consentSession: {
+        select: { decisionAt: true, manifestJson: true },
+      },
+      connector: {
+        select: { deviceName: true },
+      },
+    },
+  });
+  const now = new Date();
+
+  return {
+    type: "webmcp.reentry_account_contracts",
+    protocol_version: "0.1",
+    contracts: grants.map((grant) => {
+      const manifest = parseManifest(grant.consentSession.manifestJson);
+      const siteOrigin = grant.issuerOrigin;
+      return {
+        type: "webmcp.reentry_account_contract",
+        protocol_version: "0.1",
+        contract_id: grant.id,
+        site_origin: siteOrigin,
+        site_name: new URL(siteOrigin).hostname,
+        title: manifest.display.title,
+        reason: manifest.display.reason,
+        workflow_id: grant.workflowId,
+        event_type: grant.eventType,
+        human_boundary: grant.humanBoundary,
+        approved_at: grant.consentSession.decisionAt?.toISOString() ?? grant.createdAt.toISOString(),
+        expires_at: grant.expiresAt.toISOString(),
+        runs_remaining: grant.runsRemaining,
+        status: deriveEffectiveGrantStatus(grant, now),
+        connector_device_name: grant.connector.deviceName,
+      };
+    }),
   };
 }
 

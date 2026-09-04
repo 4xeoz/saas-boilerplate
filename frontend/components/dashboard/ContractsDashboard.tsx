@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   FiArrowLeft,
@@ -13,6 +13,8 @@ import {
   FiLock,
   FiShield,
 } from "react-icons/fi";
+import { listAccountContracts, type AccountContract } from "@/lib/api/contracts";
+import { formatDateTime } from "@/lib/utils/format";
 
 type ApprovedContract = {
   id: string;
@@ -21,42 +23,85 @@ type ApprovedContract = {
   initials: string;
   title: string;
   approvedOn: string;
+  expiresOn: string;
+  reason: string;
+  status: AccountContract["status"];
+  runsRemaining: number;
   scopes: string[];
 };
 
-const approvedContracts: ApprovedContract[] = [
-  {
-    id: "northstar-booking",
-    siteName: "Northstar Travel",
-    domain: "northstar.example",
-    initials: "NT",
-    title: "Finish a saved booking",
-    approvedOn: "Sep 3, 2026",
-    scopes: ["Read the current booking", "Submit the selected option"],
-  },
-  {
-    id: "atlas-order",
-    siteName: "Atlas Commerce",
-    domain: "atlas.example",
-    initials: "AC",
-    title: "Complete a prepared order",
-    approvedOn: "Sep 2, 2026",
-    scopes: ["Read the prepared cart", "Navigate to order review"],
-  },
-  {
-    id: "cedar-profile",
-    siteName: "Cedar Workspace",
-    domain: "cedar.example",
-    initials: "CW",
-    title: "Update a workspace profile",
-    approvedOn: "Sep 1, 2026",
-    scopes: ["Read the profile draft", "Save the approved fields"],
-  },
-];
+function statusLabel(status: AccountContract["status"]): string {
+  if (status === "active") return "Active";
+  if (status === "exhausted") return "Used once";
+  return status[0].toUpperCase() + status.slice(1);
+}
+
+function statusClass(status: AccountContract["status"]): string {
+  return status === "active"
+    ? "border-[#a6c89c] bg-[#e2f6d5] text-[#286323]"
+    : "border-[#d8d6ce] bg-[#f2f1eb] text-[#69756d]";
+}
+
+function eventLabel(eventType: string): string {
+  return eventType
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function toApprovedContract(contract: AccountContract): ApprovedContract {
+  const initials = contract.site_name
+    .split(/[.\s-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "RE";
+  return {
+    id: contract.contract_id,
+    siteName: contract.site_name,
+    domain: contract.site_origin,
+    initials,
+    title: contract.title,
+    approvedOn: formatDateTime(contract.approved_at),
+    expiresOn: formatDateTime(contract.expires_at),
+    reason: contract.reason,
+    status: contract.status,
+    runsRemaining: contract.runs_remaining,
+    scopes: [
+      `One-time permission: ${eventLabel(contract.event_type)}`,
+      "Approval is required before it can be used",
+      `Connected device: ${contract.connector_device_name}`,
+    ],
+  };
+}
 
 export default function ContractsDashboard({ dashboardHref = "/user-dashboard" }: { dashboardHref?: string }) {
-  const [selectedId, setSelectedId] = useState(approvedContracts[0].id);
-  const selectedContract = approvedContracts.find((contract) => contract.id === selectedId) ?? approvedContracts[0];
+  const [approvedContracts, setApprovedContracts] = useState<ApprovedContract[]>([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const selectedContract = approvedContracts.find((contract) => contract.id === selectedId) ?? null;
+
+  useEffect(() => {
+    let current = true;
+    void listAccountContracts()
+      .then((response) => {
+        if (!current) return;
+        const contracts = response.contracts.map(toApprovedContract);
+        setApprovedContracts(contracts);
+        setSelectedId(contracts[0]?.id ?? "");
+      })
+      .catch((requestError: unknown) => {
+        if (current) setError(requestError instanceof Error ? requestError.message : "Unable to load contracts.");
+      })
+      .finally(() => {
+        if (current) setLoading(false);
+      });
+    return () => {
+      current = false;
+    };
+  }, []);
 
   return (
     <div
@@ -91,11 +136,21 @@ export default function ContractsDashboard({ dashboardHref = "/user-dashboard" }
 
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#a6c89c] bg-[#e2f6d5] px-4 py-2.5 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#286323] shadow-[0_12px_32px_rgba(22,51,0,0.05)]">
             <FiCheckCircle aria-hidden="true" />
-            {approvedContracts.length} approved
+            {approvedContracts.length} stored
           </div>
         </div>
 
-        <section className="mt-10 overflow-hidden rounded-[30px] border border-[#cddfc8] bg-white/75 shadow-[0_24px_80px_rgba(22,51,0,0.09)]">
+        {loading ? (
+          <section className="mt-10 rounded-[30px] border border-[#cddfc8] bg-white/75 p-8 text-sm text-[#587052]">Loading your stored contracts…</section>
+        ) : null}
+        {error ? <p className="mt-6 rounded-2xl border border-[#e2b7b7] bg-[#fff0f0] px-4 py-3 text-sm text-[#8f252c]" role="alert">{error}</p> : null}
+        {!loading && !error && approvedContracts.length === 0 ? (
+          <section className="mt-10 rounded-[30px] border border-[#cddfc8] bg-white/75 p-8 text-sm text-[#587052]">
+            No approved contracts yet. Approve a website to see its stored permission here.
+          </section>
+        ) : null}
+
+        {selectedContract ? <section className="mt-10 overflow-hidden rounded-[30px] border border-[#cddfc8] bg-white/75 shadow-[0_24px_80px_rgba(22,51,0,0.09)]">
           <div className="flex flex-col gap-4 border-b border-[#dbe8d7] px-5 py-5 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#4a8e3d]">Your contracts</p>
@@ -130,9 +185,9 @@ export default function ContractsDashboard({ dashboardHref = "/user-dashboard" }
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-semibold text-[#163300]">{contract.siteName}</span>
                         <span className="mt-1 block truncate text-xs text-[#7b9077]">{contract.title}</span>
-                        <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#a6c89c] bg-[#e2f6d5] px-2 py-1 text-[10px] font-semibold text-[#286323]">
-                          <FiCheckCircle aria-hidden="true" />
-                          Approved
+                          <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-semibold ${statusClass(contract.status)}`}>
+                            <FiCheckCircle aria-hidden="true" />
+                          {statusLabel(contract.status)}
                         </span>
                       </span>
                       <FiChevronRight className={`h-4 w-4 shrink-0 transition ${isSelected ? "text-[#4b9b42]" : "text-[#b1c2ac] group-hover:text-[#4b9b42]"}`} aria-hidden="true" />
@@ -158,14 +213,15 @@ export default function ContractsDashboard({ dashboardHref = "/user-dashboard" }
                     <p className="mt-1 text-xs text-[#7b9077]">{selectedContract.domain}</p>
                   </div>
                 </div>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#a6c89c] bg-[#e2f6d5] px-3 py-1.5 text-xs font-semibold text-[#286323]">
+                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${statusClass(selectedContract.status)}`}>
                   <FiCheckCircle aria-hidden="true" />
-                  Approved
+                  {statusLabel(selectedContract.status)}
                 </span>
               </div>
 
               <div className="mt-8 border-b border-[#dbe8d7] pb-6">
                 <h4 className="text-xl font-semibold tracking-[-0.04em] text-[#163300]">{selectedContract.title}</h4>
+                <p className="mt-3 text-sm leading-6 text-[#587052]">{selectedContract.reason}</p>
               </div>
 
               <dl className="grid gap-4 border-b border-[#dbe8d7] py-6 sm:grid-cols-2">
@@ -176,6 +232,14 @@ export default function ContractsDashboard({ dashboardHref = "/user-dashboard" }
                 <div>
                   <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#8aa083]">Approved on</dt>
                   <dd className="mt-2 text-sm font-semibold text-[#163300]">{selectedContract.approvedOn}</dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#8aa083]">Expires</dt>
+                  <dd className="mt-2 text-sm font-semibold text-[#163300]">{selectedContract.expiresOn}</dd>
+                </div>
+                <div>
+                  <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#8aa083]">Uses remaining</dt>
+                  <dd className="mt-2 text-sm font-semibold text-[#163300]">{selectedContract.runsRemaining}</dd>
                 </div>
               </dl>
 
@@ -197,12 +261,12 @@ export default function ContractsDashboard({ dashboardHref = "/user-dashboard" }
               <div className="mt-7 flex items-start gap-3 rounded-2xl bg-[#163300] p-4 text-[#efffe7] sm:p-5">
                 <div className="flex items-start gap-3">
                   <FiLock className="mt-0.5 h-4 w-4 shrink-0 text-[#b9f57b]" aria-hidden="true" />
-                  <p className="text-sm leading-6 text-white/65">You approved this website. It can request only the scope shown above.</p>
+                  <p className="text-sm leading-6 text-white/65">You approved this website. This permission can be used only once before it expires.</p>
                 </div>
               </div>
             </article>
           </div>
-        </section>
+        </section> : null}
 
         <section className="mt-6 rounded-[26px] border border-[#cddfc8] bg-[#dff3d7] p-5 sm:p-6">
           <div className="flex items-center gap-2">
@@ -227,7 +291,7 @@ export default function ContractsDashboard({ dashboardHref = "/user-dashboard" }
         </section>
 
         <p className="mt-5 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#7c9376]">
-          Preview data only · approved records will replace this list later
+          Live account records · secrets and private Connector credentials stay hidden
         </p>
       </div>
     </div>

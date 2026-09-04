@@ -6,6 +6,7 @@ import {
   createOrganization,
   DeveloperPortalError,
   listApiKeys,
+  listConsentHistory,
   listEventHistory,
   listOrganizations,
   revokeApiKey,
@@ -119,6 +120,21 @@ export const listEventHistoryController = asyncHandler(async (req: Request, res:
     return res
       .status(200)
       .json(ok(await listEventHistory(developerId(req), req.params.organizationId)));
+  } catch (error) {
+    if (error instanceof DeveloperPortalError) {
+      sendPortalError(res, error);
+      return;
+    }
+    throw error;
+  }
+});
+
+export const listConsentHistoryController = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    markPrivate(res);
+    return res
+      .status(200)
+      .json(ok(await listConsentHistory(developerId(req), req.params.organizationId)));
   } catch (error) {
     if (error instanceof DeveloperPortalError) {
       sendPortalError(res, error);

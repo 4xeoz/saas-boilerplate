@@ -7,7 +7,9 @@ import styles from "./page.module.css";
 const statusCopy = {
   idle: "Ready to create a signed consent request.",
   requesting: "Creating a signed request on the Host server…",
-  approved: "Approved and retained by the test server.",
+  approved: "Consent approved. The test Event is ready to send.",
+  triggering: "Sending one signed Event to Re-entry Cloud…",
+  accepted: "Event accepted by Re-entry Cloud and queued for delivery.",
   declined: "The consent request was declined.",
   cancelled: "The consent review was closed.",
   error: "The consent request could not be completed.",
@@ -17,11 +19,13 @@ export default function Page() {
   const actionRef = useRef(null);
   const [status, setStatus] = useState("idle");
   const [continuationId, setContinuationId] = useState("");
+  const [eventId, setEventId] = useState("");
   const [error, setError] = useState("");
 
   const signTestContract = useCallback(async () => {
     setError("");
     setContinuationId("");
+    setEventId("");
     setStatus("requesting");
 
     try {
@@ -55,6 +59,23 @@ export default function Page() {
     }
   }, []);
 
+  const triggerTestEvent = useCallback(async () => {
+    if (!continuationId) return;
+    setError("");
+    setStatus("triggering");
+
+    try {
+      const result = await postJson("/api/reentry/trigger", {
+        continuation_id: continuationId,
+      });
+      setEventId(result.event_id);
+      setStatus("accepted");
+    } catch (caught) {
+      setStatus("error");
+      setError(publicErrorCode(caught).replaceAll("_", " "));
+    }
+  }, [continuationId]);
+
   return (
     <main className={styles.shell}>
       <section className={styles.card}>
@@ -65,7 +86,7 @@ export default function Page() {
         <h1 className={styles.title}>Sign one test contract</h1>
         <p className={styles.intro}>
           This tiny Host app checks the consent handoff between the installed SDK and Re-entry
-          Cloud. It ends after the approved continuation is stored on the test server.
+          Cloud, then sends one trusted test Event through the approved continuation.
         </p>
 
         <button
@@ -78,6 +99,18 @@ export default function Page() {
           <span aria-hidden="true">↗</span>
         </button>
 
+        {continuationId ? (
+          <button
+            className={styles.secondaryButton}
+            type="button"
+            disabled={status === "triggering" || status === "accepted"}
+            onClick={triggerTestEvent}
+          >
+            {status === "triggering" ? "Sending Event…" : status === "accepted" ? "Event sent" : "Trigger test Event"}
+            <span aria-hidden="true">→</span>
+          </button>
+        ) : null}
+
         <div className={styles.status} aria-live="polite">
           <span className={`${styles.statusDot} ${status === "approved" ? styles.statusDotGood : ""}`} />
           <span>{statusCopy[status]}</span>
@@ -88,11 +121,23 @@ export default function Page() {
             Stored opaque continuation: <code>{continuationId}</code>
           </p>
         ) : null}
+        {eventId ? (
+          <p className={styles.success}>
+            Cloud accepted Event <code>{eventId}</code> with status <strong>202 / queued</strong>.
+          </p>
+        ) : null}
         {error ? <p className={styles.error}>{error}</p> : null}
+
+        <div className={styles.recorded}>
+          <strong>What this test records</strong>
+          <span>Approval: ConsentSession, Binding, and Grant.</span>
+          <span>After the second button: Event and pending Delivery.</span>
+          <span>No workflow update, Agent activation, or fallback.</span>
+        </div>
 
         <div className={styles.boundary}>
           <strong>Intentionally excluded</strong>
-          <span>WebMCP, later Events, workflow updates, Agent activation, and fallbacks.</span>
+          <span>WebMCP, business actions, Agent activation, and fallbacks.</span>
         </div>
       </section>
     </main>

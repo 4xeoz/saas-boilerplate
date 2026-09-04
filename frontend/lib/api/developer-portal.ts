@@ -32,6 +32,22 @@ export type DeveloperEvent = {
   terminal_reason: string | null;
 };
 
+export type DeveloperConsent = {
+  consent_session_id: string;
+  site_origin: string;
+  site_name: string;
+  title: string | null;
+  reason: string | null;
+  workflow_id: string | null;
+  event_type: string | null;
+  status: "pending" | "approved" | "declined" | "expired";
+  grant_status: "active" | "expired" | "exhausted" | "revoked" | null;
+  created_at: string;
+  approved_at: string | null;
+  expires_at: string;
+  runs_remaining: number | null;
+};
+
 const PORTAL_PATH = "/api/organizations";
 
 export function listOrganizations(): Promise<
@@ -91,5 +107,13 @@ export function listEventHistory(
 ): Promise<ApiSuccess<{ events: DeveloperEvent[] }>> {
   return apiFetch<{ events: DeveloperEvent[] }>(
     `${PORTAL_PATH}/${encodeURIComponent(organizationId)}/events`
+  );
+}
+
+export function listConsentHistory(
+  organizationId: string
+): Promise<ApiSuccess<{ consents: DeveloperConsent[] }>> {
+  return apiFetch<{ consents: DeveloperConsent[] }>(
+    `${PORTAL_PATH}/${encodeURIComponent(organizationId)}/consents`
   );
 }

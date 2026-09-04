@@ -3,7 +3,7 @@ import { appConfig } from "../../config/config";
 import { asyncHandler } from "../../lib/async-handler";
 import { getSessionAccountId, requireSession } from "../authentication/session";
 import { renderConsentPage } from "./consent-page";
-import { ConsentError, createConsentSession, decideConsent, getConsentPrompt, getConsentStatus, registerHostKey, validateConsentPageToken } from "./consent.service";
+import { ConsentError, createConsentSession, decideConsent, getConsentPrompt, getConsentStatus, listAccountContracts, registerHostKey, validateConsentPageToken } from "./consent.service";
 import type { AccountConsentDecision, CreateConsentSession, RegisterHostKey } from "./consent.schemas";
 
 function sendConsentError(res: Response, error: ConsentError): void {
@@ -80,6 +80,16 @@ export const accountConsentDecisionController = asyncHandler(async (req: Request
     }
     throw error;
   }
+});
+
+export const listAccountContractsController = asyncHandler(async (req: Request, res: Response) => {
+  const accountId = req.auth?.accountId;
+  if (!accountId) {
+    return res.status(401).json({ error: { code: "session_required" } });
+  }
+  const result = await listAccountContracts(accountId);
+  res.set("Cache-Control", "no-store");
+  return res.status(200).json(result);
 });
 
 export const consentPageController = asyncHandler(async (req: Request, res: Response) => {
