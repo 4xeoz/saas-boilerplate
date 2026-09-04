@@ -90,7 +90,12 @@ async function createConnector(label: string): Promise<Connector> {
   const claimed = await request(app)
     .post("/v0.1/account/pairing-sessions/claim")
     .set("Content-Type", "application/json")
-    .send({ pairing_code: pairing.body.pairing_code, device_name: `Ack ${label}` });
+    .set("x-vercel-forwarded-for", `198.51.100.${20 + (Date.now() % 200)}`)
+    .send({
+      pairing_id: pairing.body.pairing_id,
+      pairing_code: pairing.body.pairing_code,
+      device_name: `Ack ${label}`,
+    });
   expect(claimed.status).toBe(200);
 
   const connector = await prisma.connector.findUnique({

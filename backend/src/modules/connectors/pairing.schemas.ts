@@ -6,6 +6,13 @@ const pairingCode = z
   .toUpperCase()
   .regex(/^[A-F0-9]{8}$/, "pairing code is invalid");
 
+const pairingId = z
+  .string()
+  .trim()
+  .min(1, "pairing id is invalid")
+  .max(128, "pairing id is invalid")
+  .refine((value) => !/[\u0000-\u001f\u007f]/.test(value), "pairing id is invalid");
+
 const deviceName = z
   .string()
   .trim()
@@ -22,6 +29,7 @@ export const createPairingSessionSchema = z.object({}).strict();
 
 export const claimPairingSessionSchema = z
   .object({
+    pairing_id: pairingId,
     pairing_code: pairingCode,
     device_name: deviceName,
   })

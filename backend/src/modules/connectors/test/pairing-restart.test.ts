@@ -30,6 +30,7 @@ const serverBaseUrl = `http://127.0.0.1:${serverPort}`;
 const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const userEmail = `pairing-restart-${suffix}@example.com`;
 const password = "correct horse battery staple";
+const testSource = `198.51.100.${20 + (Date.now() % 200)}`;
 
 let receiver: ChildProcess | null = null;
 let receiverLogs = "";
@@ -234,10 +235,15 @@ describe("Cloud Receiver v2 pairing restart evidence", () => {
 
     const pairingId = String(created.body.pairing_id);
     const pairingCode = String(created.body.pairing_code);
-    const first = await postJson("/v0.1/account/pairing-sessions/claim", {
-      pairing_code: pairingCode,
-      device_name: "Restart Mac",
-    });
+    const first = await postJson(
+      "/v0.1/account/pairing-sessions/claim",
+      {
+        pairing_id: pairingId,
+        pairing_code: pairingCode,
+        device_name: "Restart Mac",
+      },
+      { "x-vercel-forwarded-for": testSource },
+    );
     expect(first.status).toBe(200);
     expectExactKeys(first.body, [
       "type",
@@ -265,10 +271,15 @@ describe("Cloud Receiver v2 pairing restart evidence", () => {
     startReceiver();
     await waitForLive();
 
-    const replay = await postJson("/v0.1/account/pairing-sessions/claim", {
-      pairing_code: pairingCode,
-      device_name: "Renamed After Restart",
-    });
+    const replay = await postJson(
+      "/v0.1/account/pairing-sessions/claim",
+      {
+        pairing_id: pairingId,
+        pairing_code: pairingCode,
+        device_name: "Renamed After Restart",
+      },
+      { "x-vercel-forwarded-for": testSource },
+    );
     expect(replay.status).toBe(200);
     expectExactKeys(replay.body, [
       "type",

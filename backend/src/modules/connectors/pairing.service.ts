@@ -5,13 +5,15 @@ import type { ClaimPairingSession, DisconnectConnector } from "./pairing.schemas
 
 const PAIRING_LIFETIME_MS = 10 * 60 * 1_000;
 const CONNECTOR_LIFETIME_MS = 30 * 24 * 60 * 60 * 1_000;
-const MAX_FAILED_CLAIMS = 5;
+const MAX_FAILED_CLAIMS_BEFORE_TERMINAL = 5;
+const TERMINAL_FAILED_CLAIMS = MAX_FAILED_CLAIMS_BEFORE_TERMINAL + 1;
 const MAX_CODE_GENERATION_ATTEMPTS = 10;
 
 export class PairingError extends Error {
   constructor(
     public readonly code: string,
-    public readonly statusCode: number
+    public readonly statusCode: number,
+    public readonly retryAfterSeconds?: number,
   ) {
     super(code);
     this.name = "PairingError";
@@ -57,6 +59,10 @@ export type ConnectorDisconnected = {
   status: "disconnected";
   duplicate: boolean;
 };
+
+type PairingClaimResult =
+  | ConnectorCredentials
+  | { failure: "pairing_not_found" | "pairing_expired" };
 
 function digest(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -170,16 +176,48 @@ export async function claimPairingSession(
   const codeDigest = digest(input.pairing_code);
   const now = new Date();
 
-  return prisma.$transaction(async (transaction) => {
+  const result = await prisma.$transaction<PairingClaimResult>(async (transaction) => {
     const pairing = await transaction.pairingSession.findUnique({
-      where: { pairingCodeDigest: codeDigest },
+      where: { id: input.pairing_id },
       include: { connector: true },
     });
 
     if (!pairing) throw new PairingError("pairing_not_found", 404);
-    if (pairing.consumedAt) return duplicateResponse(pairing);
-    if (pairing.expiresAt <= now || pairing.failedAttempts >= MAX_FAILED_CLAIMS) {
+    if (pairing.consumedAt) {
+      if (pairing.pairingCodeDigest === codeDigest) return duplicateResponse(pairing);
+      throw new PairingError("pairing_not_found", 404);
+    }
+    if (pairing.expiresAt <= now || pairing.failedAttempts >= TERMINAL_FAILED_CLAIMS) {
       throw new PairingError("pairing_expired", 410);
+    }
+
+    if (pairing.pairingCodeDigest !== codeDigest) {
+      const incremented = await transaction.$queryRaw<Array<{ failed_attempts: number }>>`
+        UPDATE "cr2_pairing_sessions"
+        SET "failed_attempts" = "failed_attempts" + 1
+        WHERE "pairing_id" = ${pairing.id}
+          AND "consumed_at" IS NULL
+          AND "expires_at" > ${now}
+          AND "failed_attempts" < ${TERMINAL_FAILED_CLAIMS}
+        RETURNING "failed_attempts"
+      `;
+
+      if (incremented.length === 1) {
+        const failedAttempts = Number(incremented[0].failed_attempts);
+        if (failedAttempts >= TERMINAL_FAILED_CLAIMS) {
+          return { failure: "pairing_expired" };
+        }
+        return { failure: "pairing_not_found" };
+      }
+
+      const current = await transaction.pairingSession.findUnique({
+        where: { id: pairing.id },
+        include: { connector: true },
+      });
+      if (current?.consumedAt) {
+        return { failure: "pairing_not_found" };
+      }
+      return { failure: "pairing_expired" };
     }
 
     const consumed = await transaction.pairingSession.updateMany({
@@ -187,7 +225,7 @@ export async function claimPairingSession(
         id: pairing.id,
         consumedAt: null,
         expiresAt: { gt: now },
-        failedAttempts: { lt: MAX_FAILED_CLAIMS },
+        failedAttempts: { lt: TERMINAL_FAILED_CLAIMS },
       },
       data: { consumedAt: now },
     });
@@ -223,6 +261,11 @@ export async function claimPairingSession(
       duplicate: false,
     };
   });
+
+  if ("failure" in result) {
+    throw new PairingError(result.failure, result.failure === "pairing_expired" ? 410 : 404);
+  }
+  return result;
 }
 
 export async function disconnectConnector(

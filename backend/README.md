@@ -18,7 +18,9 @@ deployment surface.
 
 Required production runtime variables are `CLOUD_RECEIVER_RUNTIME_DATABASE_URL`
 (the Supabase session-mode pooler URL) or `DATABASE_URL`, `JWT_SECRET` with at
-least 32 characters, `FRONTEND_URL`, and `RECEIVER_PUBLIC_URL`. Set
+least 32 characters, `FRONTEND_URL`, `RECEIVER_PUBLIC_URL`, and
+`CLOUD_RECEIVER_PAIRING_SOURCE_HMAC_SECRET` with at least 32 random characters.
+Set
 `COOKIE_DOMAIN` only when the frontend and backend share a parent domain.
 `DIRECT_URL` is for Prisma migration commands and is not needed by request
 handling when the runtime URL is configured.
@@ -42,6 +44,15 @@ is a relative path.
 For the split-origin browser flow, `FRONTEND_URL` must exactly match the
 frontend origin. Production session cookies use `SameSite=None; Secure`, and
 the API must answer credentialed CORS preflights without redirecting them.
+
+The active account claim route is `POST /v0.1/account/pairing-sessions/claim`
+with exactly `{ pairing_id, pairing_code, device_name }`. A direct Vercel
+deployment must receive exactly one valid `x-vercel-forwarded-for` value;
+missing, repeated, comma-separated, or invalid provider identity returns the
+bounded `receiver_busy` response. The durable source budget is thirty requests
+per ten-minute window and returns `429 pairing_rate_limited` with a bounded
+`Retry-After` after the budget is exhausted. This route contract is not
+available through the retired `runtime/cloud-receiver/` service.
 
 ## Connector lifecycle
 

@@ -10,6 +10,9 @@ import {
 } from "./pairing.service";
 
 function sendPairingError(res: Response, error: PairingError): void {
+  if (error.retryAfterSeconds !== undefined) {
+    res.set("Retry-After", String(error.retryAfterSeconds));
+  }
   res.status(error.statusCode).json({ error: { code: error.code } });
 }
 

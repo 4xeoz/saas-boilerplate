@@ -222,9 +222,23 @@ export default function PairThisMac() {
             </div>
           )}
 
+          {pairing && pairingState === "pending" ? (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">
+                Pairing ID
+              </p>
+              <p
+                aria-label="Pairing ID"
+                className="mt-2 break-all font-mono text-xs leading-5 text-white/75"
+              >
+                {pairing.pairing_id}
+              </p>
+            </div>
+          ) : null}
+
           <p aria-live="polite" className="mt-5 max-w-sm text-sm leading-6 text-white/58">
             {pairingState === "pending" && pairing
-              ? `Enter it in the Local Connector before ${formatExpiry(pairing.expires_at)}.`
+              ? `Enter the pairing ID and code in the Local Connector before ${formatExpiry(pairing.expires_at)}.`
               : pairingState === "used"
                 ? currentPairedConnector && connectorStatus(currentPairedConnector) === "Disconnected"
                   ? `${currentPairedConnector.device_name} is disconnected.`

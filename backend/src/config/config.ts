@@ -69,6 +69,9 @@ const envSchema = z
     CLOUD_RECEIVER_CONNECTOR_TOKEN_SECRET: optionalText,
     CLOUD_RECEIVER_VERIFICATION_ORIGIN: optionalText,
     CLOUD_RECEIVER_GRANT_CONTROL_TOKEN: optionalText,
+    CLOUD_RECEIVER_PAIRING_SOURCE_HMAC_SECRET: isProduction
+      ? z.string().min(32, "must be at least 32 characters in production")
+      : optionalText,
   })
   .superRefine((value, context) => {
     if (!value.CLOUD_RECEIVER_RUNTIME_DATABASE_URL && !value.DATABASE_URL) {
@@ -100,6 +103,15 @@ if (!databaseUrl) {
 }
 
 const sessionTtlMs = env.SESSION_DAYS * 24 * 60 * 60 * 1000;
+const pairingSourceHmacSecret =
+  env.CLOUD_RECEIVER_PAIRING_SOURCE_HMAC_SECRET ??
+  (!isProduction ? randomBytes(32).toString("hex") : undefined);
+
+if (!pairingSourceHmacSecret) {
+  // The production schema already reports the missing value. This guard keeps
+  // the exported config fail-closed if validation rules change later.
+  process.exit(1);
+}
 
 export const appConfig = {
   nodeEnv: env.NODE_ENV,
@@ -119,4 +131,5 @@ export const appConfig = {
   grantControlToken:
     env.CLOUD_RECEIVER_GRANT_CONTROL_TOKEN ??
     (!isProduction ? randomBytes(32).toString("base64url") : undefined),
+  pairingSourceHmacSecret,
 };

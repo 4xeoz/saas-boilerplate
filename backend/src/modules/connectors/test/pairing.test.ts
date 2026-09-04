@@ -9,6 +9,7 @@ const suffix = Date.now();
 const userEmail = `pairing-red-user-${suffix}@example.com`;
 const otherUserEmail = `pairing-red-other-${suffix}@example.com`;
 const password = "correct horse battery staple";
+const testSource = `198.51.100.${20 + (Date.now() % 200)}`;
 
 const userAgent = request.agent(app);
 const otherUserAgent = request.agent(app);
@@ -57,13 +58,21 @@ async function createPairing(): Promise<{
   };
 }
 
-async function claimPairing(pairingCode: string, deviceName: string) {
+async function claimPairing(
+  pairing: { pairingId: string; pairingCode: string },
+  deviceName: string,
+) {
   // This is deliberately a fresh SuperTest client: the CLI claim must not rely
   // on either browser session or Organization credentials.
   return request(app)
     .post("/v0.1/account/pairing-sessions/claim")
     .set("Content-Type", "application/json")
-    .send({ pairing_code: pairingCode, device_name: deviceName });
+    .set("x-vercel-forwarded-for", testSource)
+    .send({
+      pairing_id: pairing.pairingId,
+      pairing_code: pairing.pairingCode,
+      device_name: deviceName,
+    });
 }
 
 async function disconnectConnector(connectorToken: string) {
@@ -126,7 +135,7 @@ describe("Cloud Receiver v2 pairing red tests", () => {
 
   it("PAIR-002 lets a cookie-free CLI claim one durable Connector credential", async () => {
     const pairing = await createPairing();
-    const response = await claimPairing(pairing.pairingCode, "Mac One");
+    const response = await claimPairing(pairing, "Mac One");
 
     expect(response.status).toBe(200);
     expectExactKeys(response.body, [
@@ -168,7 +177,7 @@ describe("Cloud Receiver v2 pairing red tests", () => {
 
   it("PAIR-006 lists only safe Connector metadata for the signed-in account", async () => {
     const pairing = await createPairing();
-    const claim = await claimPairing(pairing.pairingCode, "Dashboard Mac");
+    const claim = await claimPairing(pairing, "Dashboard Mac");
     expect(claim.status).toBe(200);
 
     const response = await listConnectors();
@@ -218,7 +227,7 @@ describe("Cloud Receiver v2 pairing red tests", () => {
 
   it("DISCONNECT-001 irreversibly revokes one Connector and exposes the lifecycle change", async () => {
     const pairing = await createPairing();
-    const claim = await claimPairing(pairing.pairingCode, "Disconnected Mac");
+    const claim = await claimPairing(pairing, "Disconnected Mac");
     expect(claim.status).toBe(200);
 
     const response = await disconnectConnector(claim.body.connector_token);
@@ -260,7 +269,7 @@ describe("Cloud Receiver v2 pairing red tests", () => {
 
   it("DISCONNECT-002 replays exactly and rejects an unknown Connector token", async () => {
     const pairing = await createPairing();
-    const claim = await claimPairing(pairing.pairingCode, "Replay Mac");
+    const claim = await claimPairing(pairing, "Replay Mac");
     expect(claim.status).toBe(200);
     await prisma.connector.update({
       where: { id: claim.body.connector_id },
@@ -297,10 +306,10 @@ describe("Cloud Receiver v2 pairing red tests", () => {
 
   it("PAIR-003 replays metadata without returning the raw token or creating a second target", async () => {
     const pairing = await createPairing();
-    const first = await claimPairing(pairing.pairingCode, "Mac One");
+    const first = await claimPairing(pairing, "Mac One");
     expect(first.status).toBe(200);
 
-    const replay = await claimPairing(pairing.pairingCode, "Renamed Mac");
+    const replay = await claimPairing(pairing, "Renamed Mac");
 
     expect(replay.status).toBe(200);
     expectExactKeys(replay.body, [
@@ -334,7 +343,7 @@ describe("Cloud Receiver v2 pairing red tests", () => {
 
   it("PAIR-004 rejects an inconsistent persisted account identity without reassignment", async () => {
     const pairing = await createPairing();
-    const first = await claimPairing(pairing.pairingCode, "Mac One");
+    const first = await claimPairing(pairing, "Mac One");
     expect(first.status).toBe(200);
     const before = await connectorCount(first.body.connector_id);
 
@@ -346,7 +355,7 @@ describe("Cloud Receiver v2 pairing red tests", () => {
       WHERE "pairing_id" = ${pairing.pairingId}
     `;
 
-    const replay = await claimPairing(pairing.pairingCode, "Other Account Device");
+    const replay = await claimPairing(pairing, "Other Account Device");
 
     expect(replay.status).toBe(409);
     expect(replay.body.error?.code).toBe("account_pairing_identity_conflict");

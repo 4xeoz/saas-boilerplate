@@ -19,6 +19,7 @@ import {
   deliveryClaimSchema,
   disconnectConnectorSchema,
 } from "./pairing.schemas";
+import { pairingClaimRateLimit } from "./pairing-rate-limit";
 
 export const pairingRouter = Router();
 
@@ -38,6 +39,7 @@ pairingRouter.get(
 
 pairingRouter.post(
   "/account/pairing-sessions/claim",
+  pairingClaimRateLimit,
   validateProtocolBody(claimPairingSessionSchema),
   claimPairing,
 );

@@ -31,6 +31,9 @@ function isPairingSession(value: unknown): value is PairingSession {
     candidate.type === "webmcp.connector_account_pairing" &&
     candidate.protocol_version === "0.1" &&
     typeof candidate.pairing_id === "string" &&
+    candidate.pairing_id.length > 0 &&
+    candidate.pairing_id.length <= 128 &&
+    !/[\u0000-\u001f\u007f]/.test(candidate.pairing_id) &&
     /^[A-F0-9]{8}$/.test(String(candidate.pairing_code)) &&
     typeof candidate.expires_at === "string" &&
     Number.isFinite(Date.parse(candidate.expires_at))

@@ -40,10 +40,15 @@ The first v0.1 replacement surface is account-owned Connector pairing:
   same-origin JSON `{}`; it returns one short-lived uppercase hexadecimal code.
 - The authenticated `/user-dashboard` page exposes the `Pair this Mac` action;
   `/dashboard` remains compatible. It
-  calls the pairing-session route with the browser session and shows the code
-  only after a successful response.
+  calls the pairing-session route with the browser session and shows the public
+  pairing ID beside the code only after a successful response.
 - `POST /v0.1/account/pairing-sessions/claim` accepts only
-  `{ pairing_code, device_name }` without browser or Organization credentials.
+  `{ pairing_id, pairing_code, device_name }` without browser or Organization
+  credentials. The direct Vercel path supplies a trusted client-IP header; a
+  missing or invalid provider identity fails closed.
+- Anonymous claims are covered by a durable thirty-request per ten-minute
+  source budget. Five wrong codes for one pairing return the generic not-found
+  response; the sixth is terminal and returns `410 pairing_expired`.
 - The first claim returns the raw Connector token once. A duplicate replay
   returns the same metadata with `duplicate: true` and omits
   `connector_token` entirely.
@@ -115,6 +120,9 @@ The old Cloud Receiver variable names are accepted:
   composition and are not required by the pairing implementation.
 - `CLOUD_RECEIVER_GRANT_CONTROL_TOKEN` configures the private local Grant
   revocation authority. It is never persisted or logged.
+- `CLOUD_RECEIVER_PAIRING_SOURCE_HMAC_SECRET` is required in production and
+  protects the durable anonymous pairing source fingerprint. Generate at least
+  32 random characters; it is never returned or logged.
 - `RECEIVER_PUBLIC_URL` sets the base used in consent URLs and defaults to the
   local backend URL.
 

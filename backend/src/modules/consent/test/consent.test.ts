@@ -125,7 +125,12 @@ async function createConnector(deviceName: string): Promise<string> {
   const claim = await request(app)
     .post("/v0.1/account/pairing-sessions/claim")
     .set("Content-Type", "application/json")
-    .send({ pairing_code: pairing.body.pairing_code, device_name: deviceName });
+    .set("x-vercel-forwarded-for", `198.51.100.${20 + (Date.now() % 200)}`)
+    .send({
+      pairing_id: pairing.body.pairing_id,
+      pairing_code: pairing.body.pairing_code,
+      device_name: deviceName,
+    });
   expect(claim.status).toBe(200);
   expect(claim.body.connector_token).toEqual(expect.any(String));
   return claim.body.connector_id as string;
@@ -636,7 +641,12 @@ describe("Cloud Receiver v2 Consent, Target, and revocation red tests", () => {
     const claim = await request(app)
       .post("/v0.1/account/pairing-sessions/claim")
       .set("Content-Type", "application/json")
-      .send({ pairing_code: pairing.body.pairing_code, device_name: deviceName });
+      .set("x-vercel-forwarded-for", `198.51.100.${21 + (Date.now() % 199)}`)
+      .send({
+        pairing_id: pairing.body.pairing_id,
+        pairing_code: pairing.body.pairing_code,
+        device_name: deviceName,
+      });
     expect(claim.status).toBe(200);
 
     const pending = await createConsent(
