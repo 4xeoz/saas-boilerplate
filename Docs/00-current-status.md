@@ -1,8 +1,9 @@
-# Cloud Receiver — Current Status
+# Cloud Receiver 2 — Current Status
 
 **Role:** Canonical service-state and claim ledger
 **As of:** 2026-09-05, Europe/London
-**Status:** Active Receiver development; release and cross-project gates remain open
+**Status:** Active Receiver development; static/build checks pass, while database, source-pin,
+deployment, and cross-project release gates remain open
 
 ## Current verified state
 
@@ -17,9 +18,15 @@ authorization v0.2 path.
   acknowledgement, and notification-handoff authority are implemented behind explicit boundaries.
 - The source-pinned conformance runner selects Core commit
   `1446d73aa3e66533547471728ad8fa5344d51f9e` through
-  `backend/conformance/standing-v0.2/core-pin.json` and refuses an unpinned default run.
+  `backend/conformance/standing-v0.2/core-pin.json`, but the active sibling checkout is at
+  `375a2ff426835f5e9d098fec37fcfd718a608bb8` and does not contain that commit. The source verifier
+  therefore fails closed with `conformance_pin_commit_unavailable`; see
+  [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md).
 - Database hardening is prepared as an explicit migration and has a disposable local proof; a live
   Supabase change requires a separate preflight and migration authority.
+- Current local baseline checks passed `npm run type-check`, `npm run build`, and the 16 synthetic
+  source-pin guard tests under Node `v26.5.0` and npm `11.17.0`. Database-backed Jest tests were not
+  runnable because no disposable PostgreSQL URL was configured.
 
 These statements describe implementation boundaries. They do not assert a public release, hosted
 availability, or complete external continuation.
@@ -28,7 +35,7 @@ availability, or complete external continuation.
 
 | Gate | Owner/surface | Current boundary |
 |---|---|---|
-| Core-pinned conformance | `backend/conformance/standing-v0.2/` | Source identity is pinned; full release conformance and enforcement remain open |
+| Core-pinned conformance | `backend/conformance/standing-v0.2/` | Pin is recorded but unresolved against the active sibling checkout; no source-identity claim |
 | Runtime admission and handoff | Standing module | Default application has no production admission authority and fails closed |
 | Control-plane policy | Standing control-plane proposal | Lifetime, public summaries, revocation UX, and snapshot consistency need accepted policy before implementation |
 | Database hardening | `supabase/` | Local disposable proof exists; live migration is not implied |
@@ -57,6 +64,6 @@ A report, fixture, stub, source interface, or local green test cannot claim a la
 ## Update rule
 
 Update this ledger only when a current contract, code/migration, test result, runtime readback,
-source pin, or release decision changes. Keep detailed procedures in module/conformance/migration
+source identity, or release decision changes. Keep detailed procedures in module/conformance/migration
 documents. After each coherent docs increment, reread this file and the affected README, then scan
 for stale status, duplicate authority, old product names, and historical log language.

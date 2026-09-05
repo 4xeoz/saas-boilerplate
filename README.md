@@ -1,7 +1,8 @@
-# Cloud Receiver
+# Cloud Receiver 2
 
 **Role:** Standalone Receiver service and operator-facing web application
-**Status:** Active development; local and bounded hosted evidence exists, but release closure remains open
+**Status:** Active development; local static/build checks pass, while database, source-pin, deployment,
+and cross-project release gates remain open
 
 Cloud Receiver is an Express/Prisma service with a Next.js frontend. It receives signed events,
 holds target-scoped delivery work, and exposes bounded consent, Connector, and account controls.
@@ -23,7 +24,13 @@ integration specification.
 ## Start here
 
 - [Documentation map](Docs/README.md) — authority, module boundaries, and maintenance rules.
+- [Core documentation](Docs/Core/README.md) — product definition, requirements, system design,
+  trust policy, validation, and roadmap.
 - [Current status](Docs/00-current-status.md) — verified state, active gates, and non-claims.
+- [Engineering](Docs/Engineering/README.md) — development and verification procedure.
+- [Verification](Docs/Verification/README.md) — reproducible checks and claim limits.
+- [Operations](Docs/Operations/README.md) — local, migration, deployment, health, and recovery boundary.
+- [Active tasks](Docs/Tasks/README.md) — only current outcomes and next gates.
 - [Backend deployment boundary](backend/README.md) — runtime variables, migration order, and process shape.
 - [Standing module contract](backend/src/modules/standing/README.md) — additive v0.2 routes and authority.
 - [Conformance procedure](backend/conformance/standing-v0.2/README.md) — source pin and reproducible checks.
@@ -77,7 +84,7 @@ files. Use a dedicated disposable PostgreSQL database for tests and migration re
 | `node --test backend/conformance/standing-v0.2/fresh-process.test.mjs` | Fresh-process persistence/recovery boundary |
 | `node --test backend/conformance/standing-v0.2/migration-upgrade.test.mjs` | Exact-source migration upgrade guard |
 
-Record the exact Node, npm, PostgreSQL, source pin, database scope, and claim limit for every result.
+Record the exact Node, npm, PostgreSQL, source identity, database scope, and claim limit for every result.
 A build, local test, or source interface does not prove deployment or an external end-to-end continuation.
 
 ## Maintenance

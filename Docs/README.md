@@ -6,7 +6,7 @@
 
 ## Purpose
 
-This directory is the bounded documentation entrypoint for the Cloud Receiver service. It routes
+This directory is the bounded documentation entrypoint for Cloud Receiver 2. It routes
 service contracts, security boundaries, persistence and deployment controls, conformance evidence,
 and open decisions without turning a README or report into a work log.
 
@@ -34,6 +34,12 @@ Event ordering, Delivery effects, migration safety, or cross-repository source i
 | Area | Owns | Does not own |
 |---|---|---|
 | [00-current-status.md](00-current-status.md) | Current state, active gates, and non-claims | Module contracts or test procedure |
+| [Core/](Core/README.md) | Product definition, requirements, system design, trust policy, validation, and roadmap | Mutable execution history or consumer-specific behavior |
+| [Engineering/](Engineering/README.md) | Development, change control, and closure procedure | Product authority or deployment state |
+| [Verification/](Verification/README.md) | Reproducible checks and evidence levels | Intended behavior or release permission |
+| [Operations/](Operations/README.md) | Local, migration, deployment, health, and recovery controls | Permission to apply a live change |
+| [Tasks/](Tasks/README.md) | Current bounded outcomes and next gates | Completed work history or a second roadmap |
+| [Issues/](Issues/README.md) | Open contradictions and blockers | General discussion or completed issue archive |
 | [../README.md](../README.md) | Service entrypoint, repository boundary, quick start, and routing | Detailed implementation history |
 | `backend/conformance/standing-v0.2/README.md` | Source pin, reproduction, and conformance claim limits | Product or deployment authority |
 | `supabase/README.md` | Database hardening migration and live-change preflight | Permission to apply a live migration |
