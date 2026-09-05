@@ -46,6 +46,10 @@ gate. Never include credentials, raw tokens, connection strings, row dumps, or m
 
 - Current Core pin cannot be resolved from the active sibling checkout; see
   [CR-ISSUE-001](../Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md).
+- Clean Docker image builds fail to resolve the private workspace package; see
+  [CR-ISSUE-003](../Issues/CR-ISSUE-003-docker-workspace-package-install.md).
+- The current container entrypoint runs migrations at startup despite the intended separate release
+  boundary; see [CR-ISSUE-002](../Issues/CR-ISSUE-002-container-startup-runs-migrations.md).
 - Database-backed suites require a verified disposable PostgreSQL URL; none was configured for the
   baseline check above.
 - The control-plane proposal has no accepted public lifetime, redaction, custody, or revocation

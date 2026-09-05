@@ -29,15 +29,19 @@ must never receive database, JWT, Connector-token, Grant-control, or service-rol
 
 ## Migration boundary
 
-Apply Prisma migrations as a separately authorized release step before routing traffic:
+The intended release contract applies Prisma migrations as a separately authorized step before
+routing traffic:
 
 ```sh
 npx prisma migrate deploy
 ```
 
-Supply the reviewed `DIRECT_URL` or approved migration fallback. Do not run migrations from a build
-step, request handler, or cold start. Verify migration order, target identity, health/readiness, and
-rollback before declaring a release.
+Supply the reviewed `DIRECT_URL` or approved migration fallback. The current Docker
+[`entrypoint.sh`](entrypoint.sh) still runs `npx prisma migrate deploy` during container startup;
+this is an open deployment discrepancy tracked in
+[`CR-ISSUE-002`](../Docs/Issues/CR-ISSUE-002-container-startup-runs-migrations.md). Do not claim
+that the separate-release boundary is implemented until that issue is resolved. Verify migration
+order, target identity, health/readiness, and rollback before declaring a release.
 
 ## HTTP boundaries
 

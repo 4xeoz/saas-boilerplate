@@ -39,7 +39,9 @@ availability, or complete external continuation.
 | Runtime admission and handoff | Standing module | Default application has no production admission authority and fails closed |
 | Control-plane policy | Standing control-plane proposal | Lifetime, public summaries, revocation UX, and snapshot consistency need accepted policy before implementation |
 | Database hardening | `supabase/` | Local disposable proof exists; live migration is not implied |
-| Deployment/release | Backend/frontend release owner | Environment, migration order, rollback, and hosted readback must be verified together |
+| Container build | `backend/Dockerfile`, `frontend/Dockerfile` | Both clean-context builds fail to resolve private `@saas/shared`; see CR-ISSUE-003 |
+| Migration authority | `backend/entrypoint.sh` and deployment docs | Startup migration conflicts with the separately authorized release contract; see CR-ISSUE-002 |
+| Deployment/release | Backend/frontend release owner | Environment, packaging, migration order, rollback, and hosted readback must be verified together |
 
 ## Source of truth
 
@@ -58,6 +60,10 @@ A report, fixture, stub, source interface, or local green test cannot claim a la
 - no default production runtime-admission authority, Connector capability selection, or quota policy;
 - no public Grant inspection/revocation contract beyond explicitly accepted routes;
 - no live Supabase hardening change from the prepared migration;
+- no verified Docker image build or container release because the workspace package is unavailable in
+  both current image contexts;
+- no accepted migration execution boundary because the backend entrypoint currently runs migrations
+  during startup;
 - no consumer-specific event mapping, application workflow, or end-to-end external continuation;
 - no deployment, rollback, or public availability claim without fresh platform readback.
 

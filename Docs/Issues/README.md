@@ -9,6 +9,8 @@ belong here. Completed issues are extracted into the owning current document and
 ## Current issues
 
 - [CR-ISSUE-001 — Core pin does not match the active sibling checkout](CR-ISSUE-001-core-pin-does-not-match-current-checkout.md)
+- [CR-ISSUE-002 — Container startup owns an unaccepted migration step](CR-ISSUE-002-container-startup-runs-migrations.md)
+- [CR-ISSUE-003 — Dockerfiles cannot install the private workspace package](CR-ISSUE-003-docker-workspace-package-install.md)
 
 ## Maintenance
 

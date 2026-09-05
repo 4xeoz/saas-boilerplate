@@ -32,6 +32,9 @@ their own Host/runtime boundaries; none receives a database credential.
   configuration.
 - `docker-compose.yml` composes PostgreSQL, backend, and frontend on an internal network with
   health-gated startup. The Dockerfiles run as an unprivileged user.
+- The current Dockerfiles use backend/frontend subdirectories as build contexts although both
+  workspaces depend on the private root `@saas/shared` package; clean image builds currently fail
+  before compilation (see [CR-ISSUE-003](../Issues/CR-ISSUE-003-docker-workspace-package-install.md)).
 - `supabase/` contains a prepared backend-only hardening migration; it is not automatically applied
   by build, request handling, or this documentation reset.
 

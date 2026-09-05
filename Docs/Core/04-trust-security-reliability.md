@@ -68,8 +68,9 @@ with the consumer application and require its own evidence.
 
 - `/health/live` and `/healthz` report process liveness without database readiness; `/health` and
   `/readyz` verify database readiness.
-- Migrations run as a separately authorized release step before traffic and never from a request,
-  build, or cold-start path.
+- The intended release control is a separately authorized migration step before traffic, never from a
+  request, build, or cold-start path. The current Docker entrypoint violates that intended boundary
+  by running `prisma migrate deploy` on startup; see [CR-ISSUE-002](../Issues/CR-ISSUE-002-container-startup-runs-migrations.md).
 - Graceful shutdown stops admission, allows bounded in-flight completion, disconnects Prisma, and
   forces exit at the configured timeout.
 - The prepared Supabase hardening migration is transactional and requires a named preflight and
