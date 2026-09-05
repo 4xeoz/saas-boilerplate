@@ -35,10 +35,13 @@ Event ordering, Delivery effects, migration safety, or cross-repository source i
 |---|---|---|
 | [00-current-status.md](00-current-status.md) | Current state, active gates, and non-claims | Module contracts or test procedure |
 | [../README.md](../README.md) | Service entrypoint, repository boundary, quick start, and routing | Detailed implementation history |
-| `backend/src/modules/` | Bounded HTTP/domain module contracts | Cross-module release claims |
-| `backend/src/modules/standing/README.md` | Standing v0.2 protocol and authority boundary | Public control-plane policy not yet accepted |
 | `backend/conformance/standing-v0.2/README.md` | Source pin, reproduction, and conformance claim limits | Product or deployment authority |
 | `supabase/README.md` | Database hardening migration and live-change preflight | Permission to apply a live migration |
+| `backend/src/modules/` | Bounded HTTP/domain module contracts | Cross-module release claims |
+| `backend/src/modules/developer-portal/README.md` | Developer organization, API-key, and redacted event-history controls | Grant authority or delivery effects |
+| `backend/src/modules/events/README.md` | Signed Event validation and atomic Event/Delivery creation | Connector claim or consumer mapping |
+| `backend/src/modules/deliveries/README.md` | v0.1 Delivery lease, effect, and acknowledgement contract | Standing policy or deployment |
+| `backend/src/modules/standing/README.md` | Standing v0.2 protocol and authority boundary | Public control-plane policy not yet accepted |
 | `backend/prisma/schema.prisma` and migrations | Database schema and migration order | Runtime API behavior by themselves |
 | Current tests and runtime readback | Executed behavior and deployment truth | Intended contract outside the tested scope |
 

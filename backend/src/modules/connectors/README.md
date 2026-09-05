@@ -1,29 +1,32 @@
 # Connector Pairing
 
-This module owns the first Cloud Receiver v2 Connector boundary:
+**Role:** Account-owned Connector identity and lifecycle boundary
+**Status:** Active
 
-- an authenticated User creates a short-lived pairing code;
-- a cookie-free Local Connector claims it with a device name;
-- the first claim returns one raw Connector token;
-- a duplicate claim returns metadata without `connector_token`; and
-- an authenticated account can list its paired devices through
-  `GET /v0.1/account/connectors`, which returns lifecycle metadata only; and
-- the Receiver stores only SHA-256 digests for pairing and Connector tokens.
-- the anonymous claim route resolves by the public `pairing_id`, counts wrong
-  codes durably (five generic failures, terminal sixth), and applies a
-  PostgreSQL-backed thirty-per-ten-minute source budget using the direct Vercel
-  provider identity; and
-- missing or invalid trusted source identity and limiter-store failure return a
-  bounded `receiver_busy` response rather than bypassing the fence.
+## Ownership
 
-The `POST /v0.1/delivery-claims` route is mounted beside pairing but its claim and lease behavior
-is owned by `modules/deliveries/`. Pairing owns Connector identity issuance and digest lookup; it
-does not own delivery state, acknowledgement, or public Grant behavior. The active claim request is
-exactly:
+This module owns short-lived pairing sessions, cookie-free Connector claiming, digest-only token
+storage, account-scoped device metadata, and self-disconnection. Delivery lease, acknowledgement,
+Consent, Grant, and standing transport rules belong to their owning modules.
 
-```json
-{"pairing_id":"pairing_123","pairing_code":"A1B2C3D4","device_name":"Mac One"}
-```
+## Routes
 
-The previous two-field body is rejected. The old `runtime/cloud-receiver/` pairing implementation
-is retired and is not a compatibility fallback.
+| Method | Path | Boundary |
+|---|---|---|
+| POST | `/v0.1/account/pairing-sessions` | Authenticated User creates a short-lived public pairing id and code |
+| POST | `/v0.1/account/pairing-sessions/claim` | Cookie-free Connector claims exactly one pairing with `pairing_id`, `pairing_code`, and `device_name` |
+| GET | `/v0.1/account/connectors` | User reads lifecycle metadata only |
+| POST | `/v0.1/connectors/disconnect` | Connector revokes its saved token once and retains history |
+
+The first claim reveals the raw Connector token once. An exact replay returns the same metadata with
+no token. Pairing codes and Connector tokens are stored only as SHA-256 digests.
+
+Anonymous claims require a trusted provider source identity and a durable bounded source budget.
+Five wrong codes for one pairing produce generic failures; the terminal attempt expires the pairing.
+Missing identity, invalid identity, or limiter-store failure fails closed with a bounded busy result.
+
+## Verification boundary
+
+Tests cover code entropy/expiry, wrong-code fencing, source limits, duplicate claims, scope,
+disconnect replay, token redaction, and restart persistence. They do not prove delivery, Consent,
+Grant authority, or deployment.

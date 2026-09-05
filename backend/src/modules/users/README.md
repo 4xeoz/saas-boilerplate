@@ -1,24 +1,20 @@
-# users
+# User Accounts
 
-Owns the minimal user account flow.
+**Role:** User account lifecycle
+**Status:** Active
 
-## Endpoints
+This module owns the User account model and its typed session flow. It remains separate from
+Developer accounts and uses the `user_session` cookie.
+
+## Routes
 
 Mounted at `/v1/auth/users`:
 
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/register` | Create a user account and start a session. |
-| `POST` | `/login` | Verify the email/password and start a session. |
-| `GET` | `/me` | Return the current user. |
-| `POST` | `/logout` | Clear the user session cookie. |
+| POST | `/register` | Create a User account and start a session |
+| POST | `/login` | Verify credentials and start a session |
+| GET | `/me` | Return the current User summary |
+| POST | `/logout` | Clear the User session cookie |
 
-## Files
-
-- `user.service.ts` contains the Prisma queries for `UserAccount`.
-- `user-auth.controller.ts` contains registration, login, profile, and logout
-  handlers.
-- `user-auth.routes.ts` defines the endpoint and middleware order.
-
-The public shape is only `{ id, email }`. Password hashes never leave the
-service boundary.
+The public account shape is `{ id, email }`. Password hashes remain inside the service boundary.

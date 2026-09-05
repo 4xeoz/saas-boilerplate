@@ -1,14 +1,14 @@
-# system-health
+# System Health
 
-Public health endpoints for the Express/Prisma service.
+**Role:** Public liveness and database-readiness endpoints
+**Status:** Active
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/health` | Readiness: runs `SELECT 1` through Prisma/Postgres. |
-| `GET` | `/health/live` | Liveness: checks only that the process is running. |
-| `GET` | `/healthz` | Lightweight operational liveness response; does not query the database. |
-| `GET` | `/readyz` | Operational readiness: runs `SELECT 1` through Prisma/Postgres. |
+| GET | `/health` | Database readiness through Prisma/PostgreSQL |
+| GET | `/health/live` | Process liveness without a database query |
+| GET | `/healthz` | Lightweight operational liveness |
+| GET | `/readyz` | Operational readiness through Prisma/PostgreSQL |
 
-`/health` returns `503 DB_UNAVAILABLE` when the database cannot be reached;
-`/readyz` returns `503 receiver_not_ready` for the same condition. The
-operational routes set `Cache-Control: no-store`.
+Readiness returns a bounded 503 when the database is unavailable. Operational routes set
+Cache-Control no-store. Health output does not expose credentials, row data, or internal state.
