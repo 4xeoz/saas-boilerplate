@@ -1,278 +1,53 @@
-# Standing v0.2 Receiver verification
+# Standing v0.2 Receiver Conformance
 
-This directory adapts one shared Re-entry Core scenario to the active Receiver.
-It does not copy the scenario or import Core authority into the production
-Receiver. The scenario, Host SDK, Connector, and Agent Adapter are test-only
-imports from the explicitly selected Core checkout.
+**Role:** Reproducible source-pin and Receiver/Core conformance procedure
+**Status:** Active; release conformance remains open
 
-## Receiver source and upgrade closure: 2026-09-03
+## Purpose and boundary
 
-Status: **Receiver source committed locally; exact-commit upgrade rehearsal,
-minimum Core-pinned trace, fresh-process recovery, and transaction-interruption
-checks passed; full release conformance remains open**.
-This section supersedes the earlier source-status snapshots below. The user
-authorized review, bounded corrections, disposable migration verification, and
-local Git closure on the existing `Re-Entry` branch, without push or deployment.
+This directory runs one shared standing-authorization scenario against the active Receiver. The
+scenario and its reference implementation are imported from an explicitly selected Re-entry Core
+checkout for test use; they do not become Receiver authority. The runner exercises real Express and
+PostgreSQL state where the selected case requires it.
 
-The later [shared Event transaction rollback increment](#shared-event-transaction-rollback-increment-2026-09-04)
-records the current Core pin and rerun after each parent source change; the
-identity-conflict vector remains in the same shared oracle.
+A passing scenario proves only the named test scope. It does not prove production deployment, public
+control-plane policy, a runtime admission provider, consumer mapping, or an external continuation.
 
-Receiver implementation commit:
-`9156e68fe9b988f2ec7423d1c93930da3a105d4e` (28 exact owned paths).
-The subsequent evidence-only update changes no executable, schema, migration,
-dependency, or Core-pin bytes. The shared Express/PostgreSQL trace was rerun
-after the source commit and reported that exact Receiver identity, verified Core
-identity, and explicitly unverified release conformance.
+## Source pin
 
-The source review found and corrected two P2 issues:
+The default mode is `pinned`. Before importing Core or opening a database connection, the runner reads
+`core-pin.json`, which must contain exactly:
 
-- Absolute-form HTTP request targets could bypass the standing pre-parser,
-  pre-CORS, and no-store boundary. The raw target allowlist is unchanged;
-  Express's parsed path now selects rejection policy only. Two regressions
-  initially failed, then passed across six absolute-form aliases each; the
-  focused transport suite passes 18/18. Independent raw HTTP probes confirmed
-  valid v0.2 and retained v0.1 behavior.
-- The ordinary migration suite upserted its v0.1 fixture before checking it.
-  That checks post-migration compatibility, not preservation across an upgrade.
-  The new [exact-source upgrade rehearsal](migration-upgrade.mjs) seeds once
-  between the six baseline migrations and the seventh standing migration, then
-  compares all existing v0.1 rows and catalog definitions before any further
-  fixture setup. The shared seeder is test-only, not a production repair path.
+- `schema_version: 1`;
+- `profile: standing-authorization-v0.2`; and
+- a complete lowercase 40-character `core_commit`.
 
-Node `v24.20.0` / npm `10.9.2` verification passed 21 backend suites / 156 tests,
-root type-check and build, source-pin fixtures 16/16, and the real pinned
-Express/PostgreSQL shared trace 1/1. The trace still reports
-`release_conformance_verified: false`. Core pin
-`28d74e589b16e43f167aa82652220b7b182502d1` and selected-source SHA-256
-`5eb4c8c2a94e79b4da68616c921f7d996f53545ce18d559424a908e6b480b73b`
-are unchanged. An isolated exact-commit Core checkout avoids the unrelated Game
-commit now present on shared `main`; no source check was weakened.
+The current pin is `1446d73aa3e66533547471728ad8fa5344d51f9e`. Every pin change requires review of the
+selected Core source, a fresh source-pin run, and a new Receiver trace. A branch, tag, package version,
+floating checkout, or content digest cannot replace the commit pin.
 
-The actual exact-commit upgrade rehearsal passed on a new, independently
-verified disposable PostgreSQL `16.14` instance at
-`127.0.0.1:55433/reentry_closure`, using only task-owned tmpfs state:
+The source verifier checks the required recursive Core inventory, selected contract and mechanism
+files, exact committed bytes, absence of unexpected source or symlinks, and post-run source identity.
+It also rejects replacement objects and inherited routing variables that could redefine the source.
 
-- six committed baseline migrations applied, then the v0.1 fixture was seeded;
-- the seventh committed migration applied; all seven stored checksums matched;
-- 13 existing table definitions and all 10 fixture rows matched before/after,
-  checked before any post-upgrade seeding and again after the constraint probes;
-- all six reused migration constraint tests passed, without skipped tests;
-- baseline snapshot SHA-256:
-  `5b3521a28cd21d395436c7c14a6fc7c3851967ccc98f5f0737f35b5cc0daf292`;
-- migration SQL SHA-256:
-  `e707a57e7b7330428ba96d0212bfc75516df26ea583904674996d739f70843c1`;
-- upgrade guard/record tests passed 5/5; Prisma schema validation passed; and
-- 28 staged files passed scoped Markdown/link, English, sensitive-pattern,
-  committed-byte, and whitespace checks. The dependency lock was unchanged.
+## What the procedure covers
 
-Local migration workspaces, regression fixtures, and the two disposable
-databases are retained; no reset or deletion was performed. Fixture snapshots
-and credentials are not tracked. The existing Next.js middleware deprecation
-warning remains outside this backend increment.
+- exact v0.2 target/method/header/body/size/canonical-response/no-store transport behavior;
+- signed Manifest, Host-key pin, Consent/Grant authority, expiry, and target binding;
+- positive contiguous Event sequence, duplicate identity, future sequence, conflict, and replay;
+- atomic Event plus pending Delivery creation and injected transaction interruption;
+- bounded claim/reclaim attempts, terminal exhaustion, and next-Event admission;
+- effect-backed acknowledgement and its lease, Grant, Connector, and revocation fences; and
+- fresh-process recovery of committed PostgreSQL state.
 
-No schema SQL, dependency, lifetime policy, accepted protocol, public control,
-Game, or production deployment change was required by review. An internal
-inspection can read Grant and active-Delivery state across different instants;
-its public snapshot contract remains an explicit control-plane design/test item
-in [the proposal](../../src/modules/standing/CONTROL-PLANE-PROPOSAL.md).
+The Receiver module owns the implementation profile. This procedure verifies it against the pinned
+shared oracle; it does not authorize changes to the public protocol or unresolved lifetime/control policy.
 
-### Prior post-writeback exact-pin refresh: 2026-09-03
+## Reproduction prerequisites
 
-Parent documentation commits after the original pin changed three files inside
-the selected Core/spec inventory. The first pinned Receiver run therefore
-stopped before database access with the expected
-`conformance_source_commit_mismatch`. After reviewing those bytes, the fixed
-pin was advanced to Core commit `84f5082c5701c7a2bb4d233b511134898434a249`.
-
-The refreshed pinned checks passed as follows:
-
-| Check | Result | Claim limit |
-| --- | --- | --- |
-| Source-pin fixture suite | 16/16 passed | Fixed Core source identity and drift fencing |
-| Upgrade guard/record suite | 5/5 passed | Exact endpoint, source/lock inputs, and migration-record failures |
-| Pinned real Express/PostgreSQL standing trace | 1/1 passed | Core source identity plus the minimum shared two-signal trace |
-| Full backend aggregate | 21 suites / 158 tests passed, no skips | Local Receiver regression and standing profile; not full release conformance |
-
-The trace ran on Node `v26.5.0` against the task-owned loopback baseline and
-reported:
-
-```json
-{
-  "mode": "pinned",
-  "profile": "standing-authorization-v0.2",
-  "core_commit": "84f5082c5701c7a2bb4d233b511134898434a249",
-  "core_source_sha256": "6c7688a074c3d99bca6cba1945b79200db4b8f4b0455edef55f2f3659095cb65",
-  "source_identity_verified": true,
-  "release_conformance_verified": false,
-  "receiver_commit": "7faf527aca7710a26ee03c2c4beec0e2c7edf8c0",
-  "node": "v26.5.0"
-}
-```
-
-Receiver commit `7faf527` contains the browser logout protection increment;
-the subsequent pin-only commit is `1368741`. The logout change does not alter
-the standing protocol, schema, migration, or conformance implementation. The
-full aggregate and pinned trace are local evidence only; public controls,
-fresh-process recovery, release enforcement, production effect authority,
-deployment, and hosted readback remain open.
-
-### Rehearsal command and limits
-
-Provision and verify a **new empty disposable PostgreSQL database** at exactly
-`127.0.0.1:55433/reentry_closure`. It is separate from the retained regression
-database at port 55432. Set `NODE_ENV=test`, provide its credential only through
-`STANDING_UPGRADE_DATABASE_URL`, select the full reviewed Receiver commit in
-`STANDING_MIGRATION_RECEIVER_COMMIT`, and set
-`STANDING_MIGRATION_LOCK_SHA256` to the reviewed dependency-lock SHA-256 below.
-Run with Node 24 from this repository:
-
-```sh
-node --test backend/conformance/standing-v0.2/migration-upgrade.test.mjs
-node backend/conformance/standing-v0.2/migration-upgrade.mjs
-```
-
-The rehearsal refuses a populated database; it never resets, deletes, or repairs
-existing data. It validates selected source bytes against the named commit,
-applies committed SQL through Prisma in two stages, verifies all seven applied
-checksums, compares v0.1 data/catalog before any post-upgrade seeding, and then
-runs the six constraint probes. It retains its temporary migration workspace
-and local fixture snapshots for inspection. On failure, preserve that evidence
-and diagnose the named stage rather than retrying against populated state.
-
-The v0.1 catalog comparison excludes internal triggers added by the intended new
-foreign keys. Standing `RESTRICT` references can prevent deletion of referenced
-existing accounts, organizations, or Connectors; unchanged old rows/DDL does not
-mean unchanged parent-deletion behavior. Actual deployed-role access, tested
-application rollback, forced multi-row failure, fresh-process crash recovery,
-the full shared v0.1/v0.2 matrix, and CI/release enforcement remain open under
-TASK-028. Public controls and lifetime remain separate TASK-027/TASK-033 gates.
-
-## Prior local source-pin result: 2026-09-03
-
-Status: **Core source identity and minimum real-store trace locally verified;
-Receiver source closure and full release conformance remain open**.
-
-The fixed [Core pin](core-pin.json) now selects
-`28d74e589b16e43f167aa82652220b7b182502d1`. Parent local commits are:
-
-- `abcbbaa6df8168e8d62f6cb95aca700968759df9`: 36 documentation/accepted-contract files;
-- `58d8d71b2508084cf749e3d618d5ce5ae3feec51`: 31 Core/compatibility-consumer files; and
-- `28d74e589b16e43f167aa82652220b7b182502d1`: eight owning evidence/status files.
-
-The last commit changes no selected Core/spec bytes. The pin was explicitly
-advanced after that commit and the actual `pinned` runner was rerun, not assumed
-green from the preceding source commit. At final HEAD it passed 1/1 through real
-Express/PostgreSQL and reported:
-
-```json
-{
-  "mode": "pinned",
-  "profile": "standing-authorization-v0.2",
-  "core_commit": "28d74e589b16e43f167aa82652220b7b182502d1",
-  "core_source_sha256": "5eb4c8c2a94e79b4da68616c921f7d996f53545ce18d559424a908e6b480b73b",
-  "source_identity_verified": true,
-  "release_conformance_verified": false,
-  "receiver_commit": "6b4826f68bb3634d004c49259d9c5311c660d997",
-  "node": "v24.20.0"
-}
-```
-
-The Core loopback/SQLite shared scenario also passed 1/1 at the final commit.
-Fresh pre-commit verification passed Core 153/153, Connector 49 with 12 explicit
-external-suite skips, reference-system 2/2, application-demo 2/2, and source-pin
-fixtures 16/16 on Node 24 / npm 10.9.2. Core package checks retained zero runtime
-dependencies and 19 files. The earlier backend 154-test, type-check/build, and
-migration-test results remain prior evidence, not reruns in this pin-only step.
-
-Receiver `Re-Entry` remains based on `6b4826f68bb3634d004c49259d9c5311c660d997`.
-Its standing implementation, migration, conformance tooling, pin, and this record
-remain local and uncommitted. The bounded source delta is the four tracked files
-`backend/prisma/schema.prisma`, `backend/src/app.ts`,
-`backend/src/middleware/protocol-transport.ts`, `backend/src/routes/index.ts`, plus
-`backend/src/modules/standing/`, `backend/conformance/standing-v0.2/`, and the
-standing migration directory. The Core pin does not attest this Receiver delta.
-
-Dependency lock SHA-256 remains
-`3f4354370ec3fa4a965c8434c6e8dd3c80be238dcb6fa7c42747719ac8275314`;
-standing migration SQL SHA-256 is
-`e707a57e7b7330428ba96d0212bfc75516df26ea583904674996d739f70843c1`.
-Readback of the verified disposable PostgreSQL 16 instance at
-`127.0.0.1:55432/reentry_baseline` showed all seven migrations finished:
-
-- `20260902000000_init_cloud_receiver_2_auth`;
-- `20260902010000_pairing`;
-- `20260902020000_consent_targeting`;
-- `20260902030000_signed_event_ingress`;
-- `20260902040000_delivery_claim_lease`;
-- `20260902050000_delivery_acknowledgement`; and
-- `20260903193000_standing_authorization_v02`.
-
-No production database, branch creation, push, publication, or deployment was
-performed. Parent commits include no Game/RightSpot paths. Staged documentation
-and source governance checks passed after fixing TASK-033's filename/headings;
-the full parent scanner still reports 21 pre-existing Game artifact-name matches.
-No clean CI or whole-repository security gate is claimed. TASK-028 owns Receiver
-source/migration closure and the full matrix/release gate; TASK-027/TASK-033 own
-the separate lifetime and public-control decisions.
-
-The verifier requires checkout HEAD to equal this exact pin. A later Game-only
-commit on shared `main` also changes HEAD and intentionally fails that check;
-use an exact-commit source checkout or a separately reviewed updated pin, never
-a floating branch or a weakened check. The evidence above remains for the named
-commit. Shared-main pushes would publish these local-only ancestors and require
-separate user authorization.
-
-The snapshots below are historical. Their missing-pin and uncommitted-Core
-statements describe earlier steps, superseded by this section; their Receiver
-working-tree and broader non-production limits still apply.
-
-## Historical local verification snapshot: 2026-09-03
-
-Status: **locally verified working-tree increment, not release closure**.
-
-- Runtime: Node `v24.20.0`, npm `10.9.2`, disposable PostgreSQL 16.
-- Receiver branch: `Re-Entry`; base commit:
-  `6b4826f68bb3634d004c49259d9c5311c660d997`. The standing increment is uncommitted.
-- Core HEAD observed for the final shared run:
-  `4a71866ac1a5735b22d4931b0d7f555fa2ba306d`.
-- Core source fingerprint:
-  `4562c7f6ff34883add69b3794cd73c82fa66ef228806ebf51556cd566c1b0ce0`.
-  This covers the shared scenario and sorted Core `src/*.mjs` files. Relevant
-  standing source files are untracked in that checkout, so HEAD alone does not
-  reproduce the tested source. The runner checks the fingerprint before and
-  after that development scenario. The source-preflight increment below now
-  refuses an unpinned run by default; this historical hash is not an accepted pin.
-- Dependency lock SHA-256, unchanged from the baseline:
-  `3f4354370ec3fa4a965c8434c6e8dd3c80be238dcb6fa7c42747719ac8275314`.
-
-| Check | Result | Boundary |
-| --- | --- | --- |
-| Baseline backend | 14 suites / 56 tests passed | Existing behavior before the standing increment |
-| Final backend | 21 suites / 154 tests passed; no skips | Existing 56 tests plus 98 standing tests |
-| Root type-check | Passed | Backend and frontend |
-| Root build | Passed | Backend TypeScript and frontend production build |
-| Prisma validation and migration | Passed | Six baseline migrations, then the additive seventh migration, on the disposable database only |
-| Shared standing scenario | 1 passed | Actual Express and PostgreSQL; one human Consent decision and two acknowledged signals |
-| Dependency audit at baseline | 8 findings: 3 moderate, 5 high | Retained dependency debt; no dependency upgrades or audit-fix command in this increment |
-
-The migration suite checks retained v0.1 rows, schema isolation, constraints,
-backend-only access, and actual rejection of a Grant key-pin update. Deterministic
-lock-barrier suites cover expiry during waits, Host-key replacement/revocation,
-Connector loss, concurrent approvals and Event acceptance, and ACK/revocation
-ordering. The active delivery profile covers three attempts, retired claim
-tokens, terminal exhaustion, and a subsequent Event without a fourth attempt.
-
-## Reproduction
-
-Use Node 24 and the repository's pinned npm version. From the Receiver repository
-root, first provision and verify a dedicated disposable PostgreSQL instance; do
-not use the application runtime database or an existing shared local database.
-The Jest fixture guards require `127.0.0.1:55432/reentry_baseline`. Supply the
-connection credential through the local environment, never a tracked file.
-
-Set `NODE_ENV=test`, then explicitly assign all of the following URL variables
-to that same verified disposable database before migration or tests:
+Use Node 24 and the repository's pinned npm version. Provision a new disposable PostgreSQL instance
+on loopback, and never point these checks at a runtime or shared database. Set `NODE_ENV=test` and
+provide all database aliases explicitly to the same verified disposable database:
 
 - `DATABASE_URL`
 - `DIRECT_URL`
@@ -281,356 +56,66 @@ to that same verified disposable database before migration or tests:
 - `STANDING_RACE_TEST_DATABASE_URL`
 - `STANDING_CONSENT_CONCURRENCY_TEST_DATABASE_URL`
 
-Also set `REENTRY_CONFORMANCE_ROOT` to the absolute Git root of the intended Core
-checkout containing `reentry-core/conformance/standing-v0.2/scenario.mjs`.
-The shared runner rejects missing configuration, non-loopback URLs, and URL
-query/fragment overrides; the caller still owns verifying that the database is
-disposable. It fences all runtime database aliases before loading the app.
+Set `REENTRY_CONFORMANCE_ROOT` to the absolute Git root of the selected Core checkout. The runner
+rejects missing configuration, non-loopback URLs, query/fragment overrides, and an absent source pin.
+The caller remains responsible for proving that the database is disposable.
+
+Representative commands from the repository root:
 
 ```sh
-npx --yes npm@10.9.2 ci
-npx --yes npm@10.9.2 run db:migrate -w backend
-npx --yes npm@10.9.2 run test -w backend -- --runInBand
-npx --yes npm@10.9.2 run type-check
-npx --yes npm@10.9.2 run build
+npm ci
+npm run db:migrate -w backend
+npm run test -w backend -- --runInBand
+npm run type-check
+npm run build
 node --test backend/conformance/standing-v0.2/source-pin.test.mjs
 node --test backend/conformance/standing-v0.2/receiver.test.mjs
-REENTRY_CONFORMANCE_MODE=development node --test backend/conformance/standing-v0.2/receiver.test.mjs
+node --test backend/conformance/standing-v0.2/fresh-process.test.mjs
+node --test backend/conformance/standing-v0.2/migration-upgrade.test.mjs
 ```
 
-Do not run another database-writing test process against this instance while the
-Consent concurrency suite is active: a short table lock is part of its proof.
-Standing tests retain their uniquely named fixture rows. Migration constraint
-probes roll back their own transactions; they do not reset the database.
+Run lock-barrier suites serially. Migration rehearsal refuses a populated database, never resets or
+repairs existing data, and retains its temporary snapshots for diagnosis.
 
-## Committed-source preflight
+## Modes and claim limits
 
-The runner defaults to `pinned` mode. Before importing Core or Receiver code or
-opening a database connection, it requires a fixed repository-local pin at
-`backend/conformance/standing-v0.2/core-pin.json` with exactly these fields:
+`pinned` is the only mode that can report `source_identity_verified: true`; it still does not imply
+`release_conformance_verified`. The full v0.1/v0.2 matrix, exact Receiver/lock/migration identities,
+mandatory CI/release enforcement, deployed-role access, production lease profile, and hosted readback
+are separate gates.
 
-- `schema_version`: `1`;
-- `profile`: `standing-authorization-v0.2`;
-- `core_commit`: the complete 40-character lowercase Git commit identity.
+`REENTRY_CONFORMANCE_MODE=development` is explicit local development mode. It fingerprints the selected
+scope before and after the run, but reports source identity and release conformance as unverified. It
+is not a fallback for a missing or changed pin.
 
-The current fixed pin names the reviewed Core commit above, which contains the
-entire required source and governing contract. Do not replace it with an
-unreviewed observed HEAD, branch/tag, package version, or content digest. Every
-pin change requires review of the exact source followed by a new pinned run.
+The shared scenario uses a deterministic test effect authority and typed service seams where public
+control pages are not implemented. A process restart in a test is not proof of supervision, distributed
+ownership, power-loss recovery, or hosted continuity.
 
-The verifier checks the full recursive `reentry-core` inventory plus ADR-0043,
-ADR-0044, ADR-0045, and Mechanisms 01-03. It verifies required files exist in the
-commit and actual file bytes equal the committed blobs, rejects unexpected or
-missing source and symlinks, and repeats verification after the scenario. Git
-replace objects and inherited repository-routing environment variables cannot
-redefine the selected source. Keep generated/ignored files out of this exact
-source checkout; the verifier does not delete or hide them.
+## Evidence record
 
-`REENTRY_CONFORMANCE_MODE=development` is an explicit local-development mode,
-never a fallback. It fingerprints the same scope before and after the run but
-reports both `source_identity_verified: false` and
-`release_conformance_verified: false`. Its expanded source fingerprint is not
-directly comparable to the earlier flat-source historical hash above.
+For every result retained outside the local session, record:
 
-In pinned mode a successful preflight reports only `source_identity_verified`.
-The complete v0.1/v0.2 matrix, real reference and active stores, production lease
-profile, exact Receiver commit/lock/migration identities, and mandatory CI/release
-enforcement are separate remaining gates. An explicitly green development run or
-pure source-verifier test cannot satisfy them. No workflow, branch protection,
-package publication, or deployment setting is changed by this increment.
+- Receiver and Core commit identities plus the selected source inventory;
+- Node, npm, PostgreSQL, Prisma, and host versions;
+- disposable database identity and fixture scope without credentials or row dumps;
+- exact command, mode, test count, and pass/fail/skip result;
+- migration and lock identities where applicable;
+- the highest verification level and claim supported; and
+- skipped or untested layers, residual risk, and the executable reopen gate.
 
-### Source-preflight verification: 2026-09-03
+A green source verifier, a focused suite, or a local trace is not a production release claim.
 
-- Node `v24.20.0`: `source-pin.test.mjs` passed 16/16 tests. Fixtures include
-  missing/malformed pins, an uncommitted scenario at a real HEAD, changed/missing
-  source, symlinks, replacement objects, post-run drift, and actual entry-point
-  refusal before database configuration or imports.
-- The actual default runner exited with `conformance_pin_missing` before
-  database setup. This is the expected blocking result, not a conformance pass.
-- Explicit development mode passed the real Express/PostgreSQL shared scenario
-  (1/1). Its expanded source fingerprint was
-  `11aa6b70ac66f268e43570482226f92e87e536a51af32a456573e390571c2910`;
-  Core and Receiver HEADs remained the identities recorded above.
-- Native syntax checks passed for the verifier, its test, and the Receiver
-  wrapper. The dependency lock is unchanged. No production code, schema, or
-  migration changed in this source-preflight increment; the earlier 154-test,
-  type-check, and build results are retained evidence, not newly rerun counts.
-- Parent governance validator/scanner unit tests passed 6/6 and 3/3; repository
-  documentation/link/shape validation passed without staging owner-held work. The full
-  parent secret scanner still reports the 21 previously recorded Game artifact
-  filename matches; no scanner or Game file was changed to suppress them.
+## File map
 
-All sources remain local and uncommitted. Synthetic Git repositories and standing
-database fixtures are retained for inspection; this increment performs no
-production migration, source commit, push, publication, or deployment.
+- `core-pin.json` — reviewed Core commit selection.
+- `source-pin.mjs` and `source-pin.test.mjs` — pre-import source identity guard.
+- `receiver-process.mjs` and `receiver.test.mjs` — shared scenario wrapper and execution.
+- `fresh-process.test.mjs` — committed-state and transaction-interruption recovery boundary.
+- `migration-upgrade.mjs` and `migration-upgrade.test.mjs` — exact-source migration rehearsal.
 
-### Source-owner review rerun: 2026-09-03
+## Maintenance
 
-Core review corrected reference time/authority resolution before the SQLite
-writer lock and tightened the shared scenario's exact approval, acceptance, and
-acknowledgement responses. Core verification passed 153/153 tests, including
-20 deterministic transaction-boundary regressions and 21 response-oracle tests;
-the real reference transport trace also passed. Oracle fixtures do not count as
-an independent Receiver implementation.
-
-The active Receiver backend was rerun on the same verified disposable
-PostgreSQL instance: 21 suites / 154 tests passed, no skips. The strengthened
-shared scenario then passed 1/1 in explicit development mode with:
-
-- Core observed HEAD: `694f8450bcb65b2d70c5f82d365a9ff50effc10d`;
-- selected-source SHA-256:
-  `5eb4c8c2a94e79b4da68616c921f7d996f53545ce18d559424a908e6b480b73b`;
-- Receiver HEAD: `6b4826f68bb3634d004c49259d9c5311c660d997`; and
-- `source_identity_verified: false`, `release_conformance_verified: false`.
-
-No production Receiver code, migration, or dependency lock changed in this
-review. The earlier type-check/build results are retained, not newly rerun.
-The parent source and mixed standing/application-selection documents are still
-uncommitted while their exact local commit scope is resolved. The fixed pin
-remains absent. Neither the moved parent HEAD nor the working-source hash is
-substituted for a reviewed committed source. Parent CLOUD-023 owns that gate;
-public controls and deployment remain out of scope.
-
-The source-pin fixture suite was rerun at 16/16 passed; the real default runner
-again refused `conformance_pin_missing` before database setup. All 24 modified
-or untracked Receiver candidates passed scoped markdown/link, English, and
-sensitive-pattern checks; whitespace and the recorded lock identity were
-unchanged. Parent candidate validation additionally found a TASK-033 filename
-grammar violation not covered by the normal index-only check; exact rename and
-mixed-document commit scope remain pending. The full parent scanner retains the
-same 21 Game artifact filename findings. No full repository gate pass is claimed.
-
-## What the shared run does and does not prove
-
-The adapter seeds only prerequisite account, organization, pairing, Connector,
-and Host-key records. It does not pre-seed standing Consent, Grant, Event,
-Delivery, or attempt rows. Consent and control calls use the same-account typed
-service seam because a public standing Consent/control shell is not implemented.
-Event, claim, and acknowledgement use the real `/v0.2` HTTP surface.
-
-The Host-effect authority is a separate deterministic test authority, not the
-production game or an Agent's self-report. The restart step reconstructs the app
-and reconnects Prisma in the same process; it is not fresh-process crash,
-power-loss, or deployment recovery evidence. Lock-barrier and delivery-profile
-tests provide additional implementation checks, not a substitute for the full
-mandatory cross-repository failure and release gate.
-
-No new public consent/control routes, lifetime policy, production effect
-authority, Connector capability selection, rate/quota policy, Game integration,
-or deployment is included. TASK-027, TASK-028, and TASK-033 remain open in the
-owning project. Parent canonical status and remote release records must be
-reconciled at the cross-repository integration gate; this local test record does
-not close or overwrite those collaborator-owned surfaces.
-
-## Shared ordering-vector increment: 2026-09-03
-
-The pinned shared standing scenario now exercises one additional failure and
-recovery slice: a signed Event with sequence `2` is submitted while sequence
-`1` is still the next expected Event. Both implementations return the exact
-non-retryable `409 event_sequence_out_of_order` error, leave the public Grant
-sequence at `0` with no active Delivery, and later accept that same Event after
-sequence `1` is acknowledged. This verifies rejection, no mutation, and
-eventual acceptance through the same shared oracle.
-
-Evidence for this increment:
-
-- Core scenario contract and cross-layer tests: `24/24` passed;
-- source-pin fixtures: `16/16` passed;
-- pinned Express/PostgreSQL Receiver trace: `1/1` passed;
-- Core commit: `4565ccc5773ee70905b8e5f7bf2b65440f83edfc`;
-- selected Core/spec SHA-256: `583e541ff41884449ebc5547e9655b3eb4ef34f9db4120236c6354a4dbfba499`;
-- Receiver commit: `82e2f5712343625225fe4cda603ede7e2d53c4fb`; and
-- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
-
-The full backend aggregate was not rerun for this oracle-only increment; the
-previous `21/21` suites and `158` tests remain prior evidence because Receiver
-production source, schema, and migration bytes are unchanged. The mandatory
-concurrent race, forced rollback, fresh-process recovery, release-enforcement,
-public-control, lifetime, and production gates remain open under TASK-028.
-
-## Active-v2 delivery profile increment: 2026-09-03
-
-The active Receiver's implementation-specific delivery profile was rerun against
-the task-owned loopback PostgreSQL baseline. One focused test reclaims exactly
-three lease attempts, retires each prior claim token, reaches
-`retry_exhausted` with `attempt_limit_reached`, releases the standing slot, and
-accepts the next Event sequence without a fourth attempt.
-
-Evidence for this increment:
-
-- command: `../node_modules/.bin/jest src/modules/standing/test/standing-delivery-profile.test.ts --runInBand --forceExit`;
-- Jest result: `1/1` suite and `1/1` test passed;
-- runtime: Node `v26.5.0` against the task-owned `127.0.0.1:55432/reentry_baseline` database;
-- Receiver checkout: `96227925fb7c63041fba98910fda0a0f2f17d12f2`; production standing source last changed in `9156e68`; and
-- no production database, migration, deployment, or external service was touched.
-
-This closes the active-v2 lease/reclaim profile as a local implementation
-check. It is not shared normative conformance: the full distinct-Event race,
-forced rollback, fresh-process recovery, release-enforcement, public-control,
-lifetime, and production gates remain open under TASK-028.
-
-## Shared duplicate-vector increment: 2026-09-03
-
-The pinned shared standing scenario now submits the same signed Event envelope
-concurrently twice. The Core reference and pinned Receiver converge on one
-fresh `202` acceptance and one `202` duplicate response for the same Event ID;
-the sequence/Delivery contract therefore creates one activation rather than
-duplicating work. The preceding future-sequence rejection/no-mutation vector
-remains in the same scenario.
-
-Evidence for this increment:
-
-- Core scenario contract and cross-layer tests: `24/24` passed;
-- source-pin fixtures: `16/16` passed;
-- pinned Express/PostgreSQL Receiver trace: `1/1` passed;
-- Core commit: `68a306eef6b977ee530a6ac75754ad4c3a12dd64`;
-- selected Core/spec SHA-256: `0723f2db654bbe6088e46dc970bb482edfb27d59ddf62b8ec2a6e4aafc24b9fb`;
-- Receiver commit: `fa5de9de162f5746d00179200c8ba41320af1408`; and
-- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
-
-The full backend aggregate was not rerun for this oracle-only increment; the
-previous `21/21` suites and `158` tests remain prior evidence because Receiver
-production source, schema, and migration bytes are unchanged. The mandatory
-distinct-Event race, forced rollback, fresh-process recovery, release-enforcement,
-public-control, lifetime, and production gates remain open under TASK-028.
-
-## Shared distinct-Event sequence race increment: 2026-09-03
-
-The pinned shared standing scenario now submits two distinct signed Event
-envelopes for the same next sequence concurrently. The Core reference and pinned
-Receiver converge on one fresh `202` acceptance and one exact `409`
-`event_sequence_conflict` response with `retryable: false`; replaying the losing
-envelope remains the same conflict, while the Grant sequence and one open Delivery
-reflect only the winner. Future-sequence rejection/no-mutation and same-envelope
-duplicate convergence remain in the same shared oracle.
-
-Evidence for this increment:
-
-- Core scenario contract and cross-layer tests: `26/26` passed;
-- Core full verification: `157/157` tests passed, with syntax, conformance, and package checks green;
-- source-pin fixtures: `16/16` passed;
-- pinned Express/PostgreSQL Receiver trace: `1/1` passed;
-- Core commit: `8e953b25eb7994ee84deb8517c8d036a7f7c5f58`;
-- selected Core/spec SHA-256: `caccfd962bfb55040681cde9e13c8bbc15705a3db7e72a3306fc9e3fcd00d9f9`;
-- Receiver commit: `4112d88dc60285f0f7551cecab9c8d99332ec897`; and
-- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
-
-The full backend aggregate was not rerun for this oracle increment; the prior
-`21/21` suites and `158` tests remain bounded evidence because Receiver
-production source, schema, and migration bytes are unchanged. This does not
-close forced rollback, fresh-process recovery, release-enforcement, public-control,
-lifetime, or production gates under TASK-028.
-
-## Shared Event identity-conflict increment: 2026-09-03
-
-The pinned shared standing scenario now resubmits an already accepted Event ID
-with a different canonical body. The Core reference and pinned Receiver return
-the exact non-retryable `409 event_identity_conflict` response. The Grant
-sequence remains at `1` and the existing open Delivery remains unchanged, so a
-changed payload cannot converge as a duplicate or create another activation.
-
-Evidence for this increment:
-
-- Core scenario contract and cross-layer tests: `28/28` passed;
-- Core full verification: `159/159` tests passed, with syntax, conformance, and package checks green;
-- source-pin fixtures: `16/16` passed;
-- pinned Express/PostgreSQL Receiver trace: `1/1` passed;
-- Core commit: `270c8e88a645d2624d29d70b455e64efca177cb7`;
-- selected Core/spec SHA-256: `71dfbf55a32cbca9f3089d672dca808c99116a61fb4c3ff7c7981c30f14eb714`;
-- Receiver commit: `a92f9403e134ca2c3a8e6249f117b24284e3988c`; and
-- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
-
-The full backend aggregate was not rerun for this oracle increment; the prior
-`21/21` suites and `158` tests remain bounded evidence because Receiver
-production source, schema, and migration bytes are unchanged. The mandatory
-forced rollback, fresh-process recovery, release-enforcement, public-control,
-lifetime, and production gates remain open under TASK-028.
-
-## Shared Event transaction rollback increment: 2026-09-04
-
-The pinned shared standing-v0.2 scenario injects a one-shot failure after the
-Event and Grant sequence writes but before Delivery creation. The active
-Receiver returns the exact non-retryable `500 receiver_internal_error` response,
-leaves the Grant sequence and active Delivery state unchanged, and accepts the
-exact same signed Event envelope after the fixture fault is removed. The retry
-then completes its normal claim, dispatch, effect, and acknowledgement cycle.
-
-Evidence for this increment:
-
-- source-pin fixtures: `16/16` passed;
-- pinned real Express/PostgreSQL standing trace: `1/1` passed, including the expected one-shot injected `500`;
-- Core commit: `1446d73aa3e66533547471728ad8fa5344d51f9e`;
-- selected Core/spec SHA-256: `6210d7724417e0533c77d5989e8ffdd3c404af4063ac9d70d70db9b622f73d45`;
-- Receiver commit: `3972456e510e5c78c26d7eefa396b761e450e749`; and
-- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
-
-The failure is injected only by this disposable PostgreSQL fixture; production
-source, schema, migration, and deployment bytes are unchanged. The full
-backend aggregate was not rerun for this fixture-only increment; the prior
-`21/21` suites and `158` tests remain bounded evidence. This closes the shared
-one-shot post-write rollback/retry vector, not forced process termination,
-fresh-process recovery, release-enforcement, public-control, lifetime, or
-production gates.
-
-## Active Receiver fresh-process recovery increment: 2026-09-04
-
-The active Receiver now has a test-only process boundary that proves a
-committed standing Delivery survives a forced process stop and can complete
-after a fresh Express/Prisma process opens the same PostgreSQL database. The
-test creates the standing authority and pending Delivery through the active
-service, accepts the signed Event over `/v0.2/events`, terminates the first
-Receiver process with `SIGKILL`, starts a second process, claims the retained
-Delivery, verifies the Host-effect attestation through the child-process
-authority seam, acknowledges it, and replays the exact Event as a duplicate.
-The Grant sequence and Delivery state are read from PostgreSQL before and after
-the restart; Connector, claim, and effect tokens are not persisted in the
-verified state projection.
-
-Evidence for this increment:
-
-- focused command: `node --test backend/conformance/standing-v0.2/fresh-process.test.mjs`;
-- focused result: `1/1` passed, with two additional stability reruns also `1/1`;
-- existing pinned active Receiver trace: `1/1` passed after the new fixture;
-- pinned Core commit: `1446d73aa3e66533547471728ad8fa5344d51f9e`;
-- selected Core/spec SHA-256: `6210d7724417e0533c77d5989e8ffdd3c404af4063ac9d70d70db9b622f73d45`;
-- Receiver commit: `98934c27b19f2423f6a18d2fc0210206477d421d`; and
-- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
-
-This is local evidence against a task-owned disposable loopback PostgreSQL
-instance. The child process loads the active Receiver's Express app and
-Prisma client; its in-memory effect authority is an explicit test seam and is
-not production Game authority. The increment does not prove transaction
-interruption at an arbitrary database boundary, supervision, distributed
-ownership, public consent/control routes, release enforcement, deployment or
-hosted recovery. Those remain separate TASK-027/TASK-028/TASK-033 gates.
-
-## Active Receiver transaction-interruption increment: 2026-09-04
-
-The same process-boundary fixture now injects a forced termination immediately
-after the active Receiver writes a standing Delivery inside its Prisma
-transaction. The killed transaction leaves the Grant sequence at `0` and no
-Event or Delivery row committed. A fresh Receiver process accepts the exact same
-signed Event, then a second forced process stop after the committed Delivery is
-followed by a third process that claims the retained Delivery, verifies the
-effect, acknowledges it, and replays the Event as a duplicate. This covers the
-active PostgreSQL transaction boundary and the committed-state recovery path in
-one deterministic trace.
-
-Evidence for this increment:
-
-- focused command: `node --test backend/conformance/standing-v0.2/fresh-process.test.mjs`;
-- focused result: `1/1` passed, with two additional stability reruns also `1/1`;
-- existing pinned active Receiver standing trace: `1/1` passed;
-- pinned Core commit: `1446d73aa3e66533547471728ad8fa5344d51f9e`;
-- selected Core/spec SHA-256: `6210d7724417e0533c77d5989e8ffdd3c404af4063ac9d70d70db9b622f73d45`;
-- Receiver commits: `2429281b7b9f0db56aa8cf8250de18a450ea477f` (fixture),
-  `78e7e561d2779c7779d023b4c6a1461b150f95cf` (state assertion), and
-  `eb2837849dfb7c974a9e2508da2bf0ecbb68eeec` (record); and
-- runtime: Node `v26.5.0`, `release_conformance_verified: false`.
-
-The write-after-create kill is a test-only wrapper around Prisma's transaction
-client; it is not production code and does not emulate every possible database
-or host failure. This closes the bounded active Receiver/PostgreSQL transaction
-interruption vector only. Supervision, distributed ownership, production effect
-authority, public controls, lifetime, deployment, release enforcement, and the
-remaining shared v0.1/v0.2 failure matrix stay open.
+Keep this README procedural and bounded. Put module rules in the standing README, current claims in
+`Docs/00-current-status.md`, and fresh results in the owning release/evidence record. When the Core pin
+or Receiver contract changes, rerun source preflight and the affected scenario before updating any claim.

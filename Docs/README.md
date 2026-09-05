@@ -1,0 +1,69 @@
+# Cloud Receiver Documentation Map
+
+**Role:** Service documentation authority map
+**Status:** Active
+**Last updated:** 2026-09-05
+
+## Purpose
+
+This directory is the bounded documentation entrypoint for the Cloud Receiver service. It routes
+service contracts, security boundaries, persistence and deployment controls, conformance evidence,
+and open decisions without turning a README or report into a work log.
+
+The repository owns Receiver HTTP behavior, account and Connector controls, consent and Grant
+state, Event ingress, Delivery leases and acknowledgement, standing authorization, service health,
+database migrations, and the frontend surfaces that operate those boundaries. Re-entry Core owns
+the reusable protocol contracts. A consumer application owns its event mapping and adapter. No
+permanent consumer-specific integration specification belongs here.
+
+## Reading order
+
+1. Read [00-current-status.md](00-current-status.md) for verified service state and active gates.
+2. Read the module README that owns the question.
+3. Read the linked contract, decision, conformance, migration, or evidence source.
+4. Check current code, tests, database state, and deployment readback for implementation or release
+   claims.
+
+When documents, code, tests, or runtime disagree, identify whether the question is intended
+contract, implemented behavior, or deployment truth. Reconcile the owning source before closure.
+Stop when the conflict affects authentication, secret custody, identity binding, Grant authority,
+Event ordering, Delivery effects, migration safety, or cross-repository source identity.
+
+## Authority map
+
+| Area | Owns | Does not own |
+|---|---|---|
+| [00-current-status.md](00-current-status.md) | Current state, active gates, and non-claims | Module contracts or test procedure |
+| [../README.md](../README.md) | Service entrypoint, repository boundary, quick start, and routing | Detailed implementation history |
+| `backend/src/modules/` | Bounded HTTP/domain module contracts | Cross-module release claims |
+| `backend/src/modules/standing/README.md` | Standing v0.2 protocol and authority boundary | Public control-plane policy not yet accepted |
+| `backend/conformance/standing-v0.2/README.md` | Source pin, reproduction, and conformance claim limits | Product or deployment authority |
+| `supabase/README.md` | Database hardening migration and live-change preflight | Permission to apply a live migration |
+| `backend/prisma/schema.prisma` and migrations | Database schema and migration order | Runtime API behavior by themselves |
+| Current tests and runtime readback | Executed behavior and deployment truth | Intended contract outside the tested scope |
+
+## Module boundaries
+
+- Authentication owns typed session cookies and credential validation.
+- Users and developers own their separate account models and routes.
+- Connectors own pairing, token issuance, digest lookup, and disconnection.
+- Consent owns Host keys, Manifest verification, account decisions, target binding, and Grant status.
+- Events own signed ingress and pending Delivery creation.
+- Deliveries and acknowledgements own lease, retry, effect, and settlement boundaries.
+- Standing owns the additive v0.2 transport and standing authority composition.
+- Developer Portal owns organization and API-key management; it must not expose private Grant or
+  credential material.
+- System health owns liveness/readiness endpoints.
+
+## README and report discipline
+
+A README is an orientation and authority map. It may route readers and state bounded rules, but it
+must not accumulate commands, transcripts, dated execution history, or a second status ledger.
+Implementation reports are temporary extraction inputs: promote durable conclusions to the owning
+module or status file, then retire the report when its remaining content no longer changes a decision.
+
+## Maintenance
+
+Keep project-authored documentation in English. Update current truth in place, link to exact
+evidence, and run type-check/build plus the relevant backend tests after contract-affecting changes.
+Do not store secrets, production connection strings, raw tokens, or mutable database output in docs.

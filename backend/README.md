@@ -1,96 +1,64 @@
-# Cloud Receiver v2 backend deployment
+# Cloud Receiver backend
 
-This directory is the independently deployable backend surface for Cloud
-Receiver v2.
+**Role:** Independently deployable API and persistence boundary
+**Status:** Active
 
-## Vercel project setup
+## Ownership
 
-Configure the Vercel project root as:
+This directory owns the Express application, Prisma schema and migrations, HTTP middleware, account
+and Receiver modules, health/readiness routes, and backend verification. It does not own frontend
+pages, consumer event mapping, reusable Core contracts, or permission to apply a live migration.
 
-```text
-saas-boilerplate/backend
-```
+## Deployment shape
 
-Vercel then discovers [`api/index.ts`](api/index.ts) as the Node.js function
-entrypoint. It exports the Express app and deliberately does not call
-`listen()`. The repository-level historical `vercel.json` is not part of this
-deployment surface.
+The Vercel deployment root, when Vercel is selected, is `saas-boilerplate/backend`. The handler in
+`api/index.ts` exports the Express app and does not call `listen()`. The standalone local listener is
+`src/index.ts`. Keep these process boundaries separate.
 
-Required production runtime variables are `CLOUD_RECEIVER_RUNTIME_DATABASE_URL`
-(the Supabase session-mode pooler URL) or `DATABASE_URL`, `JWT_SECRET` with at
-least 32 characters, `FRONTEND_URL`, `RECEIVER_PUBLIC_URL`, and
-`CLOUD_RECEIVER_PAIRING_SOURCE_HMAC_SECRET` with at least 32 random characters.
-Set
-`COOKIE_DOMAIN` only when the frontend and backend share a parent domain.
-`DIRECT_URL` is for Prisma migration commands and is not needed by request
-handling when the runtime URL is configured.
+Required runtime configuration:
 
-Keep the frontend's `NEXT_PUBLIC_BACKEND_URL` pointed at this backend origin.
-The frontend has no database, JWT, Connector-token, Grant-control, or
-Supabase service-role variable.
+- `CLOUD_RECEIVER_RUNTIME_DATABASE_URL` or `DATABASE_URL` for request handling;
+- `JWT_SECRET` with at least 32 characters;
+- `FRONTEND_URL` for exact credentialed CORS and cookie origin checks;
+- `RECEIVER_PUBLIC_URL` for Receiver-built consent URLs; and
+- `CLOUD_RECEIVER_PAIRING_SOURCE_HMAC_SECRET` with at least 32 random characters.
 
-## Current Vercel Preview
-
-The current non-production integration Preview is available at
-<https://cloud-receiver-delta.vercel.app>. Its paired frontend is
-<https://re-entry-weld.vercel.app>. These aliases are Preview-only and must not
-be treated as production evidence.
-
-The backend does not render account pages. For Connector compatibility,
-`/user-login` and `/user-register` redirect to the matching path on the
-configured `FRONTEND_URL`; the optional `next` value is preserved only when it
-is a relative path.
-
-For the split-origin browser flow, `FRONTEND_URL` must exactly match the
-frontend origin. Production session cookies use `SameSite=None; Secure`, and
-the API must answer credentialed CORS preflights without redirecting them.
-
-The active account claim route is `POST /v0.1/account/pairing-sessions/claim`
-with exactly `{ pairing_id, pairing_code, device_name }`. A direct Vercel
-deployment must receive exactly one valid `x-vercel-forwarded-for` value;
-missing, repeated, comma-separated, or invalid provider identity returns the
-bounded `receiver_busy` response. The durable source budget is thirty requests
-per ten-minute window and returns `429 pairing_rate_limited` with a bounded
-`Retry-After` after the budget is exhausted. This route contract is not
-available through the retired `runtime/cloud-receiver/` service.
-
-## Connector lifecycle
-
-The active v2 Connector signs itself out with
-`POST /v0.1/connectors/disconnect` and an exact JSON body containing only its
-saved `connector_token`. The Receiver stamps `revoked_at` once, retains the
-Connector row, rejects future claims, and returns a replay-safe disconnected
-response. The route uses no browser cookie or Organization credential and
-never returns the raw token.
-
-The read-only regression check is:
-
-```sh
-curl -i -X OPTIONS \
-  -H 'Origin: https://re-entry-weld.vercel.app' \
-  -H 'Access-Control-Request-Method: POST' \
-  -H 'Access-Control-Request-Headers: content-type' \
-  https://cloud-receiver-delta.vercel.app/v1/auth/users/login
-```
-
-Expected: `204`, an exact `Access-Control-Allow-Origin` for the frontend,
-`Access-Control-Allow-Credentials: true`, and no `Location` header.
+`DIRECT_URL` is for Prisma migration commands, not request handling. Set `COOKIE_DOMAIN` only when
+frontend and backend share a parent domain. The frontend must receive only its public backend URL; it
+must never receive database, JWT, Connector-token, Grant-control, or service-role credentials.
 
 ## Migration boundary
 
-Run Prisma migrations as a separately authorized release step before routing
-traffic to a deployment:
+Apply Prisma migrations as a separately authorized release step before routing traffic:
 
 ```sh
 npx prisma migrate deploy
 ```
 
-Supply `DIRECT_URL` (or the approved migration fallback) to that command. Do
-not run migrations from the Vercel build, `api/index.ts`, or a function cold
-start. The local `backend/entrypoint.sh` is for the Docker image and is not a
-Vercel startup command.
+Supply the reviewed `DIRECT_URL` or approved migration fallback. Do not run migrations from a build
+step, request handler, or cold start. Verify migration order, target identity, health/readiness, and
+rollback before declaring a release.
+
+## HTTP boundaries
+
+- Cookie-authenticated POST mutations require the configured frontend Origin and JSON content type.
+- Anonymous pairing claims accept exactly the pairing fields, use a trusted provider source identity,
+  apply the durable source budget, and fail closed when the identity or limiter store is unavailable.
+- Connector disconnect accepts only the saved token, revokes once, retains history, and is replay-safe.
+- Standing v0.2 routes use exact raw-target, method, header, body, size, canonical-response, and
+  no-store checks; they do not negotiate or fall back to v0.1.
+- Health endpoints are public; readiness checks the database, while liveness checks process state only.
 
 ## Local process
 
-Use `src/index.ts` for the standalone local Express listener. The Vercel
-handler is tested through Supertest and must remain listener-free.
+From this directory's parent:
+
+```sh
+npm run dev -w backend
+npm run build -w backend
+npm test -w backend -- --runInBand
+```
+
+Use a dedicated disposable PostgreSQL database for database-backed tests. Record exact source, runtime,
+database, and claim scope. A successful Vercel build or health response does not prove authenticated
+workflow, delivery, or cross-project continuation.
