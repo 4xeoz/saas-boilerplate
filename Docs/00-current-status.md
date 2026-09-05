@@ -19,7 +19,7 @@ authorization v0.2 path.
 - The source-pinned conformance runner selects Core commit
   `1446d73aa3e66533547471728ad8fa5344d51f9e` through
   `backend/conformance/standing-v0.2/core-pin.json`, but the active sibling checkout is at
-  `375a2ff426835f5e9d098fec37fcfd718a608bb8` and does not contain that commit. The source verifier
+  `c77b70320aac2cb5e939dac444f5ddd5ac4b46fa` and does not contain that commit. The source verifier
   therefore fails closed with `conformance_pin_commit_unavailable`; see
   [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md).
 - Database hardening is prepared as an explicit migration and has a disposable local proof; a live

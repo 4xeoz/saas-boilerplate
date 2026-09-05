@@ -11,7 +11,7 @@ can load without an implicit historical checkout or floating branch.
 ## Current boundary
 
 The recorded pin is `1446d73aa3e66533547471728ad8fa5344d51f9e`, while the active sibling checkout is
-`375a2ff426835f5e9d098fec37fcfd718a608bb8`; the pin is unavailable there. Details and evidence live
+`c77b70320aac2cb5e939dac444f5ddd5ac4b46fa`; the pin is unavailable there. Details and evidence live
 in [CR-ISSUE-001](../Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md).
 
 ## Next gate

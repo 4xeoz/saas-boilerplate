@@ -9,7 +9,7 @@
 - `backend/conformance/standing-v0.2/core-pin.json` selects Core commit
   `1446d73aa3e66533547471728ad8fa5344d51f9e`.
 - The active sibling checkout at `/Users/alex/Re-Entry/reentry` is at
-  `375a2ff426835f5e9d098fec37fcfd718a608bb8`.
+  `c77b70320aac2cb5e939dac444f5ddd5ac4b46fa`.
 - `git cat-file -t 1446d73aa3e66533547471728ad8fa5344d51f9e` fails in the active sibling checkout.
 - Running the Receiver source verifier against that checkout returns
   `conformance_pin_commit_unavailable` before any database or protocol import.
