@@ -26,6 +26,7 @@ integration specification.
 - [Documentation map](Docs/README.md) — authority, module boundaries, and maintenance rules.
 - [Core documentation](Docs/Core/README.md) — product definition, requirements, system design,
   trust policy, validation, and roadmap.
+- [Contracts](Docs/Contracts/README.md) — HTTP versioning and module contract owners.
 - [Current status](Docs/00-current-status.md) — verified state, active gates, and non-claims.
 - [Engineering](Docs/Engineering/README.md) — development and verification procedure.
 - [Verification](Docs/Verification/README.md) — reproducible checks and claim limits.

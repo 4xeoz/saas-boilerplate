@@ -35,6 +35,7 @@ Event ordering, Delivery effects, migration safety, or cross-repository source i
 |---|---|---|
 | [00-current-status.md](00-current-status.md) | Current state, active gates, and non-claims | Module contracts or test procedure |
 | [Core/](Core/README.md) | Product definition, requirements, system design, trust policy, validation, and roadmap | Mutable execution history or consumer-specific behavior |
+| [Contracts/](Contracts/README.md) | HTTP versioning and module contract owners | Consumer mapping or a duplicate Core specification |
 | [Engineering/](Engineering/README.md) | Development, change control, and closure procedure | Product authority or deployment state |
 | [Verification/](Verification/README.md) | Reproducible checks and evidence levels | Intended behavior or release permission |
 | [Operations/](Operations/README.md) | Local, migration, deployment, health, and recovery controls | Permission to apply a live change |
