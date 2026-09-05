@@ -8,12 +8,25 @@ or upgrade the retained v0.1 authority, and it does not define a consumer's even
 
 ## Accepted transport boundary
 
-The public v0.2 router exposes exactly:
+The v0.2 router has two explicitly separated route groups. The protocol kernel exposes exactly:
 
 - `POST /v0.2/events`
 - `POST /v0.2/delivery-claims`
 - `POST /v0.2/delivery-acknowledgements`
 - `POST /v0.2/delivery-notification-handoffs`
+
+The authenticated control group additionally exposes:
+
+- `POST /v0.2/host-keys`
+- `POST /v0.2/consent-sessions`
+- `GET /v0.2/consent-sessions/:consentSessionId`
+- `POST /v0.2/account-consent-decisions`
+- `GET /v0.2/grants/:bindingId`
+- `POST /v0.2/grants/:bindingId/revoke`
+
+Host enrollment uses an Organization API key. Account decisions, inspection, and revocation use the
+authenticated User session and Receiver-origin JSON checks. These control routes are not an
+alternate protocol transport and do not relax the kernel's exact-target rules.
 
 Raw request-target resolution precedes method, headers, body, CORS, and application dispatch. The
 transport requires one JSON content type, no content encoding, fatal UTF-8 decoding, bounded bodies

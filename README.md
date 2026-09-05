@@ -44,6 +44,7 @@ integration specification.
 | `/v1/auth/users` and `/v1/auth/developers` | Users, developers, authentication | Separate account models and typed httpOnly session cookies |
 | `/v0.1/account/*` | Connectors and consent | Pairing, account-scoped device metadata, consent decisions, and target binding |
 | `/v0.1/events`, `/v0.1/delivery-claims`, `/v0.1/delivery-acknowledgements` | Events, deliveries, acknowledgements | Retained compatibility surface with exact replay/lease/effect rules |
+| `/v0.2/host-keys`, `/v0.2/consent-sessions*`, `/v0.2/account-consent-decisions`, `/v0.2/grants/*` | Standing module | Authenticated Host enrollment, User decisions, Grant inspection, and revocation |
 | `/v0.2/events`, `/v0.2/delivery-*` | Standing module | Signed standing Event ingress, claims, acknowledgement, and notification handoff |
 | `/health`, `/health/live`, `/healthz`, `/readyz` | System health | Public liveness/readiness only |
 
