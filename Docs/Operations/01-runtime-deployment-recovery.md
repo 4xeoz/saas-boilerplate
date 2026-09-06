@@ -22,6 +22,11 @@ startup.
 
 ## Process shapes
 
+The current backend and frontend Dockerfiles build on `node:22-alpine`. This is the present image
+base, not a release-compatibility claim: the conformance and local verification baseline is Node 24,
+so an image release must run its required checks on the exact image runtime before deployment claims
+are made.
+
 | Shape | Entry | Current boundary |
 |---|---|---|
 | Local backend | `backend/src/index.ts` | Owns `listen()`, graceful shutdown, and Prisma disconnect |
