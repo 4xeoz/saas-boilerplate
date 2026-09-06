@@ -58,8 +58,8 @@ consent, delivery, acknowledgement, or human review.
 - direct browser or Connector access to PostgreSQL/Supabase;
 - unbounded standing authority, hidden retries, or automatic human-consequence execution;
 - consumer-specific gameplay, UI, event vocabulary, or deployment policy;
-- a public standing control plane before its lifetime, redaction, CSRF, custody, and revocation
-  decisions are accepted; or
+- an expanded account-facing standing control plane before its lifetime, redaction, CSRF, custody,
+  and revocation decisions are accepted; or
 - a production or end-to-end claim based only on local source, tests, or a frontend screen.
 
 ## Ownership changes

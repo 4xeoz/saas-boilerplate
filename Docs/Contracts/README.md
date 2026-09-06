@@ -1,7 +1,7 @@
 # Cloud Receiver 2 Contracts
 
 **Role:** HTTP, protocol-version, state, and module-contract routing
-**Status:** Current implementation baseline; standing public policy remains open
+**Status:** Current implementation baseline; expanded account-facing standing policy remains open
 
 ## Contract owners
 
