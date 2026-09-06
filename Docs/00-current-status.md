@@ -35,7 +35,7 @@ availability, or complete external continuation.
 
 | Gate | Owner/surface | Current boundary |
 |---|---|---|
-| Core-pinned conformance | `backend/conformance/standing-v0.2/` | Pin is recorded but unresolved against the active sibling checkout; no source-identity claim |
+| Core-pinned conformance | `backend/conformance/standing-v0.2/` | Historical pin and fixed selected inventory are unresolved against the active sibling checkout; no source-identity claim |
 | Runtime admission and handoff | Standing module | Default application has no production admission authority and fails closed |
 | Control-plane policy | Standing control-plane proposal | Lifetime, public summaries, revocation UX, and snapshot consistency need accepted policy before implementation |
 | Database hardening | `supabase/` | Local disposable proof exists; live migration is not implied |

@@ -22,13 +22,19 @@
   `source_identity_verified: true` and `release_conformance_verified: false`. This confirms that
   the historical pin is internally source-identifiable; it does not make the clone an active
   dependency or prove Receiver conformance.
+- The verifier's fixed `SPEC_PATHS` still names historical `ADR-0043`, `ADR-0044`, and `ADR-0045`.
+  None of those paths exists at the active Re-entry checkout; the current equivalents are
+  `ADR-1003`, `ADR-1004`, and `ADR-1005`, while the selected Mechanism paths remain present. A
+  current pin therefore cannot pass by changing only `core_commit`; the selected source inventory
+  and its verifier contract would also require an accepted review.
 
 ## Impact
 
 The Receiver cannot currently establish the pinned Core source identity from the active workspace.
 Therefore pinned conformance, release conformance, and any cross-project compatibility claim remain
-open. This issue does not by itself prove a protocol or implementation defect, and it authorizes no
-runtime or pin mutation.
+open. The fixed selected inventory creates a second compatibility boundary beyond the commit pin;
+this issue does not by itself prove a protocol or implementation defect, and it authorizes no
+runtime, verifier, or pin mutation.
 
 ## Resolution gate
 
@@ -36,8 +42,9 @@ The owner must choose one reviewed source boundary:
 
 1. recover and explicitly supply the historical pinned source as a retrieval fixture with recorded
    identity; or
-2. review the current domain-neutral Core checkout, update the Receiver pin and selected inventory,
-   then rerun source identity, focused conformance, migration, and compatibility checks.
+2. review the current domain-neutral Core checkout, update the Receiver pin and selected verifier
+   inventory as one accepted compatibility change, then rerun source identity, focused conformance,
+   migration, and compatibility checks.
 
 Do not replace the pin with `HEAD`, a branch, a package version, or a working tree without that
 review. Close this issue only after the selected source is committed, the verifier passes, and
