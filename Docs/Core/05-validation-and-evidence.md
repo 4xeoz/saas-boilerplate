@@ -5,7 +5,9 @@
 
 ## Current local checks
 
-The following checks were run against the current `Re-Entry` branch:
+The following checks were recorded against the Receiver implementation baseline
+`4fa4ba312902d9ae70734e8b82305ba2e4924987` on branch `Re-Entry`; later commits through the current
+checkout are documentation-only:
 
 | Check | Result | Claim supported |
 |---|---|---|
