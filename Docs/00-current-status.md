@@ -27,6 +27,9 @@ authorization v0.2 path.
   inventory, historical source evidence, and `CODE-AHEAD` classification.
 - Database hardening is prepared as an explicit migration and has a disposable local proof; a live
   Supabase change requires a separate preflight and migration authority.
+- Receiver implementation source baseline: commit
+  `4fa4ba312902d9ae70734e8b82305ba2e4924987`; all later commits through the current checkout are
+  documentation-only.
 - Current local baseline checks passed `npm run type-check`, `npm run build`, and the 16 synthetic
   source-pin guard tests under Node `v26.5.0` and npm `11.17.0`. Database-backed Jest tests were not
   runnable because no disposable PostgreSQL URL was configured.
