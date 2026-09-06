@@ -1,7 +1,7 @@
 # Cloud Receiver 2 — Current Status
 
 **Role:** Canonical service-state and claim ledger
-**As of:** 2026-09-05, Europe/London
+**As of:** 2026-09-06, Europe/London
 **Status:** Active Receiver development; static/build checks pass, while database, source-pin,
 deployment, and cross-project release gates remain open
 
@@ -19,7 +19,7 @@ authorization v0.2 path.
 - The source-pinned conformance runner selects Core commit
   `1446d73aa3e66533547471728ad8fa5344d51f9e` through
   `backend/conformance/standing-v0.2/core-pin.json`, but the active sibling checkout is at
-  `c77b70320aac2cb5e939dac444f5ddd5ac4b46fa` and does not contain that commit. The source verifier
+  `8efe68b615365f5277722835b045853b074f10f8` and does not contain that commit. The source verifier
   therefore fails closed with `conformance_pin_commit_unavailable`; see
   [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md).
 - Database hardening is prepared as an explicit migration and has a disposable local proof; a live
