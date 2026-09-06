@@ -46,6 +46,12 @@
   mapped but not path- or byte-compatible with the historical inventory. A current pin cannot
   pass by changing only `core_commit`; the selected source inventory and its verifier contract
   require an accepted compatibility review.
+- A direct tree comparison on 2026-09-06 also shows that this is not documentation-only drift:
+  the pinned checkout contains 53 `reentry-core` files, while the active checkout contains 59;
+  six files are new and 12 common files differ. The active delta includes runtime-admission and
+  notification-handoff modules, schema version 7 (the pinned source is version 6), and expanded
+  standing authorization, HTTP, store, and fresh-process coverage. This is a `CODE-AHEAD`
+  conflict at the source boundary, in addition to the historical documentation-inventory mismatch.
 
 ## Impact
 

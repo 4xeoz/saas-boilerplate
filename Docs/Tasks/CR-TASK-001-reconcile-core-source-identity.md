@@ -22,7 +22,11 @@ semantic mapping is now explicit: historical ADR-0043 is represented by ADR-1003
 Mechanism/Core sections; ADR-0044 by ADR-1004 plus the proof and implementation gates; and ADR-0045
 by ADR-1002 plus Mechanism 03 and the exact code/profile contract. ADR-1005 is governance metadata,
 not a replacement for the transport decision. This mapping does not satisfy the verifier's exact
-path/byte inventory by itself.
+path/byte inventory by itself. A direct 2026-09-06 tree comparison further shows that the active
+Core is not merely a documentation descendant: its `reentry-core` tree has 59 files versus 53 at
+the pin, with six additions and 12 changed common files, including runtime admission, notification
+handoff, schema v7, and expanded standing/fresh-process coverage. Treat the source mismatch as a
+`CODE-AHEAD` compatibility conflict until an owner reviews the new source boundary.
 
 ## Next gate
 
