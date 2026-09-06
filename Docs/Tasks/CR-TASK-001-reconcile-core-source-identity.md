@@ -12,8 +12,8 @@ can load without an implicit historical checkout or floating branch.
 
 The recorded pin is `1446d73aa3e66533547471728ad8fa5344d51f9e`. The source readback used sibling
 checkout `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline; the current
-sibling checkout is `cd41bf5505930367da863e127711c8eaf6196be1`, and the intervening changes are
-documentation-only. The pin is unavailable in both. Earlier documentation used
+sibling checkout readback is `a0ce2a91213ff6e4cbf0032de0f2e438c9b00639`, and the intervening changes
+are documentation-only. The pin is unavailable in both. Earlier documentation used
 `c0a42a5286dcbfeeccdda1068f0c7456a1df2da8` and then `91c68fd60aee2d30df8d64b75c325bd6c4d642cb`
 before the baseline readback.
 Details and evidence live
