@@ -64,17 +64,14 @@ prompt or optional page capability is not a Grant. The Receiver does not infer U
 Host, Connector, token, process exit, or frontend boolean. Consumer-specific human consequences stay
 with the consumer application and require its own evidence.
 
-## Operational safety
+## Operational boundary
 
-- `/health/live` and `/healthz` report process liveness without database readiness; `/health` and
-  `/readyz` verify database readiness.
-- The intended release control is a separately authorized migration step before traffic, never from a
-  request, build, or cold-start path. The current Docker entrypoint violates that intended boundary
-  by running `prisma migrate deploy` on startup; see [CR-ISSUE-002](../Issues/CR-ISSUE-002-container-startup-runs-migrations.md).
-- Graceful shutdown stops admission, allows bounded in-flight completion, disconnects Prisma, and
-  forces exit at the configured timeout.
-- The prepared Supabase hardening migration is transactional and requires a named preflight and
-  migration owner; this repository does not imply that it has been applied live.
+Runtime health, migration order, deployment packaging, graceful shutdown, recovery, and live
+hardening procedures are owned by
+[Operations/01-runtime-deployment-recovery.md](../Operations/01-runtime-deployment-recovery.md).
+This policy still requires those procedures to preserve secret custody, backend-only database
+access, explicit migration authority, fail-closed admission, and a current evidence ceiling; it
+does not duplicate their commands or mutable deployment state.
 
 ## Reopen conditions
 
