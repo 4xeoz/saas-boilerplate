@@ -7,6 +7,13 @@ repository. Establish the Git root from the current checkout; do not infer it fr
 the surrounding workspace. Preserve unrelated tracked, untracked, ignored, and collaborator-owned
 work, and stage exact paths owned by the current increment.
 
+A clean clone must be operable from this file and the repository's canonical documents; it must not
+depend on a parent-workspace or machine-local AGENTS.md. The parent workspace can provide
+coordination context only.
+
+Any nested package-generated `AGENTS.md` is additive and package-local. It can govern that generated
+tooling surface, but it never replaces this repository guide or the canonical `Docs/` authorities.
+
 The repository owns the Receiver API, authentication, consent and Grant state, Event ingress,
 Delivery settlement, persistence, migrations, health/readiness, deployment configuration, and
 frontend surfaces. Re-entry Core owns reusable protocol contracts; a consumer owns its mapping and
@@ -21,10 +28,13 @@ For every non-trivial task:
 3. read the owning Core, Contract, module, Task, Issue, or ADR and only the evidence required by the
    affected claim;
 4. read [`Docs/Engineering/`](Docs/Engineering/README.md) for technical policy and
-   [`Docs/AI-Development/`](Docs/AI-Development/README.md) for AI-facing execution, testing,
-   handoff, and closure procedure; and
+   [`Docs/AI-Development/README.md`](Docs/AI-Development/README.md) to route AI-facing execution,
+   testing, handoff, and closure procedure; and
 5. read [`Docs/Verification/`](Docs/Verification/README.md) or [`Docs/Operations/`](Docs/Operations/README.md)
    when the intended claim requires those layers.
+
+Classify the increment as Fast, Standard, or Assured through the AI-Development procedure. The
+profile changes control depth and evidence effort; it never changes product or contract authority.
 
 An owner request is intent to evaluate, not permission to override an accepted contract. Stop at a
 decision boundary before changing identity, secret custody, authority, data lifecycle, migrations,
@@ -40,6 +50,16 @@ deployment, compatibility, or a cross-project contract.
 - Implement the smallest coherent outcome with one real consumer. Avoid speculative abstractions,
   hidden fallbacks, silent migration changes, and unbounded dependency or generated-file edits.
 - Keep project-authored artifacts in English and secrets out of source, logs, evidence, and docs.
+
+## Git and collaboration
+
+- At session start or resume, and again before any push, fetch the intended remote and inspect the
+  actual root, branch, upstream, status, ownership, and divergence.
+- Integrate remote work deliberately on a clean tree; a blind pull is not a review step.
+- Stage exact task-owned paths, inspect the full staged diff, and keep the primary session in control
+  of authority reconciliation, commit, push, deployment, publication, and closure claims.
+- Never use force-push, shared-history rewriting, destructive checkout, `git clean`, or
+  `git reset --hard` to manufacture a clean result. External actions require separate authorization.
 
 ## Verification and closure
 
