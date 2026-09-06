@@ -43,10 +43,11 @@ before it can support a release claim.
 
 ## Explicit non-requirements
 
-The current product does not require public Grant listing/revocation, runtime admission provider
-selection, quota policy, multi-instance ownership, consumer-specific workflow, arbitrary external
-effect execution, or live database hardening. Each is an open decision or separate release gate,
-not an implied implementation task.
+The current product does not require an expanded public Grant listing/management shell beyond the
+explicitly accepted authenticated `/v0.2` control routes, runtime admission provider selection,
+quota policy, multi-instance ownership, consumer-specific workflow, arbitrary external effect
+execution, or live database hardening. Each is an open decision or separate release gate, not an
+implied implementation task.
 
 ## Change rule
 

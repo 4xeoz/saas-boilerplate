@@ -37,7 +37,7 @@ availability, or complete external continuation.
 |---|---|---|
 | Core-pinned conformance | `backend/conformance/standing-v0.2/` | Historical pin and fixed selected inventory are unresolved against the active sibling checkout; no source-identity claim |
 | Runtime admission and handoff | Standing module | Default application has no production admission authority and fails closed |
-| Control-plane policy | Standing control-plane proposal | Lifetime, public summaries, revocation UX, and snapshot consistency need accepted policy before implementation |
+| Control-plane policy | Standing control-plane proposal | Expanded account-facing shell: lifetime, public summaries, revocation UX, and snapshot consistency need accepted policy before implementation |
 | Database hardening | `supabase/` | Local disposable proof exists; live migration is not implied |
 | Container build | `backend/Dockerfile`, `frontend/Dockerfile` | Both clean-context builds fail to resolve private `@saas/shared`; see CR-ISSUE-003 |
 | Migration authority | `backend/entrypoint.sh` and deployment docs | Startup migration conflicts with the separately authorized release contract; see CR-ISSUE-002 |
@@ -58,7 +58,7 @@ A report, fixture, stub, source interface, or local green test cannot claim a la
 
 - no complete production standing-mode release or mandatory CI/release enforcement;
 - no default production runtime-admission authority, Connector capability selection, or quota policy;
-- no public Grant inspection/revocation contract beyond explicitly accepted routes;
+- no expanded public Grant listing/management shell beyond the explicitly accepted authenticated `/v0.2` control routes;
 - no live Supabase hardening change from the prepared migration;
 - no verified Docker image build or container release because the workspace package is unavailable in
   both current image contexts;

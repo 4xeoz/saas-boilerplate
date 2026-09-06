@@ -25,8 +25,9 @@ The authenticated control group additionally exposes:
 - `POST /v0.2/grants/:bindingId/revoke`
 
 Host enrollment uses an Organization API key. Account decisions, inspection, and revocation use the
-authenticated User session and Receiver-origin JSON checks. These control routes are not an
-alternate protocol transport and do not relax the kernel's exact-target rules.
+authenticated User session; JSON writes also require the Receiver-origin check. These checked-in
+control endpoints are a bounded protocol surface, not a general Grant-listing or account-management
+API. They are not an alternate protocol transport and do not relax the kernel's exact-target rules.
 
 Raw request-target resolution precedes method, headers, body, CORS, and application dispatch. The
 transport requires one JSON content type, no content encoding, fatal UTF-8 decoding, bounded bodies
@@ -34,9 +35,9 @@ and responses, canonical JSON, and no-store headers. Absolute-form aliases are r
 version negotiation or fallback to v0.1.
 
 Host enrollment and account decisions use their own organization-key and authenticated same-user
-boundaries. Public Grant inspection or revocation is not implied by this module. The [control-plane
-proposal](CONTROL-PLANE-PROPOSAL.md) is non-authoritative until its lifetime, redaction, and public
-security decisions are accepted.
+boundaries. The [control-plane proposal](CONTROL-PLANE-PROPOSAL.md) covers the still-missing
+account-facing shell (lists, terminal-page custody, login continuation, and its public policy); it
+is non-authoritative until its lifetime, redaction, and security decisions are accepted.
 
 ## Authority and state flow
 

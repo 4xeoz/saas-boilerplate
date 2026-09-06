@@ -52,6 +52,6 @@ gate. Never include credentials, raw tokens, connection strings, row dumps, or m
   boundary; see [CR-ISSUE-002](../Issues/CR-ISSUE-002-container-startup-runs-migrations.md).
 - Database-backed suites require a verified disposable PostgreSQL URL; none was configured for the
   baseline check above.
-- The control-plane proposal has no accepted public lifetime, redaction, custody, or revocation
-  contract.
+- The expanded control-plane shell proposal has no accepted lifetime, redaction, custody, or
+  public revocation contract.
 - No current deployment readback in this repository proves a public release or consumer continuation.

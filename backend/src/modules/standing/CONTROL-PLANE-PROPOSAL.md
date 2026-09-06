@@ -1,27 +1,32 @@
 # Standing Control-Plane Decision Brief
 
-**Status:** NON-AUTHORITATIVE — proposed, not accepted or implemented
+**Status:** NON-AUTHORITATIVE — proposed expanded account-facing shell; not accepted or implemented
 **Owner:** Receiver service
 
 ## 1. Purpose and decision boundary
 
-This brief describes a possible Receiver-owned HTML and `/v1/standing/*` control plane for
+This brief describes a possible Receiver-owned HTML and `/v1/standing/*` account-facing shell for
 standing authorization. It is a proposal, not a public API contract or permission to implement.
-The standing kernel routes under `/v0.2/*` remain governed by the accepted Core and the Standing
-module README.
+The checked-in `/v0.2/*` router already has a bounded, authenticated protocol-control group; those
+routes remain governed by the accepted Core and the Standing module README and are not this shell.
 
 Standing means a Grant may accept multiple Events within its configured lifetime; it does not mean
-unbounded authority. The current schema stores finite Consent and Grant deadlines. Public enrollment
-must remain disabled until an explicit lifetime and renewal policy is accepted.
+unbounded authority. The current schema stores finite Consent and Grant deadlines. The existing
+organization-authenticated `/v0.2/consent-sessions` endpoint accepts a bounded caller-supplied cap;
+that implementation field is not an accepted product lifetime or renewal policy. The expanded
+account-facing shell remains out of scope until those policies are accepted.
 
 Parent decisions own the unresolved lifetime, conformance, implementation, and transport questions.
 This brief may be updated only as a decision input; it cannot approve itself.
 
 ## 2. Current source facts
 
-- Standing Consent creation requires trusted server configuration for the maximum Grant lifetime and
-  stores Consent and effective Grant deadlines separately.
-- Internal decision, inspection, and revocation functions are not complete authenticated public routes.
+- The checked-in `/v0.2` router exposes organization-authenticated Host-key/enrollment/status routes
+  and same-user decision/inspection/revocation routes. They are bounded protocol controls, not the
+  proposed account-facing list/login/terminal shell.
+- Standing Consent creation accepts a schema-bounded `maximum_grant_lifetime_ms` request cap and
+  stores Consent and effective Grant deadlines separately; a caller cap is not a product lifetime
+  decision.
 - Standing Consent tokens use a separate cryptographic namespace; that alone does not define expiry,
   owner checks, login handoff, or terminal-page custody.
 - The schema pins one Organization/Host-subject binding to one Connector target; Grant revocation does
@@ -82,8 +87,9 @@ Before public implementation, accept:
 - public revocation semantics, in-flight behavior, and binding decommission/rebinding policy; and
 - exact routes, fields, status/error envelopes, abuse limits, token custody, and login/popup protocol.
 
-The current internal inspection reads Grant and open Delivery separately; it must not be exposed as a
-coherent snapshot until concurrent Event acceptance and ordering semantics are decided and tested.
+The current `/v0.2` inspection endpoint reads Grant and open Delivery separately; it must not be reused
+as a coherent account-facing shell snapshot until concurrent Event acceptance and ordering semantics
+are decided and tested.
 
 ## 6. Alternatives
 
@@ -94,7 +100,7 @@ coherent snapshot until concurrent Event acceptance and ordering semantics are d
 | New controls under `/v0.2/*` | Requires a new accepted transport contract; not implied by kernel routes |
 | Copy v0.1 page/helpers | Fails standing terminal-owner and lifetime assumptions |
 | Organization/Host-controlled Grant management | Violates authenticated same-user authority |
-| Keep internal functions only | Safest current boundary; not a usable public control plane |
+| Keep the current `/v0.2` controls only | Safest current boundary while the account-facing shell decisions remain open |
 
 ## 7. Acceptance and verification gates
 

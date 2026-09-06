@@ -13,7 +13,7 @@ removed.
 |---|---|---|
 | [CR-TASK-001](CR-TASK-001-reconcile-core-source-identity.md) | Resolve the reviewed Re-entry Core source identity used by standing conformance. | Choose historical recovery or a new current pin; pass source inventory/bytes, then rerun conformance. |
 | [CR-TASK-002](CR-TASK-002-run-disposable-database-verification.md) | Complete disposable PostgreSQL and standing migration/recovery verification. | Provision an explicitly disposable loopback database and run the documented suites serially. |
-| [CR-TASK-003](CR-TASK-003-decide-standing-control-plane.md) | Accept or reject a public standing control-plane contract. | Decide lifetime, custody, CSRF, redaction, revocation, and snapshot semantics before implementation. |
+| [CR-TASK-003](CR-TASK-003-decide-standing-control-plane.md) | Accept or reject the expanded standing account-facing shell. | Decide lifetime, custody, CSRF, redaction, revocation, and snapshot semantics before shell implementation. |
 | [CR-TASK-004](CR-TASK-004-close-deployment-release-evidence.md) | Close deployment and database-hardening release evidence. | Resolve image packaging and migration authority, then perform named preflight, health/readiness, rollback, secret-custody, and platform readback. |
 
 See [Current status](../00-current-status.md) and [Roadmap](../Core/06-roadmap.md) for the claim
