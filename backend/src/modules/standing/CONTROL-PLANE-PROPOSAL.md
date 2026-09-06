@@ -33,7 +33,14 @@ This brief may be updated only as a decision input; it cannot approve itself.
   not release that binding.
 - User and Developer sessions are distinct, and frontend-origin checks are distinct from Receiver-origin
   checks.
-- Existing v0.1 page helpers and login paths are evidence to review, not standing public authority.
+- The shared unversioned `GET /consent?token=...` route supports a bounded standing Consent prompt
+  after standing-token validation. It redirects unauthenticated users to the User login continuation,
+  renders only one standing Consent session (pending or approved/declined terminal), and posts the
+  same-user decision to `/v0.2/account-consent-decisions`; an expired pending token returns a bounded
+  expiry response. This is not the proposed list, renewal, or management shell.
+- Existing v0.1 page helpers and login paths remain compatibility evidence. Neither they nor the bounded
+  standing prompt settle the expanded shell's lifetime, redaction, custody, renewal, or public-management
+  policy.
 
 ## 3. Candidate surfaces
 

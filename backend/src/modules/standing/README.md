@@ -29,6 +29,14 @@ authenticated User session; JSON writes also require the Receiver-origin check. 
 control endpoints are a bounded protocol surface, not a general Grant-listing or account-management
 API. They are not an alternate protocol transport and do not relax the kernel's exact-target rules.
 
+The unversioned `GET /consent?token=...` page is the bounded human handoff for both token namespaces.
+For a standing token, it requires an authenticated User session, shows only that one Consent session
+and the current account-owned Connector choices, and submits the same-user decision to
+`POST /v0.2/account-consent-decisions`; approved and declined sessions render terminal states, while
+an expired pending token returns a bounded expiry response. This page does not provide authorization
+listing, renewal, general Grant management, or the expanded account-facing shell. The [control-plane
+proposal](CONTROL-PLANE-PROPOSAL.md) remains non-authoritative for those surfaces.
+
 Raw request-target resolution precedes method, headers, body, CORS, and application dispatch. The
 transport requires one JSON content type, no content encoding, fatal UTF-8 decoding, bounded bodies
 and responses, canonical JSON, and no-store headers. Absolute-form aliases are rejected; there is no

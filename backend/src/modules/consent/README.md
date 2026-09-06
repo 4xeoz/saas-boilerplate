@@ -14,7 +14,9 @@ private configured-authority revocation fence used by local verification.
 
 - `POST /v0.1/host-keys` accepts an Organization API key and stores only the Host public key.
 - `POST /v0.1/consent-sessions` validates a signed Manifest and returns an opaque session.
-- `GET /consent?token=...` serves the User consent page.
+- `GET /consent?token=...` serves the bounded User consent handoff. The shared page validates the v0.1
+  or standing v0.2 token namespace; standing-specific behavior is owned by [Standing Authorization
+  v0.2](../standing/README.md).
 - `POST /v0.1/account-consent-decisions` requires the User session, same-origin JSON, and an owned
   eligible Connector.
 - `GET /v0.1/consent-sessions/:id` returns Organization-scoped decision and Grant status.
