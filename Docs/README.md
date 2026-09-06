@@ -2,7 +2,7 @@
 
 **Role:** Service documentation authority map
 **Status:** Active
-**Last updated:** 2026-09-05
+**Last updated:** 2026-09-06
 
 ## Purpose
 
@@ -51,6 +51,24 @@ Event ordering, Delivery effects, migration safety, or cross-repository source i
 | `backend/src/modules/standing/README.md` | Standing v0.2 protocol and authority boundary | Public control-plane policy not yet accepted |
 | `backend/prisma/schema.prisma` and migrations | Database schema and migration order | Runtime API behavior by themselves |
 | Current tests and runtime readback | Executed behavior and deployment truth | Intended contract outside the tested scope |
+
+### Shared semantic core map
+
+The service implements the shared workspace model with a deployable-service operations layer:
+
+| Semantic responsibility | Canonical owner |
+|---|---|
+| Product purpose and boundary | [`Core/01-product-definition.md`](Core/01-product-definition.md) |
+| Requirements and service behavior | [`Core/02-product-requirements.md`](Core/02-product-requirements.md) and [`Contracts/`](Contracts/README.md) |
+| Architecture and authority flow | [`Core/03-system-design.md`](Core/03-system-design.md) |
+| Security, data, and reliability | [`Core/04-trust-security-reliability.md`](Core/04-trust-security-reliability.md) |
+| Roadmap and release gates | [`Core/06-roadmap.md`](Core/06-roadmap.md) |
+| Current status and claim ceiling | [`00-current-status.md`](00-current-status.md) |
+| Engineering and verification | [`Engineering/`](Engineering/README.md) and [`Verification/`](Verification/README.md) |
+| Operations and release | [`Operations/`](Operations/README.md) |
+
+This mapping is navigation only; module contracts, code, database state, and deployment readback
+remain authoritative for their respective claims.
 
 ## Module boundaries
 
