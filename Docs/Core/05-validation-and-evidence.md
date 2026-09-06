@@ -22,8 +22,9 @@ build, and the repository package manager declaration is npm `10.9.2`. Node 24 r
 reproducible conformance baseline; a different local runtime must not be silently presented as that
 baseline.
 
-The focused renderer suite was supplied a PostgreSQL-shaped local placeholder solely because the
-shared Jest setup validates `DATABASE_URL`; the renderer test does not open a database connection.
+The focused renderer and mocked HTTP suites were supplied a PostgreSQL-shaped local placeholder
+solely because the shared Jest setup validates `DATABASE_URL`; these suites do not open a database
+connection.
 
 ## Verification layers
 
