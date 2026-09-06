@@ -21,12 +21,10 @@ authorization v0.2 path.
   `backend/conformance/standing-v0.2/core-pin.json`. The source readback used the active sibling
   checkout at `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline; the current
   sibling checkout readback is `754d5bb9f5104426849c03219dca028ca1fe0409`, and the intervening
-  changes are documentation-only. Neither checkout contains the selected pin. Earlier observations
-  recorded
-  `c0a42a5286dcbfeeccdda1068f0c7456a1df2da8` and `91c68fd60aee2d30df8d64b75c325bd6c4d642cb` before
-  the baseline readback. The source verifier therefore fails closed with
-  `conformance_pin_commit_unavailable`; see
-  [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md).
+  changes are documentation-only. Neither checkout contains the selected pin. The source verifier
+  therefore fails closed with `conformance_pin_commit_unavailable`; see
+  [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md) for the exact
+  inventory, historical source evidence, and `CODE-AHEAD` classification.
 - Database hardening is prepared as an explicit migration and has a disposable local proof; a live
   Supabase change requires a separate preflight and migration authority.
 - Current local baseline checks passed `npm run type-check`, `npm run build`, and the 16 synthetic
