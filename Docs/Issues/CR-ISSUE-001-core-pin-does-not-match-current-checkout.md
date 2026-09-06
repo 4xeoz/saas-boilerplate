@@ -9,7 +9,7 @@
 
 - `backend/conformance/standing-v0.2/core-pin.json` selects Core commit
   `1446d73aa3e66533547471728ad8fa5344d51f9e`.
-- The source readback used the sibling checkout at `/Users/alex/Re-Entry/reentry` commit
+- The source readback used the sibling Re-entry repository checkout at commit
   `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline. The prior sibling
   checkout readback was `e20f16cd6def732a6ce2ca1d0264b491dd49a660`; the current checkout is
   `4f8ddaed997d7576cadcadf1fac226ca383c2338`. Changes from the prior readback to the current
@@ -21,9 +21,9 @@
 - `git cat-file -t 1446d73aa3e66533547471728ad8fa5344d51f9e` fails in the active sibling checkout.
 - Running the Receiver source verifier against that checkout returns
   `conformance_pin_commit_unavailable` before any database or protocol import.
-- The retrieval-only historical checkout `/Users/alex/OpenAI-WebMCP/WebMCP_Challenge` contains the
-  selected commit, but it is outside the active workspace authority and must not become an implicit
-  dependency.
+- The [retrieval-only historical WebMCP repository](https://github.com/Alex0158/OpenAI-Web-MCP-Challenge)
+  contains the selected commit, but it is outside the active workspace authority and must not
+  become an implicit dependency.
 - On 2026-09-06, a temporary detached clone of that retrieval checkout at the selected commit
   passed the pinned source verifier on Node 24.18.0 with source digest
   `6210d7724417e0533c77d5989e8ffdd3c404af4063ac9d70d70db9b622f73d45`. The verifier reported
