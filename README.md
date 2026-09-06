@@ -1,8 +1,8 @@
 # Cloud Receiver 2
 
 **Role:** Standalone Receiver service and operator-facing web application
-**Status:** Active development; local static/build checks pass, while database, source-pin, deployment,
-and cross-project release gates remain open
+**Status:** Active Receiver repository; current claims and open gates live in
+[Current Status](Docs/00-current-status.md)
 
 Cloud Receiver is an Express/Prisma service with a Next.js frontend. It receives signed events,
 holds target-scoped delivery work, and exposes bounded consent, Connector, and account controls.
@@ -37,30 +37,19 @@ integration specification.
 - [Conformance procedure](backend/conformance/standing-v0.2/README.md) — source pin and reproducible checks.
 - [Supabase hardening](supabase/README.md) — preflight, local proof, and live-change boundary.
 
-## Public API families
+## Service surface
 
-| Family | Owner | Boundary |
-|---|---|---|
-| `/v1/auth/users` and `/v1/auth/developers` | Users, developers, authentication | Separate account models and typed httpOnly session cookies |
-| `/v0.1/account/*` | Connectors and consent | Pairing, account-scoped device metadata, consent decisions, and target binding |
-| `/v0.1/events`, `/v0.1/delivery-claims`, `/v0.1/delivery-acknowledgements` | Events, deliveries, acknowledgements | Retained compatibility surface with exact replay/lease/effect rules |
-| `/v0.2/host-keys`, `/v0.2/consent-sessions*`, `/v0.2/account-consent-decisions`, `/v0.2/grants/*` | Standing module | Authenticated Host enrollment, User decisions, Grant inspection, and revocation |
-| `/v0.2/events`, `/v0.2/delivery-*` | Standing module | Signed standing Event ingress, claims, acknowledgement, and notification handoff |
-| `/health`, `/health/live`, `/healthz`, `/readyz` | System health | Public liveness/readiness only |
-
-The v0.2 transport has exact target, method, header, body, size, canonical-response, and no-store
-guards. It never negotiates or silently falls back to v0.1.
+The service exposes versioned authentication, finite-run v0.1 compatibility, standing v0.2, and
+health/readiness surfaces. Exact routes, methods, envelopes, compatibility rules, and module owners
+live in [Contracts](Docs/Contracts/README.md) and its linked module documents. This README does not
+duplicate the HTTP contract.
 
 ## Security and data rules
 
-- Passwords, pairing codes, Connector tokens, Consent tokens, Host credentials, Grant control values,
-  and source fingerprints are never returned or persisted as raw bearer values.
-- User and developer sessions are separate cookies and separate database models.
-- Account, Organization, Host subject, Connector target, Grant, Event, and Delivery ownership is
-  resolved server-side; client-selected identity cannot override it.
-- State mutation, event creation, and eligible Delivery creation are atomic within the owning transaction.
-- Leases are bounded and replay-safe; acknowledgement requires independently injected effect authority.
-- Unsupported runtime admission and unaccepted public control surfaces fail closed.
+The service is server-authoritative for identity, consent, Grant, Event, Delivery, and persistence
+state. It keeps secret-bearing values out of raw persistence and logs and fails closed where runtime
+admission or public policy is unsupported. See [Trust, Security, and Reliability](Docs/Core/04-trust-security-reliability.md)
+for the binding rules and data lifecycle.
 
 ## Local development
 
@@ -76,18 +65,10 @@ files. Use a dedicated disposable PostgreSQL database for tests and migration re
 
 ## Verification
 
-| Command | Purpose |
-|---|---|
-| `npm run type-check` | Backend and frontend TypeScript checks |
-| `npm run build` | Backend and frontend production builds |
-| `npm test -w backend -- --runInBand` | Backend Jest aggregate against an explicitly disposable database |
-| `node --test backend/conformance/standing-v0.2/source-pin.test.mjs` | Source-pin guard |
-| `node --test backend/conformance/standing-v0.2/receiver.test.mjs` | Pinned Receiver/Core scenario |
-| `node --test backend/conformance/standing-v0.2/fresh-process.test.mjs` | Fresh-process persistence/recovery boundary |
-| `node --test backend/conformance/standing-v0.2/migration-upgrade.test.mjs` | Exact-source migration upgrade guard |
-
-Record the exact Node, npm, PostgreSQL, source identity, database scope, and claim limit for every result.
-A build, local test, or source interface does not prove deployment or an external end-to-end continuation.
+Use [Verification](Docs/Verification/README.md) for the command matrix, source identity, database
+requirements, and evidence ceilings. Run the narrowest relevant check first and record the exact
+runtime, database scope, source, result, and claim limit. A local build, test, or source interface
+does not prove deployment or an external end-to-end continuation.
 
 ## Maintenance
 
