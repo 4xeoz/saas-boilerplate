@@ -35,6 +35,7 @@ prove a hosted or consumer end-to-end result.
 ## Maintenance
 
 Keep Core documents compact and normative. Put mutable progress in `../00-current-status.md`, active
-work in `../Tasks/`, verified contradictions in `../Issues/`, exact procedures in `../Engineering/`,
-`../Verification/`, or module documents, and deployment controls in `../Operations/`. Do not add
-session logs, completed-task histories, or copied sibling contracts here.
+work in `../Tasks/`, verified contradictions in `../Issues/`, AI-facing execution procedures in
+`../AI-Development/`, technical policy in `../Engineering/`, executed proof in `../Verification/`
+or module evidence, and deployment controls in `../Operations/`. Do not add session logs,
+completed-task histories, or copied sibling contracts here.

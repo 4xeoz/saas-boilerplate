@@ -20,8 +20,10 @@ permanent consumer-specific integration specification belongs here.
 
 1. Read [00-current-status.md](00-current-status.md) for verified service state and active gates.
 2. Read the module README that owns the question.
-3. Read the linked contract, decision, conformance, migration, or evidence source.
-4. Check current code, tests, database state, and deployment readback for implementation or release
+3. For an AI-assisted change, read [AI-Development](AI-Development/README.md) and the applicable
+   [Engineering policy](Engineering/README.md).
+4. Read the linked contract, decision, conformance, migration, or evidence source.
+5. Check current code, tests, database state, and deployment readback for implementation or release
    claims.
 
 When documents, code, tests, or runtime disagree, identify whether the question is intended
@@ -33,10 +35,11 @@ Event ordering, Delivery effects, migration safety, or cross-repository source i
 
 | Area | Owns | Does not own |
 |---|---|---|
-| [00-current-status.md](00-current-status.md) | Current state, active gates, and non-claims | Module contracts or test procedure |
+| [00-current-status.md](00-current-status.md) | Current state, active gates, and non-claims | Module contracts or AI test procedure |
 | [Core/](Core/README.md) | Product definition, requirements, system design, trust policy, validation, and roadmap | Mutable execution history or consumer-specific behavior |
 | [Contracts/](Contracts/README.md) | HTTP versioning and module contract owners | Consumer mapping or a duplicate Core specification |
-| [Engineering/](Engineering/README.md) | Development, change control, and closure procedure | Product authority or deployment state |
+| [Engineering/](Engineering/README.md) | Technical engineering policy and change-control rules | Product authority or deployment state |
+| [AI-Development/](AI-Development/README.md) | AI-facing development, test-execution, handoff, and closure procedure | Product authority, runtime truth, or release permission |
 | [Verification/](Verification/README.md) | Reproducible checks and evidence levels | Intended behavior or release permission |
 | [Operations/](Operations/README.md) | Local, migration, deployment, health, and recovery controls | Permission to apply a live change |
 | [Tasks/](Tasks/README.md) | Current bounded outcomes and next gates | Completed work history or a second roadmap |
@@ -64,7 +67,7 @@ The service implements the shared workspace model with a deployable-service oper
 | Security, data, and reliability | [`Core/04-trust-security-reliability.md`](Core/04-trust-security-reliability.md) |
 | Roadmap and release gates | [`Core/06-roadmap.md`](Core/06-roadmap.md) |
 | Current status and claim ceiling | [`00-current-status.md`](00-current-status.md) |
-| Engineering and verification | [`Engineering/`](Engineering/README.md) and [`Verification/`](Verification/README.md) |
+| Engineering, AI development, and verification | [`Engineering/`](Engineering/README.md), [`AI-Development/`](AI-Development/README.md), and [`Verification/`](Verification/README.md) |
 | Operations and release | [`Operations/`](Operations/README.md) |
 
 This mapping is navigation only; module contracts, code, database state, and deployment readback

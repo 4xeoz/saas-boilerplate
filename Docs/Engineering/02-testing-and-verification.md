@@ -30,3 +30,8 @@ actual runtime and do not relabel it as the baseline.
 Classify failures as static, contract, database, process, deployment, or consumer scope. Keep an
 open issue or task when a failure changes a release or authority claim. Do not convert a passing
 lower-layer test into a higher-layer promise.
+
+The AI-facing procedure for designing, selecting, executing, and recording these checks is the
+[Test Design, Selection, and Execution Runbook](../AI-Development/02-test-design-selection-execution-runbook.md).
+This policy remains the authority for check layers and claim ceilings; the runbook must not duplicate
+or override those limits.

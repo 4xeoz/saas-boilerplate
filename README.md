@@ -28,7 +28,8 @@ integration specification.
   trust policy, validation, and roadmap.
 - [Contracts](Docs/Contracts/README.md) — HTTP versioning and module contract owners.
 - [Current status](Docs/00-current-status.md) — verified state, active gates, and non-claims.
-- [Engineering](Docs/Engineering/README.md) — development and verification procedure.
+- [AI development](Docs/AI-Development/README.md) — AI-facing development and closure procedure.
+- [Engineering](Docs/Engineering/README.md) — technical engineering policy and change control.
 - [Verification](Docs/Verification/README.md) — reproducible checks and claim limits.
 - [Operations](Docs/Operations/README.md) — local, migration, deployment, health, and recovery boundary.
 - [Active tasks](Docs/Tasks/README.md) — only current outcomes and next gates.
