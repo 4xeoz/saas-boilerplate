@@ -19,10 +19,12 @@ private configured-authority revocation fence used by local verification.
   eligible Connector.
 - `GET /v0.1/consent-sessions/:id` returns Organization-scoped decision and Grant status.
 
-Consent tokens, Host subject references, Organization keys, and control values are never stored
-or returned as raw bearer values. Host responses exclude User ids, Connector credentials, target
-ids, and private Grant fields. The first approved Host subject remains bound to one Connector target;
-a different target is a conflict.
+Consent-token digests, Host subject references, Organization keys, and control values are never
+persisted as raw bearer values. The opaque page token is carried only inside the generated
+`consent_url` handoff; it is not returned as a standalone field or included in status/projection
+responses. Host responses exclude User ids, Connector credentials, target ids, and private Grant
+fields. The first approved Host subject remains bound to one Connector target; a different target is
+a conflict.
 
 Signed Event ingress, Delivery, acknowledgement, and standing transport are separate module
 boundaries. Public Grant inspection or revocation is not registered by this README.
