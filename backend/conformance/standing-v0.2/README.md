@@ -22,9 +22,11 @@ The default mode is `pinned`. Before importing Core or opening a database connec
 - `profile: standing-authorization-v0.2`; and
 - a complete lowercase 40-character `core_commit`.
 
-The current pin is `1446d73aa3e66533547471728ad8fa5344d51f9e`. Every pin change requires review of the
-selected Core source, a fresh source-pin run, and a new Receiver trace. A branch, tag, package version,
-floating checkout, or content digest cannot replace the commit pin.
+The checked-in pin currently selects `1446d73aa3e66533547471728ad8fa5344d51f9e`; its source identity
+is unresolved against the active sibling checkout (see [CR-ISSUE-001](../../../Docs/Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md)).
+Every pin change requires review of the selected Core source, a fresh source-pin run, and a new
+Receiver trace. A branch, tag, package version, floating checkout, or content digest cannot replace
+the commit pin.
 
 The source verifier checks the required recursive Core inventory, selected contract and mechanism
 files, exact committed bytes, absence of unexpected source or symlinks, and post-run source identity.
