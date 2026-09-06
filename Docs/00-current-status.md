@@ -28,6 +28,10 @@ authorization v0.2 path.
   therefore fails closed with `conformance_pin_commit_unavailable`; see
   [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md) for the exact
   inventory, historical source evidence, and `CODE-AHEAD` classification.
+- The explicit `REENTRY_CONFORMANCE_MODE=development` readback against the same active checkout
+  also fails with `conformance_source_missing` because the verifier still requires the removed
+  historical ADR-0043/0044/0045 paths. No development fingerprint or release claim is available
+  until the source inventory boundary is reviewed.
 - Database hardening is prepared as an explicit migration and has a disposable local proof; a live
   Supabase change requires a separate preflight and migration authority.
 - Receiver implementation source baseline: commit

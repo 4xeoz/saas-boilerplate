@@ -88,7 +88,10 @@ are separate gates.
 
 `REENTRY_CONFORMANCE_MODE=development` is explicit local development mode. It fingerprints the selected
 scope before and after the run, but reports source identity and release conformance as unverified. It
-is not a fallback for a missing or changed pin.
+is not a fallback for a missing or changed pin. The selected checkout must still satisfy the
+verifier's current source inventory; the active sibling checkout currently does not because the
+fixed inventory names removed historical ADR-0043/0044/0045 paths, so development mode fails closed
+with `conformance_source_missing` until that compatibility boundary is reviewed.
 
 The shared scenario uses a deterministic test effect authority and typed service seams where public
 control pages are not implemented. A process restart in a test is not proof of supervision, distributed

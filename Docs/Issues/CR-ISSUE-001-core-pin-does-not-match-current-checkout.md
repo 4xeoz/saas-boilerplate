@@ -22,6 +22,11 @@
 - `git cat-file -t 1446d73aa3e66533547471728ad8fa5344d51f9e` fails in the active sibling checkout.
 - Running the Receiver source verifier against that checkout returns
   `conformance_pin_commit_unavailable` before any database or protocol import.
+- A direct readback of the explicit `development` mode against the same active checkout on
+  2026-09-06 also fails closed with `conformance_source_missing`: the verifier's fixed
+  `SPEC_PATHS` still requires the three historical ADR paths listed below, and none exists in the
+  current checkout. Therefore development mode cannot currently produce even its non-release
+  working-checkout fingerprint for this source layout; it is not a fallback or a release claim.
 - The [retrieval-only historical WebMCP repository](https://github.com/Alex0158/OpenAI-Web-MCP-Challenge)
   contains the selected commit, but it is outside the active workspace authority and must not
   become an implicit dependency.
