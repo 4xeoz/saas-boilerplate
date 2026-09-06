@@ -11,9 +11,10 @@
   `1446d73aa3e66533547471728ad8fa5344d51f9e`.
 - The source readback used the sibling Re-entry repository checkout at commit
   `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline. The prior sibling
-  checkout readback was `e20f16cd6def732a6ce2ca1d0264b491dd49a660`; the current checkout is
-  `4f8ddaed997d7576cadcadf1fac226ca383c2338`. Changes from the prior readback to the current
-  checkout are documentation-only, and neither checkout contains the selected pin. Earlier
+  checkout readbacks were `e20f16cd6def732a6ce2ca1d0264b491dd49a660` and
+  `4f8ddaed997d7576cadcadf1fac226ca383c2338`; the current checkout is
+  `b6b802f5999430d6e9a9b72528cfa0653bc58a4e`. Changes from the latest prior readback to the
+  current checkout are documentation-only, and neither checkout contains the selected pin. Earlier
   observations
   recorded `c0a42a5286dcbfeeccdda1068f0c7456a1df2da8`, then
   `91c68fd60aee2d30df8d64b75c325bd6c4d642cb`, and the original
