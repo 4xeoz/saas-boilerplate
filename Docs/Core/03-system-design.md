@@ -71,17 +71,22 @@ cardinalities that are absent from those sources.
 
 ## Transport composition
 
-| Surface | Purpose | Authority profile |
-|---|---|---|
-| `/v1/auth/*` | User and Developer registration, login, session, logout | Typed httpOnly cookies and same-origin writes |
-| `/v0.1/*` | Pairing, consent, signed Events, Delivery claims, acknowledgement | Retained finite-run profile |
-| `/v0.2/*` | Standing Host enrollment, Event, Delivery, inspection, revocation, handoff | Exact origin-form transport and standing authority |
-| `/health*`, `/readyz` | Liveness and readiness | Public bounded operational checks |
-| `/api/organizations/*` | Developer organization, key, and redacted history controls | Developer session and ownership |
+The Receiver exposes bounded HTTP surfaces for account control, finite-run and standing protocol
+profiles, health/readiness, and the Developer portal. The exact version prefixes, raw-target guard,
+headers, body/response limits, envelopes, route families, and compatibility rules are owned by the
+[HTTP and Compatibility Contract](../Contracts/01-http-and-compatibility.md) and the corresponding
+module contracts.
 
-Protocol transport guards resolve exact standing targets before parsing, CORS, or dispatch. They
-bound method, headers, body bytes, canonical responses, and no-store behavior. Unknown or unsupported
-paths do not become an alternate parser or version negotiation surface.
+| Architectural surface | Responsibility | Contract owner |
+|---|---|---|
+| Account control | User and Developer sessions and ownership | Authentication, Users, Developers |
+| Finite-run protocol | Pairing, consent, signed Events, Delivery, and acknowledgement | v0.1 module contracts |
+| Standing protocol | Standing enrollment, Event, Delivery, inspection, revocation, and handoff | Standing module and v0.2 contract |
+| Health/readiness | Process liveness and database readiness | System health module |
+| Developer portal | Organization, API-key, and redacted history controls | Developer Portal module |
+
+The architecture does not duplicate transport parsing or route details. Unknown or unsupported
+requests remain bounded by the contract and module owners rather than acquiring an implicit fallback.
 
 ## Cross-project boundary
 
