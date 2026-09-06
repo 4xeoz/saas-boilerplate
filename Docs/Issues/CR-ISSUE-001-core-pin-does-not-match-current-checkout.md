@@ -16,6 +16,12 @@
 - The retrieval-only historical checkout `/Users/alex/OpenAI-WebMCP/WebMCP_Challenge` contains the
   selected commit, but it is outside the active workspace authority and must not become an implicit
   dependency.
+- On 2026-09-06, a temporary detached clone of that retrieval checkout at the selected commit
+  passed the pinned source verifier on Node 24.18.0 with source digest
+  `6210d7724417e0533c77d5989e8ffdd3c404af4063ac9d70d70db9b622f73d45`. The verifier reported
+  `source_identity_verified: true` and `release_conformance_verified: false`. This confirms that
+  the historical pin is internally source-identifiable; it does not make the clone an active
+  dependency or prove Receiver conformance.
 
 ## Impact
 
