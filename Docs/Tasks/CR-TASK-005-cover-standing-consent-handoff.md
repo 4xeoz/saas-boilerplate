@@ -15,18 +15,20 @@ v0.2 token namespaces. The standing branch requires an authenticated User sessio
 bounded Consent session, redirects unauthenticated users through the User login continuation, and
 posts same-user decisions to `/v0.2/account-consent-decisions`. A focused standing renderer test now
 covers the bounded pending and terminal page output, Connector availability, Host-controlled field
-escaping, and exact popup-origin/session messaging. No dedicated HTTP integration test was found
-during the documentation audit.
+escaping, and exact popup-origin/session messaging. A separate mocked HTTP-boundary suite covers
+login continuation, authenticated standing dispatch, expiry response mapping, same-user decision
+field mapping, and Receiver-origin rejection. No standing HTTP integration test exercising real token
+lookup and persistence was found during the documentation audit.
 
-Until this task closes, login continuation, v0.1/standing namespace dispatch, expiry response,
-token non-echo across the HTTP boundary, account-owned Connector projection, same-user decision,
-and the HTTP-level popup-origin/session contract remain source-readback claims rather than
-independently verified page claims. Renderer-only claims are independently covered by the focused
-test above.
+Until this task closes, real v0.1/standing namespace lookup, expiry response from persisted state,
+token non-echo across a real HTTP page response, account-owned Connector projection, same-user
+decision persistence, and the HTTP-level popup-origin/session contract remain source-readback or
+mocked-boundary claims rather than independently verified integration claims. Renderer-only claims
+and the controller's bounded mapping are independently covered by the focused tests above.
 
 ## Next gate
 
-Add focused HTTP coverage for both standing and v0.1 token dispatch, authenticated and
+Add disposable-DB-backed HTTP coverage for both standing and v0.1 token dispatch, authenticated and
 unauthenticated access, pending/approved/declined/expired outcomes, token redaction, wrong-user
 decision rejection, Connector availability, and popup message origin/session bounds. Run the focused
 tests with the required disposable database, then rerun the applicable aggregate and update

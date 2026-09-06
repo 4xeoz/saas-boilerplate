@@ -13,6 +13,7 @@ The following checks were run against the current `Re-Entry` branch during this 
 | `npm run build` | Passed (backend and frontend) | Production build compilation; not deployment proof |
 | `node --test backend/conformance/standing-v0.2/source-pin.test.mjs` | Passed, 16 tests | Source-pin guard behavior in synthetic fixtures |
 | `npm test -w backend -- --runInBand src/modules/standing/test/standing-consent-page.test.ts` | Passed, 6 tests | Standing Consent renderer behavior only; no HTTP, database, or hosted claim |
+| `npm test -w backend -- --runInBand src/modules/consent/test/consent-page-http.test.ts` | Passed, 5 tests | Shared Consent and standing decision HTTP-boundary mapping with mocked services; no database or hosted claim |
 | Pinned source readback against current sibling checkout | Failed with `conformance_pin_commit_unavailable` | Confirms a real compatibility gate is open; no pinned conformance claim |
 | `npm test -w backend -- --runInBand` | Not run to completion; configuration exits because no database URL is configured | No database-backed test or release claim |
 
@@ -56,11 +57,13 @@ gate. Never include credentials, raw tokens, connection strings, row dumps, or m
   boundary; see [CR-ISSUE-002](../Issues/CR-ISSUE-002-container-startup-runs-migrations.md).
 - Database-backed suites require a verified disposable PostgreSQL URL; none was configured for the
   baseline check above.
-- A focused standing page renderer test covers bounded pending/terminal output, Connector
-  availability, Host-controlled field escaping, and exact popup-origin/session messaging. The shared
-  `/consent?token=...` route still has no dedicated HTTP integration test; login continuation,
-  v0.1/standing dispatch, expiry response, token redaction across HTTP, same-user decision, and
-  HTTP-level popup-origin behavior remain source-level evidence until
+- Focused standing renderer and mocked HTTP-boundary tests cover bounded pending/terminal output,
+  Connector availability, Host-controlled field escaping, login continuation mapping, standing
+  dispatch mapping, expiry response mapping, same-user decision field mapping, Receiver-origin
+  rejection, and exact popup-origin/session renderer messaging. The shared `/consent?token=...` route
+  still has no standing HTTP integration test against real token lookup and persistence; real
+  namespace dispatch, expiry, token redaction across a persisted HTTP response, same-user decision,
+  Connector projection, and HTTP-level popup-origin behavior remain below integration evidence until
   [CR-TASK-005](../Tasks/CR-TASK-005-cover-standing-consent-handoff.md) closes.
 - The expanded control-plane shell proposal has no accepted lifetime, redaction, custody, or
   public revocation contract.

@@ -30,3 +30,12 @@ a conflict.
 
 Signed Event ingress, Delivery, acknowledgement, and standing transport are separate module
 boundaries. Public Grant inspection or revocation is not registered by this README.
+
+## Verification boundary
+
+- `test/consent-page.test.ts` covers the v0.1 renderer's bounded pending/terminal output, Connector
+  availability, escaping, and popup-origin/session messaging.
+- `test/consent-page-http.test.ts` covers shared-page login/standing dispatch and standing decision
+  HTTP boundary mapping with mocked services; it does not prove database lookup or persistence.
+- `test/consent.test.ts` covers the database-backed v0.1 Consent, binding, and decision lifecycle when
+  run with an explicitly disposable PostgreSQL database.

@@ -39,7 +39,7 @@ availability, or complete external continuation.
 |---|---|---|
 | Core-pinned conformance | `backend/conformance/standing-v0.2/` | Historical pin and fixed selected inventory are unresolved against the active sibling checkout; no source-identity claim |
 | Runtime admission and handoff | Standing module | Default application has no production admission authority and fails closed |
-| Standing Consent page coverage | Consent and Standing modules | Focused standing renderer coverage passes; shared `/consent?token=...` HTTP integration, namespace dispatch, login continuation, and same-user decision evidence remain open under [CR-TASK-005](Tasks/CR-TASK-005-cover-standing-consent-handoff.md) |
+| Standing Consent page coverage | Consent and Standing modules | Focused standing renderer and mocked HTTP-boundary coverage pass; real `/consent?token=...` token lookup/persistence, Connector projection, and same-user decision integration remain open under [CR-TASK-005](Tasks/CR-TASK-005-cover-standing-consent-handoff.md) |
 | Control-plane policy | Standing control-plane proposal | Expanded account-facing shell: lifetime, public summaries, revocation UX, and snapshot consistency need accepted policy before implementation |
 | Database hardening | `supabase/` | Local disposable proof exists; live migration is not implied |
 | Container build | `backend/Dockerfile`, `frontend/Dockerfile` | Both clean-context builds fail to resolve private `@saas/shared`; see CR-ISSUE-003 |
