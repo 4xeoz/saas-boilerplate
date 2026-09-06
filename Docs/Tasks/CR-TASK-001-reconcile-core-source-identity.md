@@ -11,8 +11,9 @@ can load without an implicit historical checkout or floating branch.
 ## Current boundary
 
 The recorded pin is `1446d73aa3e66533547471728ad8fa5344d51f9e`, while the active sibling checkout is
-`c0a42a5286dcbfeeccdda1068f0c7456a1df2da8`; the pin is unavailable there. Earlier documentation
-used `91c68fd60aee2d30df8d64b75c325bd6c4d642cb` before subsequent documentation-only commits.
+`90d75e5efa8d8ac403552abc2bda464d823c56ae`; the pin is unavailable there. Earlier documentation
+used `c0a42a5286dcbfeeccdda1068f0c7456a1df2da8` and then
+`91c68fd60aee2d30df8d64b75c325bd6c4d642cb` before subsequent documentation-only commits.
 Details and evidence live
 in [CR-ISSUE-001](../Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md). The verifier
 also selects historical ADR paths that are absent from the active documentation layout, so the
