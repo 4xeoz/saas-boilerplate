@@ -52,6 +52,9 @@ gate. Never include credentials, raw tokens, connection strings, row dumps, or m
   boundary; see [CR-ISSUE-002](../Issues/CR-ISSUE-002-container-startup-runs-migrations.md).
 - Database-backed suites require a verified disposable PostgreSQL URL; none was configured for the
   baseline check above.
+- The shared `/consent?token=...` route has a standing v0.2 branch in the current source, but no
+  dedicated standing page renderer/HTTP test was found; login continuation, expiry, token redaction,
+  same-user decision, and popup-origin behavior remain source-level evidence until CR-TASK-005 closes.
 - The expanded control-plane shell proposal has no accepted lifetime, redaction, custody, or
   public revocation contract.
 - No current deployment readback in this repository proves a public release or consumer continuation.
