@@ -10,9 +10,11 @@
 - `backend/conformance/standing-v0.2/core-pin.json` selects Core commit
   `1446d73aa3e66533547471728ad8fa5344d51f9e`.
 - The source readback used the sibling checkout at `/Users/alex/Re-Entry/reentry` commit
-  `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline. The current sibling
-  checkout readback is `e20f16cd6def732a6ce2ca1d0264b491dd49a660`; the intervening changes are
-  documentation-only, and neither checkout contains the selected pin. Earlier observations
+  `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline. The prior sibling
+  checkout readback was `e20f16cd6def732a6ce2ca1d0264b491dd49a660`; the current checkout is
+  `82f86c7a2e051d5b69ddbdae0dae1110cefd2bcf`. Changes from the prior readback to the current
+  checkout are documentation-only, and neither checkout contains the selected pin. Earlier
+  observations
   recorded `c0a42a5286dcbfeeccdda1068f0c7456a1df2da8`, then
   `91c68fd60aee2d30df8d64b75c325bd6c4d642cb`, and the original
   `787ff8867c0171cf113dcedd6af4473688191625` in this chain.
