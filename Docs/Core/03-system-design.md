@@ -36,7 +36,7 @@ their own Host/runtime boundaries; none receives a database credential.
   workspaces depend on the private root `@saas/shared` package; clean image builds currently fail
   before compilation (see [CR-ISSUE-003](../Issues/CR-ISSUE-003-docker-workspace-package-install.md)).
 - `supabase/` contains a prepared backend-only hardening migration; it is not automatically applied
-  by build, request handling, or this documentation reset.
+  by build or request handling.
 
 ## Authority flow
 

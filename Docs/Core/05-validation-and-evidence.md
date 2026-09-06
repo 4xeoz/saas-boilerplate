@@ -5,7 +5,7 @@
 
 ## Current local checks
 
-The following checks were run against the current `Re-Entry` branch during this documentation reset:
+The following checks were run against the current `Re-Entry` branch:
 
 | Check | Result | Claim supported |
 |---|---|---|
