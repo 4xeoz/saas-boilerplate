@@ -73,6 +73,8 @@ pins, restricted history references, and backend-only table access.
 - `standing-protocol.test.ts`: strict transport, canonicalization, signatures, key pins, and errors.
 - `standing-migration.test.ts`: additive schema constraints and retained v0.1 upgrade sentinel.
 - `standing-http.test.ts`: exact Express transport and bounded error surface.
+- `standing-consent-page.test.ts`: bounded standing Consent renderer output, Connector availability,
+  Host-controlled field escaping, terminal states, and popup-origin/session messaging.
 - `standing-service-races.test.ts`: lock-barrier authority and expiry races.
 - `standing-consent-concurrency.test.ts`: concurrent subject binding and approval fences.
 - `standing-event-concurrency.test.ts`: sequence, duplicate, and revocation ordering over HTTP.

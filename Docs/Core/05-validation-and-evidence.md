@@ -12,6 +12,7 @@ The following checks were run against the current `Re-Entry` branch during this 
 | `npm run type-check` | Passed (backend and frontend) | Type-level consistency for the checked workspaces |
 | `npm run build` | Passed (backend and frontend) | Production build compilation; not deployment proof |
 | `node --test backend/conformance/standing-v0.2/source-pin.test.mjs` | Passed, 16 tests | Source-pin guard behavior in synthetic fixtures |
+| `npm test -w backend -- --runInBand src/modules/standing/test/standing-consent-page.test.ts` | Passed, 6 tests | Standing Consent renderer behavior only; no HTTP, database, or hosted claim |
 | Pinned source readback against current sibling checkout | Failed with `conformance_pin_commit_unavailable` | Confirms a real compatibility gate is open; no pinned conformance claim |
 | `npm test -w backend -- --runInBand` | Not run to completion; configuration exits because no database URL is configured | No database-backed test or release claim |
 
@@ -19,6 +20,9 @@ The executed runtime versions were Node `v26.5.0`, npm `11.17.0`, Next.js `16.3.
 build, and the repository package manager declaration is npm `10.9.2`. Node 24 remains the intended
 reproducible conformance baseline; a different local runtime must not be silently presented as that
 baseline.
+
+The focused renderer suite was supplied a PostgreSQL-shaped local placeholder solely because the
+shared Jest setup validates `DATABASE_URL`; the renderer test does not open a database connection.
 
 ## Verification layers
 
@@ -52,9 +56,12 @@ gate. Never include credentials, raw tokens, connection strings, row dumps, or m
   boundary; see [CR-ISSUE-002](../Issues/CR-ISSUE-002-container-startup-runs-migrations.md).
 - Database-backed suites require a verified disposable PostgreSQL URL; none was configured for the
   baseline check above.
-- The shared `/consent?token=...` route has a standing v0.2 branch in the current source, but no
-  dedicated standing page renderer/HTTP test was found; login continuation, expiry, token redaction,
-  same-user decision, and popup-origin behavior remain source-level evidence until CR-TASK-005 closes.
+- A focused standing page renderer test covers bounded pending/terminal output, Connector
+  availability, Host-controlled field escaping, and exact popup-origin/session messaging. The shared
+  `/consent?token=...` route still has no dedicated HTTP integration test; login continuation,
+  v0.1/standing dispatch, expiry response, token redaction across HTTP, same-user decision, and
+  HTTP-level popup-origin behavior remain source-level evidence until
+  [CR-TASK-005](../Tasks/CR-TASK-005-cover-standing-consent-handoff.md) closes.
 - The expanded control-plane shell proposal has no accepted lifetime, redaction, custody, or
   public revocation contract.
 - No current deployment readback in this repository proves a public release or consumer continuation.

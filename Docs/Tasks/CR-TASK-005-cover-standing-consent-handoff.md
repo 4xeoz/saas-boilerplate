@@ -13,17 +13,20 @@ boundaries without expanding the unaccepted account-facing control-plane shell.
 The current source dispatches the shared `GET /consent?token=...` route between the v0.1 and standing
 v0.2 token namespaces. The standing branch requires an authenticated User session, renders one
 bounded Consent session, redirects unauthenticated users through the User login continuation, and
-posts same-user decisions to `/v0.2/account-consent-decisions`. Existing focused page tests cover the
-v0.1 renderer; standing service and transport tests cover adjacent protocol behavior, but no
-dedicated standing page renderer or HTTP integration test was found during the documentation audit.
+posts same-user decisions to `/v0.2/account-consent-decisions`. A focused standing renderer test now
+covers the bounded pending and terminal page output, Connector availability, Host-controlled field
+escaping, and exact popup-origin/session messaging. No dedicated HTTP integration test was found
+during the documentation audit.
 
-Until this task closes, login continuation, pending/terminal/expiry handling, token non-echo,
-account-owned Connector projection, same-user decision, and exact popup-origin messaging remain
-source-readback claims rather than independently verified page claims.
+Until this task closes, login continuation, v0.1/standing namespace dispatch, expiry response,
+token non-echo across the HTTP boundary, account-owned Connector projection, same-user decision,
+and the HTTP-level popup-origin/session contract remain source-readback claims rather than
+independently verified page claims. Renderer-only claims are independently covered by the focused
+test above.
 
 ## Next gate
 
-Add focused renderer and HTTP coverage for both standing and v0.1 token dispatch, authenticated and
+Add focused HTTP coverage for both standing and v0.1 token dispatch, authenticated and
 unauthenticated access, pending/approved/declined/expired outcomes, token redaction, wrong-user
 decision rejection, Connector availability, and popup message origin/session bounds. Run the focused
 tests with the required disposable database, then rerun the applicable aggregate and update
