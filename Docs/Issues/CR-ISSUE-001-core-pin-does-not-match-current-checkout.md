@@ -2,7 +2,8 @@
 
 **Status:** Open
 **Owner:** Receiver conformance and release boundary
-**Observed:** 2026-09-05, Europe/London
+**First observed:** 2026-09-05, Europe/London
+**Last verified:** 2026-09-06, Europe/London
 
 ## Evidence
 
