@@ -20,7 +20,7 @@ authorization v0.2 path.
   `1446d73aa3e66533547471728ad8fa5344d51f9e` through
   `backend/conformance/standing-v0.2/core-pin.json`. The source readback used the active sibling
   checkout at `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline; the current
-  sibling checkout readback is `e3db7d58e511f88a96f2cce13f699505398727a2`, and the intervening
+  sibling checkout readback is `40a43f379715ed36a9e81d8793621e466d88ea0f`, and the intervening
   changes are documentation-only. Neither checkout contains the selected pin. The source verifier
   therefore fails closed with `conformance_pin_commit_unavailable`; see
   [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md) for the exact
