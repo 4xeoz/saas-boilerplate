@@ -18,11 +18,13 @@ authorization v0.2 path.
   acknowledgement, and notification-handoff authority are implemented behind explicit boundaries.
 - The source-pinned conformance runner selects Core commit
   `1446d73aa3e66533547471728ad8fa5344d51f9e` through
-  `backend/conformance/standing-v0.2/core-pin.json`, but the active sibling checkout is at
-  `90d75e5efa8d8ac403552abc2bda464d823c56ae` and does not contain that commit. Earlier
-  observations recorded `c0a42a5286dcbfeeccdda1068f0c7456a1df2da8` and
-  `91c68fd60aee2d30df8d64b75c325bd6c4d642cb` before subsequent documentation-only commits. The
-  source verifier therefore fails closed with `conformance_pin_commit_unavailable`; see
+  `backend/conformance/standing-v0.2/core-pin.json`. The source readback used the active sibling
+  checkout at `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline; the current
+  sibling checkout is `cd41bf5505930367da863e127711c8eaf6196be1`, and the intervening changes are
+  documentation-only. Neither checkout contains the selected pin. Earlier observations recorded
+  `c0a42a5286dcbfeeccdda1068f0c7456a1df2da8` and `91c68fd60aee2d30df8d64b75c325bd6c4d642cb` before
+  the baseline readback. The source verifier therefore fails closed with
+  `conformance_pin_commit_unavailable`; see
   [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md).
 - Database hardening is prepared as an explicit migration and has a disposable local proof; a live
   Supabase change requires a separate preflight and migration authority.
