@@ -23,10 +23,25 @@
   the historical pin is internally source-identifiable; it does not make the clone an active
   dependency or prove Receiver conformance.
 - The verifier's fixed `SPEC_PATHS` still names historical `ADR-0043`, `ADR-0044`, and `ADR-0045`.
-  None of those paths exists at the active Re-entry checkout; the current equivalents are
-  `ADR-1003`, `ADR-1004`, and `ADR-1005`, while the selected Mechanism paths remain present. A
-  current pin therefore cannot pass by changing only `core_commit`; the selected source inventory
-  and its verifier contract would also require an accepted review.
+  None of those paths exists at the active Re-entry checkout. A semantic review of the active
+  layout found that they are not a one-to-one rename:
+
+  - `ADR-0043` (standing authorization) is represented by `ADR-1003` plus the standing sections
+    in Mechanisms 01–04 and the Core requirements/design/evidence surfaces. Its old
+    consumer-specific amendment and implementation chronology were intentionally removed from
+    the domain-neutral Core reading path.
+  - `ADR-0044` (independent conforming Receivers) is represented by `ADR-1004`, with proof limits
+    in Core/05, implementation obligations in the Mechanisms, and the active Receiver gate in
+    `TASK-101`.
+  - `ADR-0045` (standing transport v0.2) is split between `ADR-1002` (versioned protocol and
+    authority boundary) and Mechanism 03 (exact transport/Connector boundary). Its exact route
+    and envelope details remain code/profile contract, not a missing standalone ADR.
+
+  `ADR-1005` governs documentation and engineering ownership; it is not the semantic replacement
+  for any of those three protocol decisions. The active documents are therefore semantically
+  mapped but not path- or byte-compatible with the historical inventory. A current pin cannot
+  pass by changing only `core_commit`; the selected source inventory and its verifier contract
+  require an accepted compatibility review.
 
 ## Impact
 
