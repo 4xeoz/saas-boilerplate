@@ -15,13 +15,17 @@ The Vercel deployment root, when Vercel is selected, is `saas-boilerplate/backen
 `api/index.ts` exports the Express app and does not call `listen()`. The standalone local listener is
 `src/index.ts`. Keep these process boundaries separate.
 
-Required runtime configuration:
+Production runtime configuration:
 
 - `CLOUD_RECEIVER_RUNTIME_DATABASE_URL` or `DATABASE_URL` for request handling;
 - `JWT_SECRET` with at least 32 characters;
 - `FRONTEND_URL` for exact credentialed CORS and cookie origin checks;
-- `RECEIVER_PUBLIC_URL` for Receiver-built consent URLs; and
+- `RECEIVER_PUBLIC_URL` set to the public Receiver origin for Receiver-built consent URLs; and
 - `CLOUD_RECEIVER_PAIRING_SOURCE_HMAC_SECRET` with at least 32 random characters.
+
+The parser supplies local-only defaults for `FRONTEND_URL`, `JWT_SECRET`, the pairing-source HMAC
+secret, and `RECEIVER_PUBLIC_URL`; those defaults are not a release configuration. In particular, a
+production deployment must not allow the Receiver URL to fall back to `localhost`.
 
 `DIRECT_URL` is for Prisma migration commands, not request handling. Set `COOKIE_DOMAIN` only when
 frontend and backend share a parent domain. The frontend must receive only its public backend URL; it
