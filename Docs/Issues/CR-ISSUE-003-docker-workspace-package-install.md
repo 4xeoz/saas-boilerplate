@@ -3,6 +3,7 @@
 **Status:** Open
 **Owner:** Container build and workspace packaging boundary
 **Observed:** 2026-09-05, Europe/London
+**Last verified:** 2026-09-06, Europe/London
 
 ## Evidence
 
