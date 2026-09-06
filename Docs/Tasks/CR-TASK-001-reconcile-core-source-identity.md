@@ -12,7 +12,7 @@ can load without an implicit historical checkout or floating branch.
 
 The recorded pin is `1446d73aa3e66533547471728ad8fa5344d51f9e`. The source readback used sibling
 checkout `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline; the current
-sibling checkout readback is `c677da03f94b1107bbd72b39a0645da8f9604bac`, and the intervening changes
+sibling checkout readback is `e20f16cd6def732a6ce2ca1d0264b491dd49a660`, and the intervening changes
 are documentation-only. The pin is unavailable in both. The canonical
 [CR-ISSUE-001](../Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md) owns the exact
 source inventory, historical evidence, ADR mapping, and `CODE-AHEAD` classification; this task owns
