@@ -45,7 +45,8 @@ deployment, compatibility, or a cross-project contract.
 - README files are bounded orientation and authority maps, not work logs, transcripts, status ledgers,
   or evidence archives.
 - Core and Contracts own product and HTTP behavior; Engineering owns technical policy;
-  AI-Development owns repeatable AI-facing procedure; Verification and Evidence own executed proof;
+  AI-Development owns repeatable AI-facing procedure; Verification owns reproducible scenarios;
+  Core/05 and owning evidence records own executed proof;
   Operations owns runtime and release controls; Tasks and Issues own current work and blockers.
 - Implement the smallest coherent outcome with one real consumer. Avoid speculative abstractions,
   hidden fallbacks, silent migration changes, and unbounded dependency or generated-file edits.

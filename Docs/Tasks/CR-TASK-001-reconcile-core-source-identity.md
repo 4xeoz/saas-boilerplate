@@ -10,15 +10,11 @@ can load without an implicit historical checkout or floating branch.
 
 ## Current boundary
 
-The recorded pin is `1446d73aa3e66533547471728ad8fa5344d51f9e`. The source readback used sibling
-checkout `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline; the prior
-sibling checkout readbacks were `e20f16cd6def732a6ce2ca1d0264b491dd49a660` and
-`4f8ddaed997d7576cadcadf1fac226ca383c2338`, and the current checkout is
-`b6b802f5999430d6e9a9b72528cfa0653bc58a4e`. Changes from the latest prior readback to the current
-checkout are documentation-only. The pin is unavailable in both. The canonical
+The selected pin cannot be verified against the reviewed active-source layout. Both the commit
+identity and the selected contract inventory need reconciliation.
 [CR-ISSUE-001](../Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md) owns the exact
-source inventory, historical evidence, ADR mapping, and `CODE-AHEAD` classification; this task owns
-only the resolution gate and does not duplicate that evidence.
+source baseline, historical recovery evidence, ADR mapping, and CODE-AHEAD classification.
+This task owns the resolution outcome and next gate, not a duplicate evidence chronology.
 
 ## Next gate
 

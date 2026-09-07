@@ -45,8 +45,8 @@ Event ordering, Delivery effects, migration safety, or cross-repository source i
 | [Tasks/](Tasks/README.md) | Current bounded outcomes and next gates | Completed work history or a second roadmap |
 | [Issues/](Issues/README.md) | Open contradictions and blockers | General discussion or completed issue archive |
 | [../README.md](../README.md) | Service entrypoint, repository boundary, quick start, and routing | Detailed implementation history |
-| `backend/conformance/standing-v0.2/README.md` | Source pin, reproduction, and conformance claim limits | Product or deployment authority |
-| `supabase/README.md` | Database hardening migration and live-change preflight | Permission to apply a live migration |
+| `backend/conformance/standing-v0.2/README.md` | Source-file map and route to Verification/01 | Reproduction procedure, results, or product authority |
+| `supabase/README.md` | Migration-file map and route to Operations/02 | Hardening procedure, results, or live-change permission |
 | `backend/src/modules/` | Bounded HTTP/domain module contracts | Cross-module release claims |
 | `backend/src/modules/developer-portal/README.md` | Developer organization, API-key, and redacted event-history controls | Grant authority or delivery effects |
 | `backend/src/modules/events/README.md` | Signed Event validation and atomic Event/Delivery creation | Connector claim or consumer mapping |

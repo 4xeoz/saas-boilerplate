@@ -4,6 +4,22 @@
 **Status:** Active
 **Last updated:** 2026-09-06
 
+## Risk profile
+
+Select a profile independently of the changed surface:
+
+| Profile | Use when | Minimum controls |
+| --- | --- | --- |
+| Fast | Read-only inspection or reversible mechanical correction without behavior change | Scope, current evidence, readback, precise claim |
+| Standard | Contained documentation, test, or implementation work | Bounded outcome, affected owners, focused checks, current-truth reconciliation |
+| Assured | Identity, authority, security, data lifecycle, persistence, migration, external effects, deployment, or cross-project contract | Explicit scope and decision review, failure/recovery plan, multi-layer verification and evidence |
+
+A surface label such as database or documentation does not replace risk assessment. A documentation
+edit that changes accepted authority is Assured; a correction to match an already accepted owner
+does not itself authorize a new decision.
+
+## Execution
+
 Use this sequence for each bounded increment:
 
 1. Confirm the repository root, branch, status, ownership, and active source of truth.

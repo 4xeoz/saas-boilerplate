@@ -7,8 +7,8 @@
 
 - [Backend deployment boundary](../../backend/README.md) — process shape, variables, and migration
   order.
-- [Supabase hardening](../../supabase/README.md) — prepared SQL, preflight, local proof, and live
-  change boundary.
+- [Database hardening](02-database-hardening.md) — prepared SQL, target preflight, transaction
+  verification, and recovery; evidence is separately owned by Core/05.
 - [Docker composition](../../docker-compose.yml) — local PostgreSQL, backend, frontend, health gates,
   resource limits, and internal network.
 - [Runtime and deployment controls](01-runtime-deployment-recovery.md) — process shape, migration

@@ -36,8 +36,9 @@ accepted Core/Contract/ADR authority, or exact code, database, runtime, and rele
 
 Runbooks state how to obtain evidence; they must not become transcripts, command-output archives,
 status ledgers, or completed-task histories. Record exact commands, source revisions, database
-scope, environments, results, skipped checks, claim ceilings, and residual risks in Verification,
-Tasks, Issues, or the owning evidence record.
+scope, environments, results, skipped checks, claim ceilings, and residual risks in
+[Core/05](../Core/05-validation-and-evidence.md), Tasks, Issues, or the owning evidence record.
+Verification owns reproducible scenarios, not a second results ledger.
 
 The primary session owns substantive edits, authority reconciliation, final staging, commit, and
 any separately authorized push or external action. Supporting agents may inspect bounded evidence,

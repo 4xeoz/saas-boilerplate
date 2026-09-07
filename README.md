@@ -35,8 +35,8 @@ integration specification.
 - [Active tasks](Docs/Tasks/README.md) — only current outcomes and next gates.
 - [Backend deployment boundary](backend/README.md) — runtime variables, migration order, and process shape.
 - [Standing module contract](backend/src/modules/standing/README.md) — additive v0.2 routes and authority.
-- [Conformance procedure](backend/conformance/standing-v0.2/README.md) — source pin and reproducible checks.
-- [Supabase hardening](supabase/README.md) — preflight, local proof, and live-change boundary.
+- [Conformance procedure](Docs/Verification/01-standing-conformance.md) — source pin and reproducible checks.
+- [Supabase hardening](Docs/Operations/02-database-hardening.md) — preflight, verification, and live-change boundary.
 
 ## Service surface
 

@@ -1,7 +1,7 @@
 # Cloud Receiver 2 — Current Status
 
 **Role:** Canonical service-state and claim ledger
-**As of:** 2026-09-06, Europe/London
+**As of:** 2026-09-07, Europe/London
 **Status:** Active Receiver development; static/build checks pass, while database, source-pin,
 deployment, and cross-project release gates remain open
 
@@ -16,30 +16,15 @@ authorization v0.2 path.
   back to v0.1.
 - Standing Event acceptance, sequence/replay rules, Delivery claim/reclaim limits, effect-backed
   acknowledgement, and notification-handoff authority are implemented behind explicit boundaries.
-- The source-pinned conformance runner selects Core commit
-  `1446d73aa3e66533547471728ad8fa5344d51f9e` through
-  `backend/conformance/standing-v0.2/core-pin.json`. The source readback used the active sibling
-  checkout at `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline; the prior
-  sibling checkout readbacks were `e20f16cd6def732a6ce2ca1d0264b491dd49a660` and
-  `4f8ddaed997d7576cadcadf1fac226ca383c2338`, and the current checkout is
-  `b6b802f5999430d6e9a9b72528cfa0653bc58a4e`. Changes from the latest prior readback to the
-  current checkout are documentation-only. Neither checkout contains the selected pin. The source
-  verifier
-  therefore fails closed with `conformance_pin_commit_unavailable`; see
-  [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md) for the exact
-  inventory, historical source evidence, and `CODE-AHEAD` classification.
-- The explicit `REENTRY_CONFORMANCE_MODE=development` readback against the same active checkout
-  also fails with `conformance_source_missing` because the verifier still requires the removed
-  historical ADR-0043/0044/0045 paths. No development fingerprint or release claim is available
-  until the source inventory boundary is reviewed.
-- Database hardening is prepared as an explicit migration and has a disposable local proof; a live
-  Supabase change requires a separate preflight and migration authority.
-- Receiver implementation source baseline: commit
-  `4fa4ba312902d9ae70734e8b82305ba2e4924987`; all later commits through the current checkout are
-  documentation-only.
-- Current local baseline checks passed `npm run type-check`, `npm run build`, and the 16 synthetic
-  source-pin guard tests under Node `v26.5.0` and npm `11.17.0`. Database-backed Jest tests were not
-  runnable because no disposable PostgreSQL URL was configured.
+- Pinned conformance remains blocked by an unavailable historical commit and incompatible selected
+  contract inventory. Explicit development mode also fails closed; it is not a fallback.
+  [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md) owns the exact
+  source baseline, errors, recovery evidence, and compatibility review gate.
+- Database hardening is prepared, but its retained local observation lacks exact source and run
+  provenance. Fresh rehearsal and any live change remain separate gates.
+- Source-bound local type/build and focused test results, actual runtimes, skipped database checks,
+  and hardening evidence limits are recorded once in
+  [Validation and Evidence](Core/05-validation-and-evidence.md).
 
 These statements describe implementation boundaries. They do not assert a public release, hosted
 availability, or complete external continuation.
@@ -52,7 +37,7 @@ availability, or complete external continuation.
 | Runtime admission and handoff | Standing module | Default application has no production admission authority and fails closed |
 | Standing Consent page coverage | Consent and Standing modules | Focused standing renderer and mocked HTTP-boundary coverage pass; real `/consent?token=...` token lookup/persistence, Connector projection, and same-user decision integration remain open under [CR-TASK-005](Tasks/CR-TASK-005-cover-standing-consent-handoff.md) |
 | Control-plane policy | Standing control-plane proposal | Expanded account-facing shell: lifetime, public summaries, revocation UX, and snapshot consistency need accepted policy before implementation |
-| Database hardening | `supabase/` | Local disposable proof exists; live migration is not implied |
+| Database hardening | `supabase/` | Historical local observation only; fresh source-bound rehearsal and live authority required |
 | Container build | `backend/Dockerfile`, `frontend/Dockerfile` | Both clean-context builds fail to resolve private `@saas/shared`; see CR-ISSUE-003 |
 | Migration authority | `backend/entrypoint.sh` and deployment docs | Startup migration conflicts with the separately authorized release contract; see CR-ISSUE-002 |
 | Deployment/release | Backend/frontend release owner | Environment, packaging, migration order, rollback, and hosted readback must be verified together |

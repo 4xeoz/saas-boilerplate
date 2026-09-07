@@ -6,8 +6,8 @@
 ## Current local checks
 
 The following checks were recorded against the Receiver implementation baseline
-`4fa4ba312902d9ae70734e8b82305ba2e4924987` on branch `Re-Entry`; later commits through the current
-checkout are documentation-only:
+`4fa4ba312902d9ae70734e8b82305ba2e4924987` on branch `Re-Entry`. These are source-bound historical results, not a fresh run on every later
+checkout:
 
 | Check | Result | Claim supported |
 |---|---|---|
@@ -16,7 +16,7 @@ checkout are documentation-only:
 | `node --test backend/conformance/standing-v0.2/source-pin.test.mjs` | Passed, 16 tests | Source-pin guard behavior in synthetic fixtures |
 | `npm test -w backend -- --runInBand src/modules/standing/test/standing-consent-page.test.ts` | Passed, 6 tests | Standing Consent renderer behavior only; no HTTP, database, or hosted claim |
 | `npm test -w backend -- --runInBand src/modules/consent/test/consent-page-http.test.ts` | Passed, 5 tests | Shared Consent and standing decision HTTP-boundary mapping with mocked services; no database or hosted claim |
-| Pinned source readback against current sibling checkout | Failed with `conformance_pin_commit_unavailable` | Confirms a real compatibility gate is open; no pinned conformance claim |
+| Pinned source readback at the recorded sibling baseline | Failed with `conformance_pin_commit_unavailable` | Confirms a real compatibility gate is open; no pinned conformance claim |
 | `npm test -w backend -- --runInBand` | Not run to completion; configuration exits because no database URL is configured | No database-backed test or release claim |
 
 The executed runtime versions were Node `v26.5.0`, npm `11.17.0`, Next.js `16.3.0` in the frontend
@@ -27,6 +27,17 @@ baseline.
 The focused renderer and mocked HTTP suites were supplied a PostgreSQL-shaped local placeholder
 solely because the shared Jest setup validates `DATABASE_URL`; these suites do not open a database
 connection.
+
+## Hardening evidence boundary
+
+A retained local observation reports that the prepared SQL was executed transactionally on a
+disposable PostgreSQL table/role fixture: existing tables gained RLS, client privileges were removed,
+service-role access remained, and future tables received no client privileges. The retained account
+does not provide an exact tested source revision, runtime, date, or replayable output artifact.
+It is therefore historical supporting context, not reproducible current proof or live hardening
+approval. Rehearse the [hardening runbook](../Operations/02-database-hardening.md) with exact source,
+fixture identity, before/after ACL readback, and recorded results before raising that claim.
+No live application of the migration is established by this record.
 
 ## Verification layers
 

@@ -3,27 +3,22 @@
 **Status:** Open
 **Owner:** Receiver conformance and release boundary
 **First observed:** 2026-09-05, Europe/London
-**Last verified:** 2026-09-06, Europe/London
+**Last verified:** 2026-09-07, Europe/London
 
 ## Evidence
 
 - `backend/conformance/standing-v0.2/core-pin.json` selects Core commit
   `1446d73aa3e66533547471728ad8fa5344d51f9e`.
-- The source readback used the sibling Re-entry repository checkout at commit
-  `90d75e5efa8d8ac403552abc2bda464d823c56ae` as its implementation baseline. The prior sibling
-  checkout readbacks were `e20f16cd6def732a6ce2ca1d0264b491dd49a660` and
-  `4f8ddaed997d7576cadcadf1fac226ca383c2338`; the current checkout is
-  `b6b802f5999430d6e9a9b72528cfa0653bc58a4e`. Changes from the latest prior readback to the
-  current checkout are documentation-only, and neither checkout contains the selected pin. Earlier
-  observations
-  recorded `c0a42a5286dcbfeeccdda1068f0c7456a1df2da8`, then
-  `91c68fd60aee2d30df8d64b75c325bd6c4d642cb`, and the original
-  `787ff8867c0171cf113dcedd6af4473688191625` in this chain.
+- Source preflight baseline: Re-entry `main` at
+  `f23b8b5d988ca6041feaa561b6517cc93e897fe9`, Receiver `Re-Entry` at
+  `9756b08b12d8716d932c2329d7cd7046548aa93d`, reviewed on 2026-09-07 with Node 24.13.1.
+  These are tested source identities, not moving checkout labels. The preflight is reproducible
+  through [Verification/01](../Verification/01-standing-conformance.md#source-preflight-without-a-database).
 - `git cat-file -t 1446d73aa3e66533547471728ad8fa5344d51f9e` fails in the active sibling checkout.
 - Running the Receiver source verifier against that checkout returns
   `conformance_pin_commit_unavailable` before any database or protocol import.
 - A direct readback of the explicit `development` mode against the same active checkout on
-  2026-09-06 also fails closed with `conformance_source_missing`: the verifier's fixed
+  2026-09-07 also fails closed with `conformance_source_missing`: the verifier's fixed
   `SPEC_PATHS` still requires the three historical ADR paths listed below, and none exists in the
   current checkout. Therefore development mode cannot currently produce even its non-release
   working-checkout fingerprint for this source layout; it is not a fallback or a release claim.
@@ -56,7 +51,8 @@
   mapped but not path- or byte-compatible with the historical inventory. A current pin cannot
   pass by changing only `core_commit`; the selected source inventory and its verifier contract
   require an accepted compatibility review.
-- A direct tree comparison on 2026-09-06 also shows that this is not documentation-only drift:
+- A historical tree comparison on 2026-09-06 against Core implementation baseline
+  `90d75e5efa8d8ac403552abc2bda464d823c56ae` shows this was not documentation-only drift:
   the pinned checkout contains 53 `reentry-core` files, while the active checkout contains 59;
   six files are new and 12 common files differ. The active delta includes runtime-admission and
   notification-handoff modules, schema version 7 (the pinned source is version 6), and expanded

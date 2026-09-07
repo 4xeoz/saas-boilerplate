@@ -19,11 +19,9 @@ before it can support a release claim.
 | CR-REQ-06 | Validate signed Event identity, canonical bytes, origin, time, sequence, Grant, and replay before mutation. | Events, Standing |
 | CR-REQ-07 | Commit accepted Event history and eligible Delivery creation atomically. | Events, Deliveries, database |
 | CR-REQ-08 | Lease one target-scoped Delivery with bounded attempts, expiry, reclaim, and terminal exhaustion. | Deliveries, Standing |
-| CR-REQ-09 | Accept acknowledgement only with matching Connector, Delivery, lease, Grant, revocation window,
-  and separately verified Host-effect context. | Deliveries, Standing |
+| CR-REQ-09 | Accept acknowledgement only with matching Connector, Delivery, lease, Grant, revocation window, and separately verified Host-effect context. | Deliveries, Standing |
 | CR-REQ-10 | Keep v0.1 and standing v0.2 transport and persistence profiles distinct; no negotiation or silent fallback. | Protocol transport, Standing |
-| CR-REQ-11 | Make standing notification handoff fail closed unless a real server-side runtime-admission
-  authority is explicitly composed. | Standing |
+| CR-REQ-11 | Make standing notification handoff fail closed unless a real server-side runtime-admission authority is explicitly composed. | Standing |
 | CR-REQ-12 | Expose only bounded account, organization, Connector, consent, Grant, health, and redacted history projections. | Frontend and module routes |
 
 ## Reliability and security requirements

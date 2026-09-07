@@ -30,7 +30,8 @@ Start with the smallest check that can fail, then expand only when the changed c
 | Type or frontend/backend consistency | `npm run type-check` |
 | Production bundle | `npm run build` |
 | Backend module or database transition | `npm test -w backend -- --runInBand` with a newly provisioned disposable PostgreSQL database |
-| Standing source identity | `node --test backend/conformance/standing-v0.2/source-pin.test.mjs` against the named pinned sibling source |
+| Source guard regression | `node --test backend/conformance/standing-v0.2/source-pin.test.mjs` using synthetic repositories only |
+| Standing source identity | [Actual source preflight](../Verification/01-standing-conformance.md#source-preflight-without-a-database) against the explicitly selected Core Git root |
 | Migration, health, deployment, or recovery claim | The applicable Verification and Operations procedure with exact target identity |
 | Documentation only | Link, language, stale-claim, diff, and affected-module reread |
 

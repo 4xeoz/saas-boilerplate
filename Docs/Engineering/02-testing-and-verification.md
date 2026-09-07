@@ -10,7 +10,8 @@
 | Type consistency | `npm run type-check` | Backend/frontend TypeScript compiles |
 | Build | `npm run build` | Production bundles compile; no runtime or deployment proof |
 | Focused behavior | `npm test -w backend -- --runInBand` with an explicit disposable PostgreSQL URL | Named module behavior and database transitions |
-| Source identity | `node --test backend/conformance/standing-v0.2/source-pin.test.mjs` plus the pinned sibling checkout | Selected source identity only when the pin and bytes pass |
+| Source guard regression | `source-pin.test.mjs` using synthetic repositories | Guard behavior only; not the selected checkout |
+| Source identity | [Actual source preflight](../Verification/01-standing-conformance.md#source-preflight-without-a-database) | Selected source identity only when the pin and bytes pass |
 | Conformance | Standing Receiver/Core runner and migration/fresh-process suites | The named protocol/database scenario, not release by itself |
 | Deployment | Platform and database readback | Named deployment identity, health, migration, rollback, and workflow scope |
 | Consumer | Consumer-owned adapter/page/effect evidence | The consumer vertical slice only |
