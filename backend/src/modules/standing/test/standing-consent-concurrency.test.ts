@@ -27,17 +27,15 @@ function digest(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+const { requireOwnedDatabase, verifyOwnedDatabase } = require("../../../../conformance/standing-v0.2/disposable-database.cjs");
+
+// Verify the live task-created cluster before any suite fixture can mutate it.
+beforeAll(async () => { await verifyOwnedDatabase(process.env); });
+
 function disposableDatabaseUrl(): string {
-  const value = process.env.STANDING_CONSENT_CONCURRENCY_TEST_DATABASE_URL;
-  if (process.env.NODE_ENV !== "test" || !value || value !== appConfig.databaseUrl) {
-    throw new Error("Consent concurrency tests require an explicit matching disposable database URL");
-  }
-  const parsed = new URL(value);
-  if (!["postgres:", "postgresql:"].includes(parsed.protocol) || parsed.hostname !== "127.0.0.1" ||
-    parsed.port !== "55432" || parsed.pathname !== "/reentry_baseline" ||
-    parsed.search !== "" || parsed.hash !== "") {
-    throw new Error("Consent concurrency tests are restricted to the task-owned loopback baseline database");
-  }
+  const value = requireOwnedDatabase(process.env).databaseUrl;
+  // Config/Prisma may have been loaded before a caller changed environment variables.
+  if (appConfig.databaseUrl !== value) throw new Error("test_database_runtime_alias_mismatch");
   return value;
 }
 

@@ -17,23 +17,13 @@ const GRANT_EXPIRY = "2099-01-02T00:00:00.000Z";
 const MAX_SAFE_INTEGER = "9007199254740991";
 const V01_BODY = '{"fixture":"standing-migration-v01"}';
 
+const { requireOwnedDatabase, verifyOwnedDatabase } = require("../../../../conformance/standing-v0.2/disposable-database.cjs");
+
+// Verify the live task-created cluster before any suite fixture can mutate it.
+beforeAll(async () => { await verifyOwnedDatabase(process.env); });
+
 function disposableDatabaseUrl(): string {
-  const value = process.env.STANDING_MIGRATION_TEST_DATABASE_URL;
-  if (process.env.NODE_ENV !== "test" || !value) {
-    throw new Error("Standing migration tests require NODE_ENV=test and an explicit disposable database URL");
-  }
-  const parsed = new URL(value);
-  if (
-    !["postgres:", "postgresql:"].includes(parsed.protocol) ||
-    !["127.0.0.1", "localhost", "[::1]"].includes(parsed.hostname) ||
-    ![["55432", "/reentry_baseline"], ["55433", "/reentry_closure"]]
-      .some(([port, name]) => parsed.port === port && parsed.pathname === name) ||
-    parsed.search !== "" ||
-    parsed.hash !== ""
-  ) {
-    throw new Error("Standing migration tests are restricted to the task-created loopback baseline database");
-  }
-  return value;
+  return requireOwnedDatabase(process.env).databaseUrl;
 }
 
 function digest(value: string): string {

@@ -10,7 +10,9 @@ fixtures. It is not a release or protocol authority.
 | `source-pin.test.mjs` | Guard regression tests using synthetic repositories |
 | `receiver-process.mjs`, `receiver.test.mjs` | Shared scenario wrapper and execution |
 | `fresh-process.test.mjs` | Process recovery verification |
-| `migration-upgrade.mjs`, `migration-upgrade.test.mjs` | Migration rehearsal |
+| `migration-upgrade.mjs`, `migration-upgrade.test.mjs` | Exact-source nine-migration upgrade preservation and guard tests |
+| `disposable-postgres.py` | Provision, run against, and stop an owned local test cluster without deletion |
+| `disposable-database.cjs`, `disposable-database.test.mjs` | Private fixture proof, alias checks, live cluster identity, and negative tests |
 
 Use the [conformance procedure](../../../Docs/Verification/01-standing-conformance.md) for
 source preflight, disposable-database safety, commands, modes, and evidence limits. Current blockers

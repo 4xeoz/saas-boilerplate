@@ -4,26 +4,16 @@ import { Client } from "pg";
 import request, { type Response } from "supertest";
 import type { StandingContinuationEventEnvelope, StandingPublicBinding } from "../standing.protocol";
 
+const { requireOwnedDatabase, verifyOwnedDatabase } = require("../../../../conformance/standing-v0.2/disposable-database.cjs");
+
+// Verify the live task-created cluster before any suite fixture can mutate it.
+beforeAll(async () => { await verifyOwnedDatabase(process.env); });
+
 function requireDisposableDatabase(): string {
-  const value = process.env.STANDING_MIGRATION_TEST_DATABASE_URL;
-  if (process.env.NODE_ENV !== "test" || !value) {
-    throw new Error("Standing Event concurrency requires NODE_ENV=test and an explicit disposable database URL");
-  }
-  const parsed = new URL(value);
-  if (
-    !["postgres:", "postgresql:"].includes(parsed.protocol) ||
-    parsed.hostname !== "127.0.0.1" || parsed.port !== "55432" ||
-    parsed.pathname !== "/reentry_baseline" || parsed.search !== "" || parsed.hash !== ""
-  ) {
-    throw new Error("Standing Event concurrency is restricted to the task-owned loopback baseline database");
-  }
-  return value;
+  return requireOwnedDatabase(process.env).databaseUrl;
 }
 
 const databaseUrl = requireDisposableDatabase();
-process.env.DATABASE_URL = databaseUrl;
-process.env.DIRECT_URL = databaseUrl;
-process.env.CLOUD_RECEIVER_RUNTIME_DATABASE_URL = "";
 
 // Jest setup can preload config. Fail before a query if it selected anything
 // other than the explicitly supplied task-owned database.

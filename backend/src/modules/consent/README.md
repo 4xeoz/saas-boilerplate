@@ -33,6 +33,10 @@ boundaries. Public Grant inspection or revocation is not registered by this READ
 
 ## Verification boundary
 
+- `test/standing-consent-http.integration.test.ts`: real shared-page namespace dispatch, login,
+  Connector eligibility, decision persistence, and served popup script with simulated browser objects.
+  Requires a verified disposable PostgreSQL database; does not establish real-browser continuation.
+
 - `test/consent-page.test.ts` covers the v0.1 renderer's bounded pending/terminal output, Connector
   availability, escaping, and popup-origin/session messaging.
 - `test/consent-page-http.test.ts` covers shared-page login/standing dispatch and standing decision

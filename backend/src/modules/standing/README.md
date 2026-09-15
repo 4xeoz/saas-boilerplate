@@ -70,6 +70,10 @@ pins, restricted history references, and backend-only table access.
 
 ## Verification ownership
 
+- `../consent/test/standing-consent-http.integration.test.ts`: real shared-page namespace dispatch, login,
+  Connector eligibility, decision persistence, and served popup script with simulated browser objects.
+  Requires a verified disposable PostgreSQL database; does not establish real-browser continuation.
+
 - `standing-protocol.test.ts`: strict transport, canonicalization, signatures, key pins, and errors.
 - `standing-migration.test.ts`: additive schema constraints and retained v0.1 upgrade sentinel.
 - `standing-http.test.ts`: exact Express transport and bounded error surface.

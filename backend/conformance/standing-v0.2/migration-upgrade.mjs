@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+const { requireOwnedDatabase, verifyOwnedDatabase } = createRequire(import.meta.url)("./disposable-database.cjs");
 
 export const MIGRATIONS = Object.freeze([
   "20260902000000_init_cloud_receiver_2_auth",
@@ -15,6 +16,8 @@ export const MIGRATIONS = Object.freeze([
   "20260902040000_delivery_claim_lease",
   "20260902050000_delivery_acknowledgement",
   "20260903193000_standing_authorization_v02",
+  "20260904000000_pairing_claim_rate_limit",
+  "20260904010000_standing_notification_handoff",
 ]);
 const PREFIX = "backend/prisma/migrations";
 const SENTINEL_HELPER = "backend/src/modules/standing/test/standing-migration-sentinel.ts";
@@ -26,6 +29,7 @@ const SOURCE_PATHS = [
   "backend/src/test/setup.ts", "backend/src/db/index.ts", "backend/src/config/config.ts",
   SENTINEL_HELPER, MIGRATION_TEST,
   "backend/conformance/standing-v0.2/migration-upgrade.mjs",
+  "backend/conformance/standing-v0.2/disposable-database.cjs",
   ...MIGRATIONS.map(name => `${PREFIX}/${name}/migration.sql`),
 ];
 
@@ -57,18 +61,13 @@ export function requireUpgradeConfiguration(env) {
   if (!/^[a-f0-9]{64}$/.test(env.STANDING_MIGRATION_LOCK_SHA256 ?? "")) {
     fail("upgrade_expected_lock_sha256_required");
   }
-  let database;
-  try { database = new URL(env.STANDING_UPGRADE_DATABASE_URL); }
-  catch { fail("upgrade_database_url_invalid"); }
-  if (!["postgres:", "postgresql:"].includes(database.protocol) ||
-      database.hostname !== "127.0.0.1" || database.port !== "55433" ||
-      database.pathname !== "/reentry_closure" || database.search || database.hash) {
-    fail("upgrade_requires_exact_disposable_database");
-  }
+  const selected = requireOwnedDatabase(env);
+  if (env.STANDING_UPGRADE_DATABASE_URL !== selected.databaseUrl) fail("upgrade_database_alias_mismatch");
   return {
     commit: env.STANDING_MIGRATION_RECEIVER_COMMIT,
     lockSha256: env.STANDING_MIGRATION_LOCK_SHA256,
-    databaseUrl: database.href,
+    databaseUrl: selected.databaseUrl,
+    database: selected.proof.database,
   };
 }
 
@@ -117,11 +116,18 @@ async function migrationRecords(client) {
     FROM public._prisma_migrations ORDER BY migration_name`)).rows;
 }
 
-async function baselineSnapshot(client) {
-  const tables = (await client.query(`SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity,
+export function verifyNonStandingInventory(before, after) {
+  assert.deepEqual([...after].sort(), [...before, "cr2_pairing_claim_rate_buckets"].sort(),
+    "upgrade_non_standing_inventory_mismatch");
+}
+
+async function baselineSnapshot(client, baselineNames) {
+  let tables = (await client.query(`SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity,
     pg_get_userbyid(c.relowner) AS owner, c.relacl::text AS acl
     FROM pg_class c WHERE c.relnamespace = 'public'::regnamespace AND c.relkind = 'r'
     AND c.relname LIKE 'cr2_%' AND c.relname NOT LIKE 'cr2_standing_%' ORDER BY c.relname`)).rows;
+  // Compare every original table exactly; review the complete additive inventory separately.
+  if (baselineNames) tables = tables.filter(table => baselineNames.includes(table.relname));
   const names = tables.map(table => table.relname);
   const columns = (await client.query(`SELECT c.relname, a.attname, a.attnum,
     format_type(a.atttypid, a.atttypmod) AS type, a.attnotnull, a.attidentity, a.attgenerated,
@@ -167,6 +173,7 @@ export async function rehearseMigrationUpgrade() {
   const receiverRoot = await realpath(fileURLToPath(new URL("../../../", import.meta.url)));
   const sourceBytes = await committedSources(receiverRoot, configuration);
   if (process.versions.node.split(".")[0] !== "24") fail("upgrade_requires_node_24");
+  await verifyOwnedDatabase(process.env);
   const require = createRequire(import.meta.url);
   // Source and configuration gates above precede pg loading or database access.
   const { Client } = require("pg");
@@ -183,7 +190,7 @@ export async function rehearseMigrationUpgrade() {
     await client.connect();
     const identity = (await client.query(`SELECT current_database() AS database,
       inet_server_addr()::text AS address, current_setting('server_version_num') AS version`)).rows[0];
-    assert.equal(identity.database, "reentry_closure", "upgrade_database_identity_mismatch");
+    assert.equal(identity.database, configuration.database, "upgrade_database_identity_mismatch");
     assert.ok(identity.address !== null, "upgrade_requires_tcp_database");
     const occupied = (await client.query(`SELECT n.nspname, c.relname FROM pg_class c
       JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
@@ -193,7 +200,7 @@ export async function rehearseMigrationUpgrade() {
     async function put(path, bytes) {
       const target = join(workspace, path);
       await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, bytes, { flag: "wx" });
+      await writeFile(target, bytes, { flag: "wx", mode: 0o600 });
     }
     await put("prisma/schema.prisma", sourceBytes.get("backend/prisma/schema.prisma"));
     await put("prisma/migrations/migration_lock.toml", sourceBytes.get(`${PREFIX}/migration_lock.toml`));
@@ -215,6 +222,7 @@ export async function rehearseMigrationUpgrade() {
     const { seedV01UpgradeSentinel } = require(join(receiverRoot, SENTINEL_HELPER));
     await seedV01UpgradeSentinel(client);
     const before = await baselineSnapshot(client);
+    const baselineNames = before.schema.tables.map(table => table.relname);
     assert.equal(before.rows.cr2_grants?.length, 1, "upgrade_sentinel_grant_missing");
     assert.equal(before.rows.cr2_events?.length, 1, "upgrade_sentinel_event_missing");
     assert.equal(before.rows.cr2_deliveries?.length, 1, "upgrade_sentinel_delivery_missing");
@@ -223,8 +231,18 @@ export async function rehearseMigrationUpgrade() {
     await put(`prisma/migrations/${standing}/migration.sql`, sourceBytes.get(`${PREFIX}/${standing}/migration.sql`));
     deploy();
     // Critically, no post-upgrade seeder or regression suite runs before this comparison.
-    const after = await baselineSnapshot(client);
+    assert.deepEqual(await baselineSnapshot(client), before, "upgrade_changed_existing_v01_rows_or_schema");
+    verifyMigrationRecords(await migrationRecords(client), MIGRATIONS.slice(0, 7), sourceBytes);
+    for (const name of MIGRATIONS.slice(7)) {
+      await put(`prisma/migrations/${name}/migration.sql`, sourceBytes.get(`${PREFIX}/${name}/migration.sql`));
+    }
+    deploy();
+    const complete = await baselineSnapshot(client);
+    verifyNonStandingInventory(baselineNames, complete.schema.tables.map(table => table.relname));
+    assert.deepEqual(complete.rows.cr2_pairing_claim_rate_buckets, [], "upgrade_new_pairing_budget_not_empty");
+    const after = await baselineSnapshot(client, baselineNames);
     await put("upgraded-snapshot.json", JSON.stringify(after, null, 2));
+    await put("additive-catalog.json", JSON.stringify(complete.schema, null, 2));
     assert.deepEqual(after, before, "upgrade_changed_existing_v01_rows_or_schema");
     const applied = await migrationRecords(client);
     verifyMigrationRecords(applied, MIGRATIONS, sourceBytes);
@@ -237,7 +255,10 @@ export async function rehearseMigrationUpgrade() {
     assert.equal(constraints.success, true, "upgrade_constraint_results_failed");
     assert.equal(constraints.numPassedTests, 6, "upgrade_constraint_test_count_changed");
     assert.equal(constraints.numPendingTests, 0, "upgrade_constraint_tests_skipped");
-    assert.deepEqual(await baselineSnapshot(client), before, "upgrade_probes_changed_existing_v01_rows_or_schema");
+    assert.deepEqual(await baselineSnapshot(client, baselineNames), before, "upgrade_probes_changed_existing_v01_rows_or_schema");
+    const postProbes = await baselineSnapshot(client);
+    verifyNonStandingInventory(baselineNames, postProbes.schema.tables.map(table => table.relname));
+    assert.deepEqual(postProbes.rows.cr2_pairing_claim_rate_buckets, [], "upgrade_probes_changed_pairing_budget");
     verifyMigrationRecords(await migrationRecords(client), MIGRATIONS, sourceBytes);
     await committedSources(receiverRoot, configuration);
     const evidence = {
@@ -248,6 +269,7 @@ export async function rehearseMigrationUpgrade() {
       baseline_row_count: Object.values(before.rows).reduce((sum, rows) => sum + rows.length, 0),
       baseline_snapshot_sha256: sha256(JSON.stringify(before)),
       v01_rows_and_catalog_preserved: true, preservation_checked_before_post_upgrade_seeding: true,
+      reviewed_additive_table: "cr2_pairing_claim_rate_buckets",
       constraint_tests_passed: constraints.numPassedTests, retained_workspace: workspace,
       release_conformance_verified: false, production_migration: false,
     };

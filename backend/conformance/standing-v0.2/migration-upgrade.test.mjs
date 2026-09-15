@@ -3,13 +3,27 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { MIGRATIONS, requireUpgradeConfiguration, verifyMigrationRecords } from "./migration-upgrade.mjs";
+import { mkdtempSync, mkdirSync, writeFileSync, realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createRequire } from "node:module";
+const { DATABASE_ALIASES } = createRequire(import.meta.url)("./disposable-database.cjs");
+const fixtureRoot = mkdtempSync(join(realpathSync(tmpdir()), "upgrade-proof-test-"));
+const dataDirectory = join(fixtureRoot, "data"); mkdirSync(dataDirectory, { mode: 0o700 });
+const proofPath = join(fixtureRoot, "proof.json");
+const fixtureDatabase = `cr_test_${"b".repeat(32)}`;
+const fixtureUrl = `postgresql://cr_test:synthetic@127.0.0.1:61235/${fixtureDatabase}`;
+writeFileSync(proofPath, JSON.stringify({ version: 1, database: fixtureDatabase, port: 61235,
+  user: "cr_test", data_directory: dataDirectory, system_identifier: "7654321098765432100" }), { mode: 0o600 });
+import { MIGRATIONS, requireUpgradeConfiguration, verifyMigrationRecords, verifyNonStandingInventory } from "./migration-upgrade.mjs";
 
 const environment = {
   NODE_ENV: "test",
   STANDING_MIGRATION_RECEIVER_COMMIT: "a".repeat(40),
   STANDING_MIGRATION_LOCK_SHA256: "b".repeat(64),
-  STANDING_UPGRADE_DATABASE_URL: "postgresql://fixture:fixture@127.0.0.1:55433/reentry_closure",
+  RECEIVER_TEST_DATABASE_PROOF: proofPath,
+  ...Object.fromEntries(DATABASE_ALIASES.map(key => [key, fixtureUrl])),
+  STANDING_UPGRADE_DATABASE_URL: fixtureUrl,
 };
 
 test("upgrade guard requires a full Receiver commit and expected dependency lock", () => {
@@ -34,10 +48,10 @@ test("upgrade guard accepts only the explicit new disposable endpoint without tr
     "https://127.0.0.1:55433/reentry_closure",
   ]) {
     assert.throws(() => requireUpgradeConfiguration({ ...environment, STANDING_UPGRADE_DATABASE_URL: database }),
-      { code: "upgrade_requires_exact_disposable_database" });
+      { code: "upgrade_database_alias_mismatch" });
   }
   assert.throws(() => requireUpgradeConfiguration({ ...environment, STANDING_UPGRADE_DATABASE_URL: undefined }),
-    { code: "upgrade_database_url_invalid" });
+    { code: "upgrade_database_alias_mismatch" });
 });
 
 function migrationFixture() {
@@ -82,4 +96,14 @@ test("actual upgrade entrypoint refuses an unavailable commit before database ac
   assert.equal(result.stdout, "");
   assert.equal(result.stderr.trim(), "upgrade_source_git_invalid");
   assert.ok(!result.stderr.includes("fixture:fixture"));
+});
+
+
+test("upgrade inventory permits only the reviewed additive pairing budget table", () => {
+  const before = ["cr2_accounts", "cr2_grants"];
+  const after = [...before, "cr2_pairing_claim_rate_buckets"];
+  assert.doesNotThrow(() => verifyNonStandingInventory(before, after));
+  for (const invalid of [before, [...after, "cr2_unreviewed"], after.slice(1), [...after, after[0]]]) {
+    assert.throws(() => verifyNonStandingInventory(before, invalid), /upgrade_non_standing_inventory_mismatch/);
+  }
 });

@@ -7,12 +7,18 @@ import { isAbsolute, join } from "node:path";
 export const PIN_PATH = "backend/conformance/standing-v0.2/core-pin.json";
 export const SCENARIO_PATH = "reentry-core/conformance/standing-v0.2/scenario.mjs";
 export const SPEC_PATHS = Object.freeze([
-  "Docs/Decisions/ADR-0043-adopt-standing-authorization-v0.2.md",
-  "Docs/Decisions/ADR-0044-allow-conforming-receiver-implementations.md",
-  "Docs/Decisions/ADR-0045-adopt-standing-transport-profile-v0.2.md",
+  "Docs/Decisions/ADR-1002-protocol-and-authority-boundary.md",
+  "Docs/Decisions/ADR-1003-standing-and-private-context.md",
+  "Docs/Decisions/ADR-1004-conformance-and-release-identity.md",
   "Docs/Mechanisms/01-host-integration-manifest-and-enrollment.md",
   "Docs/Mechanisms/02-receiver-grant-and-event-authority.md",
   "Docs/Mechanisms/03-delivery-lease-and-local-connector.md",
+  "Docs/Mechanisms/04-managed-context-and-agent-activation.md",
+  "Docs/Mechanisms/05-host-reentry-webmcp-and-human-boundary.md",
+  "Docs/Core/02-product-requirements.md",
+  "Docs/Core/03-system-design.md",
+  "Docs/Core/04-trust-security-reliability.md",
+  "Docs/Core/05-validation-and-evidence.md",
 ]);
 const PROFILE = "standing-authorization-v0.2";
 const SCOPE = ["reentry-core", ...SPEC_PATHS];

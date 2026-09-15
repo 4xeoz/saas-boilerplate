@@ -10,8 +10,8 @@ required evidence and deployment boundary are closed.
 
 | Order | Outcome | Dependency and gate |
 |---|---|---|
-| 1 | Reconcile the Re-entry Core source identity used by conformance. | Owner chooses a reviewed historical recovery source or a new current pin; source inventory and bytes must pass before protocol claims are updated. |
-| 2 | Complete disposable PostgreSQL verification for v0.1 and standing v0.2. | Run migrations, disposable-DB-backed focused suites (including the shared Consent handoff integration coverage tracked by [CR-TASK-005](../Tasks/CR-TASK-005-cover-standing-consent-handoff.md)), race/restart suites, and pinned conformance on a named non-runtime database. |
+| 1 | Integrate the reviewed Re-entry Core source identity used by conformance. | Current-source selection is accepted; exact source, shared standing scenario, and fresh-process recovery pass locally. Primary-session integration and complete compatibility remain open. |
+| 2 | Integrate the existing PostgreSQL baseline and complete additional handoff coverage. | All 203 backend tests, including shared Consent HTTP/persistence coverage, and the prior nine-migration snapshot upgrade pass. Integrate and rerun against the Receiver commit; review [CR-TASK-005](../Tasks/CR-TASK-005-cover-standing-consent-handoff.md). |
 | 3 | Decide whether and how to expose the expanded standing account-facing shell. | Accept lifetime, renewal, redaction, CSRF, token custody, login continuation, revocation, and snapshot semantics before shell implementation. |
 | 4 | Complete database hardening and deployment closure. | Review Supabase preflight, apply only through the migration owner, verify health/readiness, rollback, secret custody, and platform identity. |
 | 5 | Establish a supported consumer compatibility profile. | Consumer owns event mapping and page workflow; Receiver and Core pins, API vectors, and effect boundaries must be jointly read back. |

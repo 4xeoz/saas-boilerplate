@@ -1,5 +1,5 @@
 import { createHash, generateKeyPairSync, randomBytes, randomUUID } from "node:crypto";
-import { afterAll, describe, expect, it } from "@jest/globals";
+import { afterAll, beforeAll, describe, expect, it } from "@jest/globals";
 import { appConfig } from "../../../config/config";
 import { prisma } from "../../../db";
 import { canonicalJson, createStandingContinuationEventEnvelope } from "../standing.protocol";
@@ -12,25 +12,15 @@ import {
 } from "../standing.service";
 import type { StandingRuntimeAdmissionAttestation } from "../standing-notification-handoff";
 
+const { requireOwnedDatabase, verifyOwnedDatabase } = require("../../../../conformance/standing-v0.2/disposable-database.cjs");
+
+// Verify the live task-created cluster before any suite fixture can mutate it.
+beforeAll(async () => { await verifyOwnedDatabase(process.env); });
+
 function requireDisposableDatabase(): string {
-  const value = process.env.STANDING_MIGRATION_TEST_DATABASE_URL;
-  if (process.env.NODE_ENV !== "test" || !value) {
-    throw new Error("Notification handoff service tests require NODE_ENV=test and a disposable database URL");
-  }
-  const parsed = new URL(value);
-  if (
-    !["postgres:", "postgresql:"].includes(parsed.protocol) ||
-    parsed.hostname !== "127.0.0.1" ||
-    parsed.port !== "55432" ||
-    parsed.pathname !== "/reentry_baseline" ||
-    parsed.search !== "" ||
-    parsed.hash !== ""
-  ) {
-    throw new Error("Notification handoff service tests are restricted to the task-owned loopback database");
-  }
-  if (appConfig.databaseUrl !== value) {
-    throw new Error("Notification handoff service tests found a different configured database");
-  }
+  const value = requireOwnedDatabase(process.env).databaseUrl;
+  // Config/Prisma may have been loaded before a caller changed environment variables.
+  if (appConfig.databaseUrl !== value) throw new Error("test_database_runtime_alias_mismatch");
   return value;
 }
 
@@ -210,7 +200,7 @@ afterAll(async () => {
 describe("standing notification handoff service", () => {
   it("persists a verified handoff and replays it after lease/grant lifetime changes", async () => {
     // The environment guard above prevents accidental writes outside the task-owned DB.
-    expect(databaseUrl).toContain("127.0.0.1:55432/reentry_baseline");
+    expect(databaseUrl).toBe(appConfig.databaseUrl);
     await seedFixture();
     await expect(acceptStandingEvent(signedEvent())).resolves.toMatchObject({ accepted: true });
     const leaseToken = randomBytes(32).toString("base64url");

@@ -22,7 +22,7 @@ The default mode is `pinned`. Before importing Core or opening a database connec
 - `profile: standing-authorization-v0.2`; and
 - a complete lowercase 40-character `core_commit`.
 
-The selected pin and the source-layout blocker are recorded in
+The accepted source selection and remaining compatibility boundary are recorded in
 [CR-ISSUE-001](../Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md).
 Every pin change requires review of the selected Core source, a fresh source-pin run, and a new
 Receiver trace. A branch, tag, package version, floating checkout, or content digest cannot replace
@@ -89,22 +89,66 @@ Set `REENTRY_CONFORMANCE_ROOT` to the absolute Git root of the selected Core che
 rejects missing configuration, non-loopback URLs, query/fragment overrides, and an absent source pin.
 The caller remains responsible for proving that the database is disposable.
 
-Representative commands from the repository root:
+## Portable owned fixture and commands
+
+Use `disposable-postgres.py` with a locally installed PostgreSQL binary directory. It creates a new
+cluster and unique database, binds only `127.0.0.1`, verifies empty state, and prints the private
+fixture directory. It never resets or deletes a database. The proof contains the actual database,
+user, port, data directory and PostgreSQL system identifier; synthetic credentials are in a separate
+mode-0600 file. The run wrapper sets all six aliases, test secrets, and `RECEIVER_TEST_DATABASE_PROOF`.
+No example database URL is permission to use an existing service.
 
 ```sh
-npm ci
-npm run db:migrate -w backend
-npm run test -w backend -- --runInBand
-npm run type-check
-npm run build
-node --test backend/conformance/standing-v0.2/source-pin.test.mjs
-node --test backend/conformance/standing-v0.2/receiver.test.mjs
-node --test backend/conformance/standing-v0.2/fresh-process.test.mjs
-node --test backend/conformance/standing-v0.2/migration-upgrade.test.mjs
+python3 backend/conformance/standing-v0.2/disposable-postgres.py create --pg-bin /absolute/postgresql/bin
+python3 backend/conformance/standing-v0.2/disposable-postgres.py run --fixture /printed/baseline/fixture -- npm run db:migrate -w backend
+python3 backend/conformance/standing-v0.2/disposable-postgres.py run --fixture /printed/baseline/fixture -- npm test -w backend -- --runInBand
+python3 backend/conformance/standing-v0.2/disposable-postgres.py run --fixture /printed/baseline/fixture -- node --test --test-concurrency=1 backend/conformance/standing-v0.2/receiver.test.mjs backend/conformance/standing-v0.2/fresh-process.test.mjs
+python3 backend/conformance/standing-v0.2/disposable-postgres.py run --fixture /printed/baseline/fixture -- npm run type-check
+python3 backend/conformance/standing-v0.2/disposable-postgres.py run --fixture /printed/baseline/fixture -- env NODE_ENV=production npm run build
+node --test backend/conformance/standing-v0.2/source-pin.test.mjs backend/conformance/standing-v0.2/disposable-database.test.mjs backend/conformance/standing-v0.2/migration-upgrade.test.mjs
 ```
 
-Run lock-barrier suites serially. Migration rehearsal refuses a populated database, never resets or
-repairs existing data, and retains its temporary snapshots for diagnosis.
+Use Node 24 and npm 10.9.2; these commands assume the declared dependencies are installed. Set the
+explicit `REENTRY_CONFORMANCE_ROOT` before the shared/process commands. The six standing suites
+validate the proof's private file/path ownership, reject PostgreSQL routing overrides or unequal
+aliases, and read back live identity before writes. The proof is a trusted local provisioning
+receipt, not attestation against another process running as the same OS user. It does not authorize
+remote/shared targets or substitute for current-source checks.
+
+## Upgrade preservation
+
+The `migration-upgrade.test.mjs` command above tests guards. The actual upgrade entrypoint requires
+`STANDING_MIGRATION_RECEIVER_COMMIT` (complete committed Receiver revision),
+`STANDING_MIGRATION_LOCK_SHA256` (SHA-256 of its exact dependency lock), and an independently created
+**empty** upgrade fixture. Its run wrapper supplies `STANDING_UPGRADE_DATABASE_URL` equal to all other
+aliases. Selected source files must match their committed bytes, including the fixture helper.
+
+```sh
+python3 backend/conformance/standing-v0.2/disposable-postgres.py create --pg-bin /absolute/postgresql/bin
+python3 backend/conformance/standing-v0.2/disposable-postgres.py run --fixture /printed/empty/upgrade/fixture -- node backend/conformance/standing-v0.2/migration-upgrade.mjs
+```
+
+Set the exact commit and lock variables before invoking the command. Do not run `db:migrate` on the
+upgrade fixture first. The runner applies the six v0.1 migrations, seeds baseline rows, applies the
+standing migration, then the pairing-budget and notification-handoff additions. It verifies exact
+migration checksums and the reviewed additive table while preserving all original rows/catalog
+before any post-upgrade seeding. The six constraint tests run only after preservation is proven.
+The runner refuses populated targets and unexpected source inventory; it never repairs or resets
+existing data.
+
+During working-change validation, a separately committed local copy may exercise this strict source
+gate, provided every selected byte is compared back and the result is explicitly called a test
+snapshot. It cannot claim an integrated Receiver commit or release; rerun against the actual
+Receiver commit after integration. [CR-ISSUE-004](../Issues/CR-ISSUE-004-database-verification-fixture-drift.md)
+owns that remaining integration boundary.
+
+Run lock-barrier suites serially against each cluster. Stop only the fixture that this task created;
+the stop command checks live identity and retains all files for diagnosis:
+
+```sh
+python3 backend/conformance/standing-v0.2/disposable-postgres.py stop --fixture /printed/baseline/fixture
+python3 backend/conformance/standing-v0.2/disposable-postgres.py stop --fixture /printed/upgrade/fixture
+```
 
 ## Modes and claim limits
 
@@ -117,7 +161,8 @@ are separate gates.
 scope before and after the run, but reports source identity and release conformance as unverified. It
 is not a fallback for a missing or changed pin. The selected checkout must still satisfy the
 verifier's selected source inventory. A missing required contract file fails closed with
-`conformance_source_missing`; see CR-ISSUE-001 for the recorded compatibility failure.
+`conformance_source_missing`; CR-ISSUE-001 retains the superseded source-layout failure and the
+accepted current-source decision. Development mode is unnecessary for the accepted pinned source.
 
 The shared scenario uses a deterministic test effect authority and typed service seams where public
 control pages are not implemented. A process restart in a test is not proof of supervision, distributed

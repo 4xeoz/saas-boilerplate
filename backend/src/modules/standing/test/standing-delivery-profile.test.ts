@@ -1,30 +1,18 @@
 import { createHash, generateKeyPairSync, randomBytes, randomUUID } from "node:crypto";
-import { afterAll, describe, expect, it } from "@jest/globals";
+import { afterAll, beforeAll, describe, expect, it } from "@jest/globals";
 import request from "supertest";
 import type { StandingPublicBinding } from "../standing.protocol";
 
+const { requireOwnedDatabase, verifyOwnedDatabase } = require("../../../../conformance/standing-v0.2/disposable-database.cjs");
+
+// Verify the live task-created cluster before any suite fixture can mutate it.
+beforeAll(async () => { await verifyOwnedDatabase(process.env); });
+
 function requireDisposableDatabase(): string {
-  const value = process.env.STANDING_MIGRATION_TEST_DATABASE_URL;
-  if (process.env.NODE_ENV !== "test" || !value) {
-    throw new Error("Standing delivery profile requires NODE_ENV=test and an explicit disposable database URL");
-  }
-  const parsed = new URL(value);
-  if (
-    !["postgres:", "postgresql:"].includes(parsed.protocol) ||
-    parsed.hostname !== "127.0.0.1" ||
-    parsed.port !== "55432" ||
-    parsed.pathname !== "/reentry_baseline" ||
-    parsed.search !== "" || parsed.hash !== ""
-  ) {
-    throw new Error("Standing delivery profile is restricted to the task-owned loopback baseline database");
-  }
-  return value;
+  return requireOwnedDatabase(process.env).databaseUrl;
 }
 
 const databaseUrl = requireDisposableDatabase();
-process.env.DATABASE_URL = databaseUrl;
-process.env.DIRECT_URL = databaseUrl;
-process.env.CLOUD_RECEIVER_RUNTIME_DATABASE_URL = "";
 
 // The global Jest setup may already have loaded config/Prisma. Reject any stale
 // configuration before a query rather than silently use another database.

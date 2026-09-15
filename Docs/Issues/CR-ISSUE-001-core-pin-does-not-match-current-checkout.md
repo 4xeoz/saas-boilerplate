@@ -1,13 +1,33 @@
-# CR-ISSUE-001 — Core pin does not match the active sibling checkout
+# CR-ISSUE-001 — Accepted Core source boundary and remaining compatibility closure
 
-**Status:** Open
+**Status:** Open — source mismatch resolved locally; integration and complete compatibility pending
 **Owner:** Receiver conformance and release boundary
 **First observed:** 2026-09-05, Europe/London
 **Last verified:** 2026-09-07, Europe/London
 
-## Evidence
+## Accepted current source boundary
 
-- `backend/conformance/standing-v0.2/core-pin.json` selects Core commit
+On 2026-09-07 the owner approved current-source reconciliation after reviewing the candidate pin,
+selected document inventory, source preflight, and guard results. The active Receiver selection now
+uses the immutable [Core commit](https://github.com/Alex0158/Re-Entry/commit/339acbcd664374235a4ab49b9152bf834b43c210)
+`339acbcd664374235a4ab49b9152bf834b43c210`; the repository URL identifies the counterpart source, not
+an independently verified public release.
+
+The accepted inventory selects ADR-1002/1003/1004, all five Mechanism documents, Core/02–05, and the
+entire recursive `reentry-core` source tree. The verifier's `SPEC_PATHS` is the exact path inventory.
+The semantic mapping below was reviewed; this is not a three-file rename or a documentation-only
+compatibility assumption. Byte, recursive-inventory, symlink, Git-replacement, routing-variable,
+fixed-pin, and post-run drift guards remain intact.
+
+The applied two-file Receiver change passes exact Core identity, 16 source-guard tests, the shared
+standing scenario over Express/PostgreSQL, and fresh-process transaction rollback/Delivery recovery.
+[Validation and Evidence](../Core/05-validation-and-evidence.md) owns exact Receiver working-source
+hashes, runtime, database scope, counts, and the release ceiling. The existing database matrix and snapshot upgrade
+now pass locally; fixture implementation and integration limits are recorded in [CR-ISSUE-004](CR-ISSUE-004-database-verification-fixture-drift.md).
+
+## Historical evidence — superseded source selection
+
+- Before the accepted change, `backend/conformance/standing-v0.2/core-pin.json` selected Core commit
   `1446d73aa3e66533547471728ad8fa5344d51f9e`.
 - Source preflight baseline: Re-entry `main` at
   `f23b8b5d988ca6041feaa561b6517cc93e897fe9`, Receiver `Re-Entry` at
@@ -59,24 +79,19 @@
   standing authorization, HTTP, store, and fresh-process coverage. This is a `CODE-AHEAD`
   conflict at the source boundary, in addition to the historical documentation-inventory mismatch.
 
-## Impact
+## Current impact
 
-The Receiver cannot currently establish the pinned Core source identity from the active workspace.
-Therefore pinned conformance, release conformance, and any cross-project compatibility claim remain
-open. The fixed selected inventory creates a second compatibility boundary beyond the commit pin;
-this issue does not by itself prove a protocol or implementation defect, and it authorizes no
-runtime, verifier, or pin mutation.
+The historical source-identity obstruction is resolved by the accepted working change. The named
+local standing and process scenarios now run against that exact Core source. This does not establish
+complete v0.1/v0.2 compatibility, a committed Receiver release, published SDK/Connector compatibility,
+production admission, or Game continuation. The current source must not silently follow a later
+checkout or accept an unrelated inventory change.
 
-## Resolution gate
+## Remaining resolution gate
 
-The owner must choose one reviewed source boundary:
-
-1. recover and explicitly supply the historical pinned source as a retrieval fixture with recorded
-   identity; or
-2. review the current domain-neutral Core checkout, update the Receiver pin and selected verifier
-   inventory as one accepted compatibility change, then rerun source identity, focused conformance,
-   migration, and compatibility checks.
-
-Do not replace the pin with `HEAD`, a branch, a package version, or a working tree without that
-review. Close this issue only after the selected source is committed, the verifier passes, and
-`Docs/00-current-status.md` is updated with the new evidence ceiling.
+The owner chose the reviewed current-source option; historical recovery is no longer the pending
+decision. Keep the accepted pin and inventory together during primary-session integration, preserve
+the source-bound evidence, and rerun exact-source upgrade against the integrated Receiver commit through CR-TASK-002.
+Reopen source selection only when the chosen revision, normative inventory, exact bytes, or consumer
+compatibility requirement changes. No deployment, live migration, publication, credential change,
+or push is authorized by this source decision.
