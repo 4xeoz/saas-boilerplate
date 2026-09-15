@@ -42,13 +42,11 @@ availability, or complete external continuation.
 
 ## Hosted identity boundary
 
-The current platform names, aliases, source revisions, and unresolved cross-environment checks are
-maintained in the [Operations hosted deployment readback](Operations/01-runtime-deployment-recovery.md#current-hosted-naming-and-deployment-readback).
-Vercel reports both listed Production deployments as `Ready`, but their dashboard source label is the
-older `Eyad/Full-Integration:03be040`; that abbreviated commit is not currently resolvable through
-the repository/GitHub readback. The reviewed Receiver source is `Re-Entry@fff93ebd`. Treat those
-deployments as hosted artifacts until source, configuration, database, migration, rollback, and
-consumer checks are closed.
+The current platform names, aliases, source readback, bounded checks, and unresolved cross-environment
+gates are maintained in [Operations / Current Deployment](Operations/current-deployment.md). Treat
+the listed artifacts as unqualified until source, configuration, database, migration, rollback, and
+consumer checks are closed; the [Deployment Runbook](Operations/deployment-runbook.md) defines the
+route and claim gates.
 
 ## Active gates
 

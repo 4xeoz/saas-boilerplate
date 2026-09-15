@@ -3,6 +3,12 @@
 **Role:** Local runtime, database migration, deployment, health, and recovery routing
 **Status:** Active baseline; live release remains unverified
 
+## Start here
+
+- [Deployment Runbook](deployment-runbook.md) — choose the route and execute the release gates.
+- [Current Deployment](current-deployment.md) — the latest hosted snapshot only.
+- [Deployment Change Register](deployment-history.md) — material hosted changes and decisions.
+
 ## Current owners
 
 - [Backend deployment boundary](../../backend/README.md) — process shape, variables, and migration

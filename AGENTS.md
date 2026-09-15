@@ -48,6 +48,10 @@ deployment, compatibility, or a cross-project contract.
   AI-Development owns repeatable AI-facing procedure; Verification owns reproducible scenarios;
   Core/05 and owning evidence records own executed proof;
   Operations owns runtime and release controls; Tasks and Issues own current work and blockers.
+- For deployment, release, hosted URL, Vercel, Docker, migration, rollback, or recovery work, start
+  with [`Docs/Operations/deployment-runbook.md`](Docs/Operations/deployment-runbook.md). Keep the
+  latest hosted state only in [`current-deployment.md`](Docs/Operations/current-deployment.md) and
+  append only material external changes to [`deployment-history.md`](Docs/Operations/deployment-history.md).
 - Implement the smallest coherent outcome with one real consumer. Avoid speculative abstractions,
   hidden fallbacks, silent migration changes, and unbounded dependency or generated-file edits.
 - Keep project-authored artifacts in English and secrets out of source, logs, evidence, and docs.
