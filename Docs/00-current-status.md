@@ -31,8 +31,11 @@ authorization v0.2 path.
   upgrade passes against the same Receiver commit, preserving the original catalog and rows before
   post-upgrade probes. [CR-ISSUE-004](Issues/CR-ISSUE-004-database-verification-fixture-drift.md)
   records the fixture boundary; deployment and release remain separate gates.
-- Database hardening is prepared, but its retained local observation lacks exact source and run
-  provenance. Fresh rehearsal and any live change remain separate gates.
+- Database hardening is prepared, but the 2026-09-16 authenticated Supabase MCP readback shows RLS
+  disabled on 36 public tables and no live hardening change. The same readback shows six initial
+  Receiver migrations while the current source contains three later Prisma migrations; fresh
+  source-bound rehearsal, migration authority, policy review, and any live change remain separate
+  gates.
 - Source-bound local type/build and focused test results, actual runtimes, skipped database checks,
   and hardening evidence limits are recorded once in
   [Validation and Evidence](Core/05-validation-and-evidence.md).
@@ -57,7 +60,7 @@ route and claim gates.
 | Runtime admission and handoff | Standing module | Default application has no production admission authority and fails closed |
 | Standing Consent page coverage | Consent and Standing modules | 13 real HTTP/database cases pass, including token lookup, Connector projection, decisions, and served popup script; real-browser and hosted continuation remain open under [CR-TASK-005](Tasks/CR-TASK-005-cover-standing-consent-handoff.md) |
 | Control-plane policy | Standing control-plane proposal | Expanded account-facing shell: lifetime, public summaries, revocation UX, and snapshot consistency need accepted policy before implementation |
-| Database hardening | `supabase/` | Historical local observation only; fresh source-bound rehearsal and live authority required |
+| Database hardening | `supabase/` and live `re-entry` project | Live MCP inventory shows 36 public tables with RLS disabled; the prepared migration is unapplied and policy review plus live authority are required |
 | Container build | `backend/Dockerfile`, `frontend/Dockerfile` | Both clean-context builds fail to resolve private `@saas/shared`; see CR-ISSUE-003 |
 | Migration authority | `backend/entrypoint.sh` and deployment docs | Startup migration conflicts with the separately authorized release contract; see CR-ISSUE-002 |
 | Deployment/release | Backend/frontend release owner | Environment, packaging, migration order, rollback, and hosted readback must be verified together |
