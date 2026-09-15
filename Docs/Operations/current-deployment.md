@@ -24,6 +24,12 @@ checked together before a release claim is made.
 Vercel reports the listed deployments as `Ready`. That platform state does not prove source
 equivalence, database separation, migration safety, rollback, or consumer continuation.
 
+On 2026-09-15, the Vercel Preview environment mappings were corrected without changing either
+Production alias or its deployment. The frontend Preview variable now targets the named Preview
+backend, and the backend keeps the Production frontend value while using a separate Preview-only
+frontend value. These settings require a new Preview deployment before they affect the currently
+served artifacts; the existing Preview artifacts therefore remain bounded by the checks below.
+
 ## Latest bounded checks
 
 | Check | Result | Evidence boundary |
@@ -41,9 +47,10 @@ equivalence, database separation, migration safety, rollback, or consumer contin
 
 | Field | Current value |
 |---|---|
-| Frontend `NEXT_PUBLIC_BACKEND_URL` target | Preview is miswired to `https://cloud-receiver-delta.vercel.app`; correction open |
-| Preview versus Production database separation | Unverified; Preview frontend currently reaches the Production backend |
-| Vercel environment-variable names and values | Not inspected; Vercel connector reauthentication is required before a scoped readback |
+| Frontend `NEXT_PUBLIC_BACKEND_URL` target | Preview scope is set to `https://cloud-receiver-git-re-entry-eyads-projects-b54e035a.vercel.app`; current Preview artifact still needs redeployment |
+| Backend `FRONTEND_URL` target | Production remains `https://re-entry-weld.vercel.app`; a Preview-only value is set to `https://re-entry-cloud-git-re-entry-eyads-projects-b54e035a.vercel.app`; current Preview artifact still needs redeployment |
+| Preview versus Production database separation | Unverified; `CLOUD_RECEIVER_RUNTIME_DATABASE_URL` remains scoped to Production and Preview, and no Vercel database is connected |
+| Vercel environment-variable names and scopes | Browser readback complete; secret values were not inspected |
 | Exact platform deployment IDs | Not captured in the current dashboard readback |
 | Migration authority | Open; startup migration still conflicts with the intended release sequence |
 | Container route | Blocked by clean-context private `@saas/shared` resolution and migration-boundary issues |

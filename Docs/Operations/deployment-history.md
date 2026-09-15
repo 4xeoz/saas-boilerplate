@@ -40,3 +40,21 @@ It is not a Git log, retry transcript, monitoring feed, or raw evidence archive.
 - **Residual claim limit:** The hosted artifacts are not release-qualified. Frontend backend target,
   Preview/Production database separation, migration authority, rollback, and consumer continuation
   remain open.
+
+## DCR-2026-09-15-002 — Stage Preview-only origin wiring
+
+- **Scope:** Vercel Preview environment configuration for `re-entry-cloud` and `cloud-receiver`.
+- **Previous state:** The frontend Preview variable targeted the Production backend. The backend
+  `FRONTEND_URL` value was shared by Production and Preview and pointed to the Production frontend.
+- **New state:** The frontend Preview value targets
+  `https://cloud-receiver-git-re-entry-eyads-projects-b54e035a.vercel.app`. The backend Production
+  value remains `https://re-entry-weld.vercel.app`; a separate Preview-only value targets
+  `https://re-entry-cloud-git-re-entry-eyads-projects-b54e035a.vercel.app`.
+- **Reason:** Separate the Preview route while preserving the Production aliases and deployments
+  used for the OpenAI WebMCP Challenge.
+- **Readback:** Vercel Browser readback shows the expected environment scopes. The Production
+  frontend root and backend `/readyz` remained HTTP `200`, and no Production deployment or alias
+  was changed. A new Preview deployment is required before the saved values affect served bundles.
+- **Residual claim limit:** Preview/Production database separation remains unverified. The
+  `CLOUD_RECEIVER_RUNTIME_DATABASE_URL` secret is still scoped to Production and Preview, Vercel
+  Storage reports no connected database, and no Preview redeploy or mutating browser check has run.
