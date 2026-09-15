@@ -51,7 +51,10 @@ Before changing a hosted target, record or verify each item against the exact en
    unresolvable platform label is an unresolved source identity.
 2. **Platform:** project, environment, alias, region/runtime where relevant, and the intended target.
 3. **Configuration:** required environment-variable names, target environments, and public URL
-   wiring. Never copy secret values into this repository.
+   wiring. For a browser-backed Preview check, prove that the built public bundle points to the
+   named Preview backend and that the backend allows the exact Preview frontend origin. If either
+   side points at Production or the origins do not match, stop before submitting credentials or
+   mutating requests. Never copy secret values into this repository.
 4. **Database:** target identity, Preview/Production separation, backup or disposable scope, and
    the migration role and order.
 5. **Packaging:** clean Vercel build or clean container context, including every private workspace

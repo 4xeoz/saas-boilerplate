@@ -18,8 +18,8 @@ checked together before a release claim is made.
 |---|---|---|---|---|---|---|
 | Production | Frontend console | Vercel / `re-entry-cloud` | `https://re-entry-weld.vercel.app` | Dashboard label `4xeoz/saas-boilerplate@Eyad/Full-Integration:03be040`; abbreviated commit is not reproducible through the repository/GitHub readback | Frontend backend target and database mapping unverified | Hosted artifact; not release-qualified |
 | Production | Backend API | Vercel / `cloud-receiver` | `https://cloud-receiver-delta.vercel.app` | Dashboard label `4xeoz/saas-boilerplate@Eyad/Full-Integration:03be040`; abbreviated commit is not reproducible through the repository/GitHub readback | Migration authority and database mapping unverified | Hosted artifact; not release-qualified |
-| Preview / `Re-Entry` | Frontend console | Vercel / `re-entry-cloud` | `https://re-entry-cloud-git-re-entry-eyads-projects-b54e035a.vercel.app` | Branch `Re-Entry`; reviewed Receiver source `fff93ebd81644904f28d24ab60d0ee587839fc02` | Preview isolation and frontend backend target unverified | Preview readback only |
-| Preview / `Re-Entry` | Backend API | Vercel / `cloud-receiver` | `https://cloud-receiver-git-re-entry-eyads-projects-b54e035a.vercel.app` | Branch `Re-Entry`; reviewed Receiver source `fff93ebd81644904f28d24ab60d0ee587839fc02` | Preview isolation and migration authority unverified | Preview readback only |
+| Preview / `Re-Entry` | Frontend console | Vercel / `re-entry-cloud` | `https://re-entry-cloud-git-re-entry-eyads-projects-b54e035a.vercel.app` | Branch `Re-Entry`; reviewed Receiver source `fff93ebd81644904f28d24ab60d0ee587839fc02` | Public bundle currently targets Production backend `https://cloud-receiver-delta.vercel.app`; Preview database isolation unverified | Preview artifact; browser write test blocked |
+| Preview / `Re-Entry` | Backend API | Vercel / `cloud-receiver` | `https://cloud-receiver-git-re-entry-eyads-projects-b54e035a.vercel.app` | Branch `Re-Entry`; reviewed Receiver source `fff93ebd81644904f28d24ab60d0ee587839fc02` | Preview database isolation and migration authority unverified; CORS currently allows Production frontend origin only | Preview artifact; browser write test blocked |
 
 Vercel reports the listed deployments as `Ready`. That platform state does not prove source
 equivalence, database separation, migration safety, rollback, or consumer continuation.
@@ -34,14 +34,16 @@ equivalence, database separation, migration safety, rollback, or consumer contin
 | Backend `Re-Entry` Preview `/readyz` | HTTP `200` | Process/database readiness at that alias |
 | Anonymous protected pairing creation | HTTP `401` on Production and Preview | Authentication guard responds; no authenticated workflow claim |
 | Current pairing-claim payload | Production `400 http_body_invalid`; Preview `404 pairing_not_found` with disposable authenticated accounts | Contract-drift evidence; not release qualification |
+| Preview frontend public bundle backend target | `https://cloud-receiver-delta.vercel.app` | Preview frontend is wired to the Production backend; do not run mutating browser tests |
+| Preview backend CORS for Preview frontend origin | `Access-Control-Allow-Origin: https://re-entry-weld.vercel.app` | Exact Preview origin is not allowed; browser continuation is not qualified |
 
 ## Unresolved release fields
 
 | Field | Current value |
 |---|---|
-| Frontend `NEXT_PUBLIC_BACKEND_URL` target | Unverified |
-| Preview versus Production database separation | Unverified |
-| Vercel environment-variable names and values | Not inspected; verify target and presence without recording secrets |
+| Frontend `NEXT_PUBLIC_BACKEND_URL` target | Preview is miswired to `https://cloud-receiver-delta.vercel.app`; correction open |
+| Preview versus Production database separation | Unverified; Preview frontend currently reaches the Production backend |
+| Vercel environment-variable names and values | Not inspected; Vercel connector reauthentication is required before a scoped readback |
 | Exact platform deployment IDs | Not captured in the current dashboard readback |
 | Migration authority | Open; startup migration still conflicts with the intended release sequence |
 | Container route | Blocked by clean-context private `@saas/shared` resolution and migration-boundary issues |

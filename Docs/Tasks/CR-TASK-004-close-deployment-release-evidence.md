@@ -19,12 +19,16 @@ label is the older, currently unresolvable `Eyad/Full-Integration:03be040`; the 
 uses the reviewed Receiver source. Frontend-to-backend targeting and Preview/Production database
 separation remain unverified. The bounded readback and contract-drift smoke result are in
 [Current Deployment](../Operations/current-deployment.md); route selection and claim gates are in
-the [Deployment Runbook](../Operations/deployment-runbook.md).
+the [Deployment Runbook](../Operations/deployment-runbook.md). The latest public Preview readback
+also shows the frontend bundle targeting the Production backend while the Preview backend allows
+only the Production frontend origin; no authenticated or mutating Preview browser check is safe
+until the environment scopes are corrected.
 
 ## Next gate
 
-Choose the release target, resolve the packaging and migration-boundary issues, build the selected
-artifact from a clean context, verify frontend targeting and database separation, run
-health/readiness and one approved workflow on a named target, and record rollback and residual
-unknowns in [Current Deployment](../Operations/current-deployment.md), the
-[Deployment Change Register](../Operations/deployment-history.md), and Current Status.
+First regain authenticated Vercel control-plane readback, correct the Preview frontend/backend
+origin wiring, and prove Preview/Production database separation without submitting a mutating
+request. Then choose the release target, resolve the packaging and migration-boundary issues, build
+the selected artifact from a clean context, verify health/readiness and one approved workflow on a
+named target, and record rollback and residual unknowns in [Current Deployment](../Operations/current-deployment.md),
+the [Deployment Change Register](../Operations/deployment-history.md), and Current Status.
