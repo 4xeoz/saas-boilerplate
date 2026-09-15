@@ -40,6 +40,16 @@ authorization v0.2 path.
 These statements describe implementation boundaries. They do not assert a public release, hosted
 availability, or complete external continuation.
 
+## Hosted identity boundary
+
+The current platform names, aliases, source revisions, and unresolved cross-environment checks are
+maintained in the [Operations hosted deployment readback](Operations/01-runtime-deployment-recovery.md#current-hosted-naming-and-deployment-readback).
+Vercel reports both listed Production deployments as `Ready`, but their dashboard source label is the
+older `Eyad/Full-Integration:03be040`; that abbreviated commit is not currently resolvable through
+the repository/GitHub readback. The reviewed Receiver source is `Re-Entry@fff93ebd`. Treat those
+deployments as hosted artifacts until source, configuration, database, migration, rollback, and
+consumer checks are closed.
+
 ## Active gates
 
 | Gate | Owner/surface | Current boundary |

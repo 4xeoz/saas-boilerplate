@@ -3,6 +3,8 @@
 **Role:** Executable operational boundary and release checklist
 **Status:** Current topology; release closure open
 
+**Last readback:** 2026-09-15, Vercel dashboard and bounded HTTP smoke checks
+
 ## Local runtime
 
 From the repository root, copy the relevant example environment file to an ignored local file, use
@@ -38,6 +40,37 @@ The Dockerfiles currently build from `backend/` and `frontend/` contexts althoug
 depend on private `@saas/shared`; clean builds fail with registry `E404`. Resolve
 [CR-ISSUE-003](../Issues/CR-ISSUE-003-docker-workspace-package-install.md) before treating a
 container image as a release artifact.
+
+## Current hosted naming and deployment readback
+
+The user-facing console is branded **Re-entry Cloud**. The deployable service is **Cloud Receiver 2**.
+In this repository they are the frontend and backend surfaces of one Receiver product boundary; the
+two names do not represent separate authorities or databases.
+
+| Surface | Repository path | Vercel project | Production alias | Current Preview (`Re-Entry`) | Production source label read back 2026-09-15 | Platform state |
+|---|---|---|---|---|---|---|
+| Frontend console | `frontend/` | `re-entry-cloud` | `re-entry-weld.vercel.app` | `re-entry-cloud-git-re-entry-eyads-projects-b54e035a.vercel.app` | `4xeoz/saas-boilerplate@Eyad/Full-Integration:03be040` | Vercel `Ready`; not release-qualified |
+| Backend API | `backend/` | `cloud-receiver` | `cloud-receiver-delta.vercel.app` | `cloud-receiver-git-re-entry-eyads-projects-b54e035a.vercel.app` | `4xeoz/saas-boilerplate@Eyad/Full-Integration:03be040` | Vercel `Ready`; not release-qualified |
+
+The current reviewed Receiver source is branch `Re-Entry` at commit
+`fff93ebd81644904f28d24ab60d0ee587839fc02`. It is the source of the current Preview readback, not
+the source shown for the listed Production deployments. The dashboard's abbreviated Production
+commit `03be040` is not currently resolvable through the repository/GitHub readback, so the label is
+not an independently reproducible source identity. “Ready” is Vercel's deployment status; it does
+not establish source equivalence, migration safety, configuration, rollback, or consumer
+continuation.
+
+| Required cross-environment check | Current readback |
+|---|---|
+| Frontend `NEXT_PUBLIC_BACKEND_URL` target | Unverified |
+| Preview versus Production database separation | Unverified |
+| Vercel environment-variable names and values | Not inspected; verify target and presence without recording secrets |
+| Release target | Undecided: Vercel serverless versus Docker/Compose |
+
+A bounded smoke check on 2026-09-15 returned `/readyz` `200` and anonymous `401` for protected
+routes on both Production and the `Re-Entry` Preview. The current pairing-claim shape was rejected by
+Production with `400 http_body_invalid`, while Preview reached business lookup with
+`404 pairing_not_found`; this is contract-drift evidence, not a release qualification.
 
 ## Migration order and discrepancy
 

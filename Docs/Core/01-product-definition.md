@@ -3,6 +3,8 @@
 **Role:** Stable product purpose, ownership, actors, and scope
 **Status:** Current baseline
 
+**Last reviewed:** 2026-09-15
+
 ## Purpose
 
 Cloud Receiver 2 is an independently deployable service that receives authenticated, signed
@@ -15,6 +17,12 @@ The value is durable, target-scoped continuation: a Host can request a later bou
 without handing its database, credentials, or business authority to the Connector or the Receiver
 frontend. The Receiver makes admission, scope, ordering, retry, and revocation explicit rather than
 turning a signal into an unbounded automation promise.
+
+## Product naming
+
+**Cloud Receiver 2** is the service identity. **Re-entry Cloud** is the current user-facing frontend
+brand in this repository. They describe the backend/frontend surfaces of the same product boundary;
+deployment project names and aliases are operational records, not protocol or data-authority names.
 
 ## Actors and ownership
 
