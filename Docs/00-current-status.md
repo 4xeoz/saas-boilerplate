@@ -1,10 +1,11 @@
 # Cloud Receiver 2 — Current Status
 
 **Role:** Canonical service-state and claim ledger
-**As of:** 2026-09-07, Europe/London
-**Status:** Active Receiver development; reviewed Core source identity, shared standing scenario,
-fresh-process recovery, all 203 backend tests including Consent HTTP/persistence, snapshot-bound
-upgrade preservation, and static/build checks pass locally; integration, runtime, and release remain open
+**As of:** 2026-09-15, Europe/London
+**Status:** Active Receiver development; the reviewed Core source identity, shared standing scenario,
+fresh-process recovery, all 203 backend tests including Consent HTTP/persistence, exact-source
+nine-migration upgrade, and static/build checks pass on the integrated local commit; deployment,
+runtime, and release remain open
 
 ## Current verified state
 
@@ -17,17 +18,19 @@ authorization v0.2 path.
   back to v0.1.
 - Standing Event acceptance, sequence/replay rules, Delivery claim/reclaim limits, effect-backed
   acknowledgement, and notification-handoff authority are implemented behind explicit boundaries.
-- The owner accepted the current Core source boundary. The updated pin and governing inventory
-  pass exact source verification, the shared standing scenario over Express/PostgreSQL, and the
-  fresh-process rollback/recovery scenario. These are local working-change results, not an
-  integrated Receiver release. [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md)
-  owns the source decision; [Validation and Evidence](Core/05-validation-and-evidence.md) records
-  exact identities and results.
+- The owner accepted the current Core source boundary. Receiver commit
+  `1ed853b481bb1b2b12f440b7172d3df89c22d822` carries the reviewed pin and governing inventory;
+  exact source verification, the shared standing scenario over Express/PostgreSQL, and the
+  fresh-process rollback/recovery scenario pass against that committed source. This is an
+  integrated local Receiver result, not a deployment or public release claim.
+  [CR-ISSUE-001](Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md) owns the source
+  decision; [Validation and Evidence](Core/05-validation-and-evidence.md) records exact identities
+  and results.
 - The portable fixture verifies private provisioning proof, equal aliases, and live cluster identity.
-  All 28 backend suites / 203 tests pass on a new loopback cluster. A separate committed test-source
-  snapshot passes the nine-migration upgrade rehearsal, preserving original rows and catalog.
-  [CR-ISSUE-004](Issues/CR-ISSUE-004-database-verification-fixture-drift.md) records the resolved
-  harness boundary and pending integration; the snapshot is not an integrated Receiver release.
+  All 28 backend suites / 203 tests pass on a new loopback cluster. The exact-source nine-migration
+  upgrade passes against the same Receiver commit, preserving the original catalog and rows before
+  post-upgrade probes. [CR-ISSUE-004](Issues/CR-ISSUE-004-database-verification-fixture-drift.md)
+  records the fixture boundary; deployment and release remain separate gates.
 - Database hardening is prepared, but its retained local observation lacks exact source and run
   provenance. Fresh rehearsal and any live change remain separate gates.
 - Source-bound local type/build and focused test results, actual runtimes, skipped database checks,
@@ -41,10 +44,10 @@ availability, or complete external continuation.
 
 | Gate | Owner/surface | Current boundary |
 |---|---|---|
-| Core-pinned conformance | `backend/conformance/standing-v0.2/` | Reviewed source identity, shared scenario, and recovery pass; integrated-source verification and release remain open |
-| Existing database verification | Backend tests and migration rehearsal | 28 suites / 203 tests and prior nine-migration snapshot upgrade pass; rerun upgrade on the eventual integrated commit |
+| Core-pinned conformance | `backend/conformance/standing-v0.2/` | Integrated source identity, shared scenario, recovery, and exact-source upgrade pass; release remains open |
+| Existing database verification | Backend tests and migration rehearsal | 28 suites / 203 tests and exact nine-migration upgrade pass on Receiver commit `1ed853b`; deployed-database verification remains open |
 | Runtime admission and handoff | Standing module | Default application has no production admission authority and fails closed |
-| Standing Consent page coverage | Consent and Standing modules | 13 real HTTP/database cases pass, including token lookup, Connector projection, decisions, and served popup script; primary integration remains pending under [CR-TASK-005](Tasks/CR-TASK-005-cover-standing-consent-handoff.md) |
+| Standing Consent page coverage | Consent and Standing modules | 13 real HTTP/database cases pass, including token lookup, Connector projection, decisions, and served popup script; real-browser and hosted continuation remain open under [CR-TASK-005](Tasks/CR-TASK-005-cover-standing-consent-handoff.md) |
 | Control-plane policy | Standing control-plane proposal | Expanded account-facing shell: lifetime, public summaries, revocation UX, and snapshot consistency need accepted policy before implementation |
 | Database hardening | `supabase/` | Historical local observation only; fresh source-bound rehearsal and live authority required |
 | Container build | `backend/Dockerfile`, `frontend/Dockerfile` | Both clean-context builds fail to resolve private `@saas/shared`; see CR-ISSUE-003 |

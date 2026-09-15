@@ -1,8 +1,8 @@
 # Cloud Receiver 2 — Validation and Evidence
 
 **Role:** Verification matrix and claim ceiling
-**Status:** Existing local backend baseline and upgrade preservation pass; integration, additional
-integration, runtime, and cross-project release remain open
+**Status:** Integrated local backend baseline and exact-source upgrade pass; runtime, deployment, and
+cross-project release remain open
 
 ## Historical local checks
 
@@ -29,13 +29,13 @@ The focused renderer and mocked HTTP suites were supplied a PostgreSQL-shaped lo
 solely because the shared Jest setup validates `DATABASE_URL`; these suites do not open a database
 connection.
 
-## Accepted source and current local verification
+## Accepted source and 2026-09-07 working-change verification
 
 Executed on 2026-09-07 after owner approval of current-source alignment and the portable database
-fixture/upgrade repair. Receiver source is baseline `f1dc869a7c6e6056d4f9e9972f275770885b0c0b` on
+fixture/upgrade repair. Receiver source was baseline `f1dc869a7c6e6056d4f9e9972f275770885b0c0b` on
 `Re-Entry` plus the reviewed working changes. Service behavior, schema, migration SQL, and dependency
-lock are unchanged. The changed code is test/conformance infrastructure; primary-session integration
-remains pending.
+lock were unchanged. The changed code was test/conformance infrastructure; primary-session integration
+was pending at that time. The current integrated readback follows below.
 
 | Source identity | Value |
 |---|---|
@@ -95,10 +95,11 @@ obtain the passing result. PostgreSQL reports inet text with a `/32` suffix; the
 uses `host(inet_server_addr())` while still requiring exact `127.0.0.1`. Expected injected readiness
 and Event-transaction errors remain covered failures, not unhandled test failures.
 
-The [fixture issue](../Issues/CR-ISSUE-004-database-verification-fixture-drift.md) is resolved locally
-but awaits primary integration. Rerun exact-source upgrade against the eventual integrated Receiver
-commit; the test snapshot does not replace it. Independent runtime admission, actual same-task wake, browser/page access, published SDK/Connector
-artifacts, mandatory release enforcement, hosted deployment, and Game continuation remain open.
+At the time of this 2026-09-07 working-change record, the [fixture issue](../Issues/CR-ISSUE-004-database-verification-fixture-drift.md)
+awaited primary integration; the test snapshot did not replace a Receiver branch commit. The
+integrated readback below now covers that boundary. Independent runtime admission, actual same-task
+wake, browser/page access, published SDK/Connector artifacts, mandatory release enforcement, hosted
+deployment, and Game continuation remain open.
 
 ## Hardening evidence boundary
 
@@ -135,22 +136,22 @@ gate. Never include credentials, raw tokens, connection strings, row dumps, or m
 
 ## Open evidence rows
 
-- Accepted Core source identity and local shared/process scenarios pass; primary-session integration,
-  integrated-source verification and release remain open under
+- Accepted Core source identity and local shared/process scenarios pass on Receiver commit
+  `1ed853b481bb1b2b12f440b7172d3df89c22d822`; deployment and release remain open under
   [CR-ISSUE-001](../Issues/CR-ISSUE-001-core-pin-does-not-match-current-checkout.md).
 - Clean Docker image builds fail to resolve the private workspace package; see
   [CR-ISSUE-003](../Issues/CR-ISSUE-003-docker-workspace-package-install.md).
 - The current container entrypoint runs migrations at startup despite the intended separate release
   boundary; see [CR-ISSUE-002](../Issues/CR-ISSUE-002-container-startup-runs-migrations.md).
-- The portable fixture, complete existing aggregate, and snapshot-bound upgrade now pass locally;
-  exact integrated-source verification remains pending. See
+- The portable fixture, complete existing aggregate, and exact-source upgrade now pass on the
+  integrated commit. Deployment and release remain open. See
   [CR-ISSUE-004](../Issues/CR-ISSUE-004-database-verification-fixture-drift.md).
 - Focused standing renderer and mocked HTTP-boundary tests cover bounded pending/terminal output,
   Connector availability, Host-controlled field escaping, login continuation mapping, standing
   dispatch mapping, expiry response mapping, same-user decision field mapping, Receiver-origin
   rejection, and exact popup-origin/session renderer messaging. The shared `/consent?token=...` route
-  now has 13 real HTTP/database integration cases, described below; primary integration remains
-  pending under [CR-TASK-005](../Tasks/CR-TASK-005-cover-standing-consent-handoff.md).
+  now has 13 real HTTP/database integration cases, described below; real-browser and hosted
+  continuation remain pending under [CR-TASK-005](../Tasks/CR-TASK-005-cover-standing-consent-handoff.md).
 - The expanded control-plane shell proposal has no accepted lifetime, redaction, custody, or
   public revocation contract.
 - No current deployment readback in this repository proves a public release or consumer continuation.
@@ -181,5 +182,31 @@ and decline without Grant creation. Pending tokens are not User-prebound; wrong-
 means foreign Connector selection and terminal decision replay. The served popup script executes
 with simulated browser objects and real decision HTTP/database effects, asserting the exact public
 session/status payload and Host origin. This is not a real-browser, hosted, runtime-admission,
-same-task wake, or Sleepless Kingdom continuation claim. Primary-session review/integration remain
-required; no Receiver commit, push, or deployment was performed for this increment.
+same-task wake, or Sleepless Kingdom continuation claim. Primary-session review/integration were
+required at execution time; Receiver commit `1ed853b481bb1b2b12f440b7172d3df89c22d822` now
+integrates this increment. No deployment or public release was performed.
+
+## Integrated Receiver commit readback — 2026-09-15
+
+The reviewed working changes were integrated as Receiver commit
+`1ed853b481bb1b2b12f440b7172d3df89c22d822` on branch `Re-Entry`. The commit carries the accepted Core
+pin `339acbcd664374235a4ab49b9152bf834b43c210`, the selected source inventory, the portable fixture,
+the migration guards, and the real Consent HTTP/persistence coverage. It is a committed local
+integration result, not a deployment or published release.
+
+With Node `v24.20.0`, npm `11.19.0`, and PostgreSQL `16.12`, a newly provisioned loopback fixture
+applied all nine migrations and the full backend aggregate passed **28 suites / 203 tests**. The
+shared standing scenario and fresh-process recovery passed **2/2**, and the production backend and
+frontend build passed. The source, fixture, and migration guard suites passed **26/26**; backend and
+frontend type-check also passed. No runtime or hosted database was used.
+
+The exact-source upgrade then ran against the same Receiver commit with dependency lock SHA-256
+`3f4354370ec3fa4a965c8434c6e8dd3c80be238dcb6fa7c42747719ac8275314`. It passed on Node `v24.20.0`
+and PostgreSQL `16.12`: all nine migration checksums matched, 13 original tables and 10 baseline
+rows were preserved before post-upgrade probes, the reviewed additive pairing-budget table remained
+empty, and all six constraint tests passed. The result explicitly reports
+`release_conformance_verified: false` and `production_migration: false`.
+
+This readback closes the Receiver source/integration and local database evidence gates. It does not
+prove deployment, live migration authority, public package publication, provider-owned admission,
+real Browser/Agent continuation, or Sleepless Kingdom consumer continuation.

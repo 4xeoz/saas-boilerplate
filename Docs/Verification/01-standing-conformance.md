@@ -32,6 +32,12 @@ The source verifier checks the required recursive Core inventory, selected contr
 files, exact committed bytes, absence of unexpected source or symlinks, and post-run source identity.
 It also rejects replacement objects and inherited routing variables that could redefine the source.
 
+The accepted source selection is integrated in Receiver commit
+`1ed853b481bb1b2b12f440b7172d3df89c22d822`. A current Node 24 readback reports Core commit
+`339acbcd664374235a4ab49b9152bf834b43c210`, `source_identity_verified: true`, and
+`release_conformance_verified: false`; the shared standing and fresh-process scenarios and the
+exact-source migration upgrade were rerun against that Receiver commit.
+
 ## What the procedure covers
 
 - exact v0.2 target/method/header/body/size/canonical-response/no-store transport behavior;
@@ -136,11 +142,12 @@ before any post-upgrade seeding. The six constraint tests run only after preserv
 The runner refuses populated targets and unexpected source inventory; it never repairs or resets
 existing data.
 
-During working-change validation, a separately committed local copy may exercise this strict source
-gate, provided every selected byte is compared back and the result is explicitly called a test
-snapshot. It cannot claim an integrated Receiver commit or release; rerun against the actual
-Receiver commit after integration. [CR-ISSUE-004](../Issues/CR-ISSUE-004-database-verification-fixture-drift.md)
-owns that remaining integration boundary.
+During historical working-change validation, a separately committed local copy may exercise this
+strict source gate, provided every selected byte is compared back and the result is explicitly called
+a test snapshot. That snapshot is not a Receiver branch or release. The current integrated Receiver
+commit `1ed853b481bb1b2b12f440b7172d3df89c22d822` has passed the exact-source upgrade; deployment and
+release remain separate gates. [CR-ISSUE-004](../Issues/CR-ISSUE-004-database-verification-fixture-drift.md)
+owns the fixture boundary.
 
 Run lock-barrier suites serially against each cluster. Stop only the fixture that this task created;
 the stop command checks live identity and retains all files for diagnosis:

@@ -1,8 +1,8 @@
 # CR-ISSUE-004 — Portable database fixtures and current-source upgrade verification
 
-**Status:** Resolved in working changes — primary integration pending
+**Status:** Resolved and integrated in Receiver commit `1ed853b` — deployment and release pending
 **Owner:** Backend verification and migration rehearsal
-**Verified:** 2026-09-07, Europe/London
+**Verified:** 2026-09-15, Europe/London
 
 ## Accepted repair
 
@@ -50,14 +50,21 @@ identities, snapshot identity and commands. Results:
   match, six constraint tests pass; and
 - type-check and build pass.
 
-The upgrade ran against a locally committed copy of the working sources because the active Receiver
-changes remain uncommitted. That isolated test snapshot is not the Receiver branch or a release.
-All 121 tested source files were compared byte for byte against the working source afterward.
+The initial upgrade ran against a locally committed test snapshot because the Receiver changes were
+then uncommitted. That historical snapshot is not the Receiver branch or a release. The integrated
+commit now has its own exact-source upgrade readback recorded below.
+
+On 2026-09-15, the exact upgrade ran against Receiver commit
+`1ed853b481bb1b2b12f440b7172d3df89c22d822` with dependency lock SHA-256
+`3f4354370ec3fa4a965c8434c6e8dd3c80be238dcb6fa7c42747719ac8275314`. Node `v24.20.0` and
+PostgreSQL `16.12` applied all nine migrations, preserved 13 original tables and 10 baseline rows
+before post-upgrade probes, verified all migration checksums, and passed all six constraint tests.
+The runner reported `release_conformance_verified: false` and `production_migration: false`.
 
 ## Integration and reopen gate
 
-Primary-session integration must preserve the source decision and fixture guards together, then
-rerun the exact-source upgrade against the resulting Receiver commit. Reopen on changed migration
-inventory/bytes, an unexpected additive catalog, changed proof/environment authority, or failed
-preservation/identity checks. Real standing Consent HTTP/persistence coverage remains CR-TASK-005;
-real Agent admission, Browser/Game continuation, deployment and release remain separate gates.
+The source decision and fixture guards are integrated in Receiver commit `1ed853b`, and the exact
+source upgrade passes against that commit. Reopen on changed migration inventory/bytes, an unexpected
+additive catalog, changed proof/environment authority, or failed preservation/identity checks. Real
+standing Consent HTTP/persistence coverage is integrated; real Agent admission, Browser/Game
+continuation, deployment and release remain separate gates.

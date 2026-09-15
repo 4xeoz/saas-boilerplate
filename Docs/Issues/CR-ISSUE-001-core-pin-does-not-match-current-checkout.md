@@ -1,9 +1,9 @@
 # CR-ISSUE-001 — Accepted Core source boundary and remaining compatibility closure
 
-**Status:** Open — source mismatch resolved locally; integration and complete compatibility pending
+**Status:** Open — source mismatch and local integration resolved; compatibility, deployment, and release pending
 **Owner:** Receiver conformance and release boundary
 **First observed:** 2026-09-05, Europe/London
-**Last verified:** 2026-09-07, Europe/London
+**Last verified:** 2026-09-15, Europe/London
 
 ## Accepted current source boundary
 
@@ -19,11 +19,12 @@ The semantic mapping below was reviewed; this is not a three-file rename or a do
 compatibility assumption. Byte, recursive-inventory, symlink, Git-replacement, routing-variable,
 fixed-pin, and post-run drift guards remain intact.
 
-The applied two-file Receiver change passes exact Core identity, 16 source-guard tests, the shared
-standing scenario over Express/PostgreSQL, and fresh-process transaction rollback/Delivery recovery.
-[Validation and Evidence](../Core/05-validation-and-evidence.md) owns exact Receiver working-source
-hashes, runtime, database scope, counts, and the release ceiling. The existing database matrix and snapshot upgrade
-now pass locally; fixture implementation and integration limits are recorded in [CR-ISSUE-004](CR-ISSUE-004-database-verification-fixture-drift.md).
+Receiver commit `1ed853b481bb1b2b12f440b7172d3df89c22d822` carries the reviewed source selection and
+passes exact Core identity, source guards, the shared standing scenario over Express/PostgreSQL,
+fresh-process transaction rollback/Delivery recovery, and the exact-source migration upgrade.
+[Validation and Evidence](../Core/05-validation-and-evidence.md) owns exact identities, runtime,
+database scope, counts, and the release ceiling. Fixture implementation and integration limits are
+recorded in [CR-ISSUE-004](CR-ISSUE-004-database-verification-fixture-drift.md).
 
 ## Historical evidence — superseded source selection
 
@@ -81,17 +82,16 @@ now pass locally; fixture implementation and integration limits are recorded in 
 
 ## Current impact
 
-The historical source-identity obstruction is resolved by the accepted working change. The named
-local standing and process scenarios now run against that exact Core source. This does not establish
-complete v0.1/v0.2 compatibility, a committed Receiver release, published SDK/Connector compatibility,
-production admission, or Game continuation. The current source must not silently follow a later
-checkout or accept an unrelated inventory change.
+The historical source-identity obstruction is resolved by the accepted and integrated Receiver
+commit. The named local standing and process scenarios and exact-source upgrade now run against that
+Core source. This does not establish complete v0.1/v0.2 compatibility, published SDK/Connector
+compatibility, production admission, or Game continuation. The current source must not silently
+follow a later checkout or accept an unrelated inventory change.
 
 ## Remaining resolution gate
 
 The owner chose the reviewed current-source option; historical recovery is no longer the pending
-decision. Keep the accepted pin and inventory together during primary-session integration, preserve
-the source-bound evidence, and rerun exact-source upgrade against the integrated Receiver commit through CR-TASK-002.
-Reopen source selection only when the chosen revision, normative inventory, exact bytes, or consumer
-compatibility requirement changes. No deployment, live migration, publication, credential change,
-or push is authorized by this source decision.
+decision. Keep the accepted pin and inventory together, preserve the source-bound evidence, and
+reopen source selection only when the chosen revision, normative inventory, exact bytes, or consumer
+compatibility requirement changes. Deployment, live migration, publication, and credential changes
+remain separate decisions; this source decision does not authorize them.

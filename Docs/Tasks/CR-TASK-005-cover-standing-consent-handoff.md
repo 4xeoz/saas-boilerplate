@@ -1,6 +1,6 @@
 # CR-TASK-005 — Cover the standing Consent handoff
 
-**Status:** Locally verified — primary-session integration pending
+**Status:** Locally integrated — external continuation pending
 **Owner:** Standing module and consent verification boundary
 
 ## Outcome
@@ -10,7 +10,8 @@ boundaries without expanding the unaccepted account-facing control-plane shell.
 
 ## Current boundary
 
-The disposable-database-backed `standing-consent-http.integration.test.ts` now exercises real
+The disposable-database-backed `standing-consent-http.integration.test.ts`, integrated in Receiver
+commit `1ed853b481bb1b2b12f440b7172d3df89c22d822`, exercises real
 Express routes, User registration/login cookies, signed enrollment, token lookup, Connector
 projection, decisions, and PostgreSQL readback without replacing services with mocks. All 13 cases
 pass; the complete backend aggregate passes 28 suites / 203 tests.
@@ -27,10 +28,10 @@ restriction for a still-pending token.
 
 ## Next gate
 
-Primary-session review and integration of the test and documentation remain pending. Preserve the
-local evidence ceiling recorded in [Validation and evidence](../Core/05-validation-and-evidence.md).
-Independent runtime admission, browser behavior, and actual consumer continuation require their own
-evidence and are not established by this test.
+The local test and documentation are integrated. Preserve the local evidence ceiling recorded in
+[Validation and evidence](../Core/05-validation-and-evidence.md). Independent runtime admission,
+real-browser behavior, and actual consumer continuation require their own evidence and are not
+established by this test.
 
 ## Non-goals
 
