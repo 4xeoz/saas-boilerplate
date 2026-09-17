@@ -8,6 +8,22 @@
 This runbook selects a deployment route, names the gates that must pass, and defines the required
 post-deployment writeback. It does not record the current deployment or a chronological work log.
 
+## Temporary change-control (effective through 2026-10-31)
+
+This temporary control is the governing rule for the current Re-entry verification period. Review it
+on 2026-11-01 and either remove it or renew it explicitly; expiry does not authorize pending work.
+
+- Treat the existing Challenge Production aliases and their settings as frozen. Do not change,
+  redeploy, or repoint them.
+- Do not deploy or redeploy a Preview target until the authoritative Supabase organization/project,
+  an isolated Preview database, and the migration authority have been confirmed.
+- Do not create or alter Supabase projects or branches, run migrations, change production data, or
+  enable row-level security under this temporary control.
+- Read-only inspection, evidence capture, documentation updates, and reversible Preview configuration
+  preparation are allowed. Any exception requires explicit user approval before the external action.
+- If an exception changes external state, record the resulting state in [Current Deployment](current-deployment.md)
+  and the material change in the [Deployment Change Register](deployment-history.md).
+
 ## Start here
 
 - [Current Deployment](current-deployment.md) — the one mutable hosted snapshot.
