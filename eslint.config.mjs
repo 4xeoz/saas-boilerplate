@@ -1,12 +1,10 @@
-import nextPlugin from "@next/eslint-plugin-next";
-import parser from "@typescript-eslint/parser";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTypeScript from "eslint-config-next/typescript";
 
-export default [
-  { ignores: [".next/**", "node_modules/**"] },
-  {
-    files: ["**/*.{js,jsx,ts,tsx}"],
-    languageOptions: { parser },
-    plugins: { "@next/next": nextPlugin },
-    rules: nextPlugin.configs["core-web-vitals"].rules,
-  },
+const config = [
+  ...nextVitals,
+  ...nextTypeScript,
+  { ignores: [".next/**", "node_modules/**", "next-env.d.ts"] },
 ];
+
+export default config;

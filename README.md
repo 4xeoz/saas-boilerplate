@@ -11,8 +11,9 @@ It is intentionally independent of the existing `saas-boilerplate/main` code.
   lockout, protected dashboard routes, and owner/admin/member roles.
 - Prisma against PostgreSQL, compatible with a hosted Supabase Postgres
   database or the included local Supabase Postgres Docker image.
-- Workspace, project, member, invitation, file metadata, email-log and
-  subscription models.
+- Workspace, member, invitation, file metadata, email-log and subscription
+  models. There is no product-specific domain model: add your own tables
+  scoped to `organizationId`, and set `NEXT_PUBLIC_APP_NAME` to rebrand.
 - Stripe Checkout plus signature-verified subscription webhooks.
 - Resend welcome and invitation email boundaries.
 - Server-only Google Drive uploads with a 25 MB guardrail.

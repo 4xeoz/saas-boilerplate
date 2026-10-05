@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-
-const appName = process.env.NEXT_PUBLIC_APP_NAME || "Northstar";
+import { appName } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { default: `${appName} — a calm workspace for growing teams`, template: `%s · ${appName}` },
-  description: "A clean, secure SaaS foundation for teams that want their work in one place.",
+  title: { default: appName, template: `%s · ${appName}` },
+  description: `${appName} — workspaces, team roles and billing.`,
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
 };
 

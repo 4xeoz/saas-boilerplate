@@ -2,22 +2,15 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Connection URLs live in prisma.config.ts (CLI) and prisma/prisma.ts (runtime).
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 enum Role {
   OWNER
   ADMIN
   MEMBER
-}
-
-enum ProjectStatus {
-  ACTIVE
-  PAUSED
-  ARCHIVED
 }
 
 enum Plan {
@@ -44,20 +37,18 @@ model User {
   updatedAt DateTime @updatedAt
 
   memberships OrganizationMember[]
-  projects    Project[]             @relation("ProjectCreator")
-  assets      Asset[]               @relation("AssetUploader")
+  assets      Asset[]              @relation("AssetUploader")
   attempts    LoginAttempt[]
 }
 
 model Organization {
-  id           String              @id @default(cuid())
-  name         String
-  slug         String              @unique
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   members      OrganizationMember[]
-  projects     Project[]
   assets       Asset[]
   invitations  Invitation[]
   subscription Subscription?
@@ -65,11 +56,11 @@ model Organization {
 }
 
 model OrganizationMember {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   userId         String
   organizationId String
-  role           Role         @default(MEMBER)
-  createdAt      DateTime     @default(now())
+  role           Role     @default(MEMBER)
+  createdAt      DateTime @default(now())
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -78,54 +69,32 @@ model OrganizationMember {
   @@index([organizationId])
 }
 
-model Project {
-  id             String        @id @default(cuid())
-  organizationId String
-  createdById    String
-  name           String
-  slug           String
-  description    String?
-  status         ProjectStatus @default(ACTIVE)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy    User         @relation("ProjectCreator", fields: [createdById], references: [id])
-  assets       Asset[]
-
-  @@unique([organizationId, slug])
-  @@index([organizationId, updatedAt])
-}
-
 model Asset {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String
-  projectId      String
   uploadedById   String
   name           String
   mimeType       String
   size           Int
   driveFileId    String?
   driveUrl       String?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   uploadedBy   User         @relation("AssetUploader", fields: [uploadedById], references: [id])
 
   @@index([organizationId, createdAt])
-  @@index([projectId, createdAt])
 }
 
 model Invitation {
-  id             String       @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
   email          String
-  role           Role         @default(MEMBER)
-  token          String       @unique
+  role           Role      @default(MEMBER)
+  token          String    @unique
   expiresAt      DateTime
   acceptedAt     DateTime?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime  @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -147,14 +116,14 @@ model Subscription {
 }
 
 model EmailLog {
-  id             String        @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String?
   recipient      String
   template       String
   providerId     String?
   status         String
   errorMessage   String?
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime @default(now())
 
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 

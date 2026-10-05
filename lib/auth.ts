@@ -7,10 +7,12 @@ import { prisma } from "@/prisma/prisma";
 import { authConfig } from "@/lib/auth.config";
 
 const credentialsSchema = z.object({
-  email: z.string().email().transform((value) => value.toLowerCase().trim()),
+  email: z.email().transform((value) => value.toLowerCase().trim()),
   password: z.string().min(1),
 });
 
+// Compared against when the email is unknown so response time does not reveal which accounts exist.
+const DUMMY_HASH = "$2b$12$kf.eie6dLS4Gp9u/Ln5vFum1W7T68VxHVGyIW6C6P1JKWHbhaY5fS";
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
 
@@ -57,7 +59,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: parsed.data.email },
           include: { memberships: { orderBy: { createdAt: "asc" }, take: 1 } },
         });
-        if (!user || !(await bcrypt.compare(parsed.data.password, user.password))) {
+        const valid = await bcrypt.compare(parsed.data.password, user?.password ?? DUMMY_HASH);
+        if (!user || !valid) {
           await failed(parsed.data.email);
           return null;
         }

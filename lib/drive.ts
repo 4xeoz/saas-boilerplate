@@ -1,6 +1,5 @@
 import { createSign, randomUUID } from "node:crypto";
 
-const DRIVE_API = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API = "https://www.googleapis.com/upload/drive/v3/files";
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 let cached: { token: string; expiresAt: number } | null = null;
@@ -43,7 +42,7 @@ async function accessToken(value: ReturnType<typeof config>) {
 export async function uploadToDrive(input: { name: string; mimeType: string; body: Buffer }) {
   const drive = config();
   const token = await accessToken(drive);
-  const boundary = `northstar-${randomUUID()}`;
+  const boundary = `upload-${randomUUID()}`;
   const metadata = Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: input.name, parents: [drive.rootFolderId] })}\r\n--${boundary}\r\nContent-Type: ${input.mimeType}\r\n\r\n`);
   const ending = Buffer.from(`\r\n--${boundary}--`);
   const response = await fetch(`${UPLOAD_API}?uploadType=multipart&supportsAllDrives=true&fields=id,name,mimeType,size,webViewLink`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${boundary}` }, body: Buffer.concat([metadata, input.body, ending]) as unknown as BodyInit, cache: "no-store" });

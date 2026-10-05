@@ -11,8 +11,9 @@ export function InviteForm() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    const data = new FormData(event.currentTarget);
-    startTransition(async () => { const result = await inviteMember(data); if (!result.success) setError(result.error || "Could not invite member."); else { event.currentTarget.reset(); router.refresh(); } });
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    startTransition(async () => { const result = await inviteMember(data); if (!result.success) setError(result.error || "Could not invite member."); else { form.reset(); router.refresh(); } });
   }
   return <form className="form-stack" onSubmit={submit}><div className="field"><label htmlFor="invite-email">Email address</label><input id="invite-email" name="email" type="email" required /></div><div className="field"><label htmlFor="invite-role">Role</label><select id="invite-role" name="role" defaultValue="MEMBER"><option value="MEMBER">Member</option><option value="ADMIN">Admin</option></select></div>{error && <p className="form-error">{error}</p>}<button className="button button-dark" type="submit" disabled={pending}>{pending ? "Inviting…" : "Send invitation"}</button></form>;
 }

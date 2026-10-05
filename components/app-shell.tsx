@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTransition } from "react";
-import { BarChart3, Briefcase, CreditCard, FileUp, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
+import { CreditCard, FileUp, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
 import { logout } from "@/actions/auth";
 import { Brand } from "@/components/brand";
+import { appName } from "@/lib/site";
 
 const links = [
   { href: "/app/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/app/projects", label: "Projects", icon: Briefcase },
   { href: "/app/files", label: "Files", icon: FileUp },
   { href: "/app/team", label: "Team", icon: Users },
   { href: "/app/billing", label: "Billing", icon: CreditCard },
@@ -53,11 +53,11 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
         <header className="app-topbar">
           <div>
             <p className="eyebrow" style={{ margin: 0 }}>{current?.label || "Workspace"}</p>
-            <h1>{process.env.NEXT_PUBLIC_APP_NAME || "Northstar"}</h1>
+            <h1>{appName}</h1>
           </div>
           <div className="stack-actions">
             <Link href="/" className="button button-quiet">View site</Link>
-            <Link href="/app/projects/new" className="button button-primary">New project</Link>
+            <Link href="/app/team" className="button button-primary">Invite teammates</Link>
           </div>
         </header>
         <main className="app-content">{children}</main>
