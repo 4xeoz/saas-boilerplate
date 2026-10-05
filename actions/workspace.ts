@@ -3,19 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/prisma/prisma";
 import { sendInviteEmail } from "@/lib/email";
+import { getMembership } from "@/lib/membership";
 
 async function currentContext() {
-  const session = await auth();
-  if (!session?.user?.id || !session.user.organizationId) throw new Error("You must be signed in.");
-  const membership = await prisma.organizationMember.findUnique({
-    where: { userId_organizationId: { userId: session.user.id, organizationId: session.user.organizationId } },
-    include: { organization: true },
-  });
-  if (!membership) throw new Error("Workspace access is not available.");
-  return { session, membership };
+  const context = await getMembership();
+  if (!context) throw new Error("Workspace access is not available.");
+  return context;
 }
 
 const projectSchema = z.object({
@@ -55,7 +50,7 @@ export async function updateWorkspace(formData: FormData) {
 export async function inviteMember(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const role = formData.get("role") === "ADMIN" ? "ADMIN" : "MEMBER";
-  if (!z.string().email().safeParse(email).success) return { success: false, error: "Enter a valid email." };
+  if (!z.email().safeParse(email).success) return { success: false, error: "Enter a valid email." };
   try {
     const { membership } = await currentContext();
     if (membership.role !== "OWNER" && membership.role !== "ADMIN") return { success: false, error: "Only workspace admins can invite members." };
