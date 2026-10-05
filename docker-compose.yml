@@ -12,7 +12,7 @@ services:
       # Bound to localhost so the dev database is not reachable from your network.
       - "127.0.0.1:54322:5432"
     volumes:
-      - northstar_postgres:/var/lib/postgresql/data
+      - app_postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 10s
@@ -20,4 +20,4 @@ services:
       retries: 5
 
 volumes:
-  northstar_postgres:
+  app_postgres:

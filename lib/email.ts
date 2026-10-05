@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { prisma } from "@/prisma/prisma";
+import { appName } from "@/lib/site";
 
 type EmailInput = { userId?: string; organizationId?: string; email: string; name?: string; subject: string; html: string; template: string };
 
@@ -24,7 +25,7 @@ async function sendEmail(input: EmailInput) {
 }
 
 export function sendWelcomeEmail(input: { userId: string; organizationId: string; email: string; name: string }) {
-  return sendEmail({ ...input, template: "welcome", subject: "Welcome to Northstar", html: `<h1>Welcome, ${escapeHtml(input.name)}</h1><p>Your workspace is ready. Sign in to start your first project.</p>` });
+  return sendEmail({ ...input, template: "welcome", subject: `Welcome to ${appName}`, html: `<h1>Welcome, ${escapeHtml(input.name)}</h1><p>Your workspace is ready. Sign in to get started.</p>` });
 }
 
 export function sendInviteEmail(input: { organizationId: string; email: string; token: string; workspaceName: string }) {

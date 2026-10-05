@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, Check, Database, Files, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CreditCard, Files, ShieldCheck, Sparkles } from "lucide-react";
 import { Brand } from "@/components/brand";
+import { appName } from "@/lib/site";
 
-const appName = process.env.NEXT_PUBLIC_APP_NAME || "Northstar";
-
+// Placeholder marketing page: replace the copy below with your product's story.
 export default function HomePage() {
   return (
     <main className="landing">
@@ -15,35 +15,35 @@ export default function HomePage() {
 
       <section className="hero">
         <div>
-          <span className="eyebrow">A clear place for useful work</span>
-          <h1>Your team, in a better rhythm.</h1>
-          <p>{appName} is a small, secure SaaS foundation for teams who want projects, files, people and billing to feel straightforward.</p>
-          <div className="hero-actions"><Link href="/register" className="button button-dark">Create a workspace <ArrowRight size={16} /></Link><Link href="#features" className="button button-quiet">See how it works</Link></div>
+          <span className="eyebrow">Your tagline goes here</span>
+          <h1>Describe what your product does.</h1>
+          <p>{appName} gives every customer a secure workspace with team roles, billing and file storage. Add your product on top.</p>
+          <div className="hero-actions"><Link href="/register" className="button button-dark">Create a workspace <ArrowRight size={16} /></Link><Link href="#features" className="button button-quiet">See what&apos;s included</Link></div>
         </div>
         <div className="hero-card">
           <div className="hero-card-head"><span>Workspace / ready</span><span>●</span></div>
-          <h2>A calm operating system for the next thing.</h2>
-          <p>Invite the right people, keep the latest files close, and make progress visible without adding process for its own sake.</p>
-          <div className="hero-metrics"><div className="metric"><strong>01</strong><span>shared workspace</span></div><div className="metric"><strong>RBAC</strong><span>clear access</span></div><div className="metric"><strong>24/7</strong><span>your data</span></div></div>
+          <h2>Show your product here.</h2>
+          <p>Use this card for a screenshot, a short demo or the key outcome your customers get.</p>
+          <div className="hero-metrics"><div className="metric"><strong>Teams</strong><span>shared workspaces</span></div><div className="metric"><strong>RBAC</strong><span>owner / admin / member</span></div><div className="metric"><strong>Billing</strong><span>Stripe subscriptions</span></div></div>
         </div>
       </section>
 
       <section className="section" id="features">
-        <div className="section-heading"><h2>Everything essential. Nothing noisy.</h2><p>Start with a strong foundation and add only the product logic your business actually needs.</p></div>
+        <div className="section-heading"><h2>What&apos;s included.</h2><p>The common SaaS plumbing is done, so your time goes into the product itself.</p></div>
         <div className="feature-grid">
-          <article className="feature"><span className="feature-icon"><Database size={19} /></span><h3>One workspace</h3><p>Projects and people share a tenant boundary, so every query starts from the right organisation.</p></article>
-          <article className="feature"><span className="feature-icon"><Files size={19} /></span><h3>Files where they belong</h3><p>Send project files to a private Google Drive folder without exposing service credentials in the browser.</p></article>
-          <article className="feature"><span className="feature-icon"><ShieldCheck size={19} /></span><h3>Access you can explain</h3><p>Owner, admin and member roles are enforced in server actions and API routes, not only in the UI.</p></article>
+          <article className="feature"><span className="feature-icon"><ShieldCheck size={19} /></span><h3>Workspaces and roles</h3><p>Every record belongs to a workspace, and owner, admin and member roles are enforced on the server.</p></article>
+          <article className="feature"><span className="feature-icon"><CreditCard size={19} /></span><h3>Subscription billing</h3><p>Stripe Checkout and signature-verified webhooks keep each workspace&apos;s plan in sync.</p></article>
+          <article className="feature"><span className="feature-icon"><Files size={19} /></span><h3>Private file storage</h3><p>Uploads go to a private Google Drive folder without exposing service credentials to the browser.</p></article>
         </div>
       </section>
 
       <section className="section" id="security">
-        <div className="two-column"><div className="panel"><span className="eyebrow">Security baseline</span><h2 style={{ margin: "18px 0 10px", fontSize: 34, letterSpacing: "-.06em" }}>Simple to audit. Safe to extend.</h2><p className="panel-subtitle">Auth.js sessions, bcrypt passwords, login lockout, server-side authorisation and private-by-default storage are included from day one.</p><ul className="check-list"><li>No database secrets in client code</li><li>Protected dashboard routes and API handlers</li><li>Webhook signatures checked before billing updates</li></ul></div><div className="panel"><span className="feature-icon"><Sparkles size={19} /></span><h3 style={{ marginTop: 26 }}>Bring your own stack</h3><p className="panel-subtitle">Use the included Supabase-compatible Docker database locally, connect a hosted Supabase Postgres instance in production, and keep providers replaceable.</p><Link href="/register" className="button button-dark">Open a workspace <ArrowRight size={16} /></Link></div></div>
+        <div className="two-column"><div className="panel"><span className="eyebrow">Security baseline</span><h2 style={{ margin: "18px 0 10px", fontSize: 34, letterSpacing: "-.06em" }}>Secure by default.</h2><p className="panel-subtitle">Auth.js sessions, bcrypt passwords, login lockout, server-side authorisation and private-by-default storage are included from day one.</p><ul className="check-list"><li>No database secrets in client code</li><li>Protected dashboard routes and API handlers</li><li>Webhook signatures checked before billing updates</li></ul></div><div className="panel"><span className="feature-icon"><Sparkles size={19} /></span><h3 style={{ marginTop: 26 }}>Bring your own stack</h3><p className="panel-subtitle">Use the included Supabase-compatible Docker database locally, connect a hosted Supabase Postgres instance in production, and keep providers replaceable.</p><Link href="/register" className="button button-dark">Open a workspace <ArrowRight size={16} /></Link></div></div>
       </section>
 
-      <section className="section" id="pricing"><div className="section-heading"><h2>Start small. Grow when ready.</h2><p>Every workspace begins on the free plan. Billing is opt-in and handled by Stripe Checkout.</p></div><div className="feature-grid"><article className="feature"><span className="eyebrow">Free</span><h3>For finding the shape</h3><p>Projects, a small team and the full dashboard foundation.</p><div style={{ marginTop: 24 }}><Link href="/register" className="button button-quiet">Start free</Link></div></article><article className="feature" style={{ borderColor: "#a8c59f", background: "#e9f8df" }}><span className="eyebrow">Pro</span><h3>For doing the work</h3><p>Upgrade through Stripe when your workspace needs more capacity and support.</p><div style={{ marginTop: 24 }}><Link href="/register" className="button button-dark">Choose Pro</Link></div></article><article className="feature"><span className="eyebrow">Your product</span><h3>Make it yours</h3><p>Replace the sample project surface with your own domain model without changing the security boundary.</p><div style={{ marginTop: 24 }}><Link href="/sign-in" className="button button-quiet">Sign in</Link></div></article></div></section>
+      <section className="section" id="pricing"><div className="section-heading"><h2>Pricing.</h2><p>Every workspace starts on the free plan. Upgrades go through Stripe Checkout.</p></div><div className="feature-grid"><article className="feature"><span className="eyebrow">Free</span><h3>Describe the free plan</h3><p>List what free workspaces can do.</p><div style={{ marginTop: 24 }}><Link href="/register" className="button button-quiet">Start free</Link></div></article><article className="feature" style={{ borderColor: "#a8c59f", background: "#e9f8df" }}><span className="eyebrow">Pro</span><h3>Describe the paid plan</h3><p>List what upgrading unlocks.</p><div style={{ marginTop: 24 }}><Link href="/register" className="button button-dark">Choose Pro</Link></div></article><article className="feature"><span className="eyebrow">Custom</span><h3>Add more tiers as needed</h3><p>Create extra Stripe prices and add them to the Plan enum.</p><div style={{ marginTop: 24 }}><Link href="/sign-in" className="button button-quiet">Sign in</Link></div></article></div></section>
 
-      <footer className="footer"><Brand /> <span style={{ float: "right" }}>A clean Next.js SaaS starter.</span></footer>
+      <footer className="footer"><Brand /> <span style={{ float: "right" }}>© {appName}</span></footer>
     </main>
   );
 }
